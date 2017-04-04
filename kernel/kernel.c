@@ -4,86 +4,113 @@
  *  Created on: 2/4/2017
  *      Author: utnso
  */
-#include <arpa/inet.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#define MAXDATASIZE 100 // Máximo número de bytes que se pueden leer de una vez.
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/wait.h>
+#include <signal.h>
 #define MIPUERTO 9090
 #define BACKLOG 10
+void sigchld_handler(int s)
+{
+	while (wait(NULL) > 0);
+}
 
-int main(void) {
+int crearSocket() {
+	return socket(AF_INET, SOCK_STREAM, 0);
+}
+
+int reusarSocket(int sockServ, int yes) {
+	return setsockopt(sockServ, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
+}
+
+int bindearSocket(int sockServ, const struct sockaddr_in* mi_addr) {
+	return bind(sockServ, (struct sockaddr*) &*mi_addr, sizeof(struct sockaddr));
+}
+
+int listenearSocket(int sockServ) {
+	return listen(sockServ, BACKLOG);
+}
+
+int acceptearSocket(int sockServ, int sin_size, struct sockaddr_in* clie_addr) {
+	return accept(sockServ, (struct sockaddr*) &*clie_addr, &sin_size);
+}
+
+int main(void)
+{
 
 	//VARIABLES
 
-	int servidor;
+	int sockServ, sockAccept; // Escuchar sobre sockServ, nuevas conexiones sobre sockAccept
+	struct sockaddr_in mi_addr; // información sobre mi dirección
+	struct sockaddr_in clie_addr; // información sobre la dirección del cliente
 	int sin_size;
+	struct sigaction sa;
+	int yes=1;
 
-
-	servidor = crear_socket();
-
-	int activado = 1; //Para poder reusar el mismo socket y no esperar 2 minutos.
-	setsockopt(servidor, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
-
-	int enlace = bindear(servidor,MIPUERTO);
-	if (enlace == -1){
-		printf("Error al bindear, dale que podes!");
+	//Creo el socket
+	if ((sockServ = crearSocket()) == -1) {
+	perror("socket");
+	exit(1);
 	}
 
-	int escucha = listen(servidor, BACKLOG);
-	if (escucha == -1){
-		printf("No se pudo relizar el listen, metele que se hace!");
+	//Lo hago reutilizable
+	if (reusarSocket(sockServ, yes) == -1) {
+	perror("setsockopt");
+	exit(1);
 	}
-	printf("Estoy escuchando\n");
 
-	struct sockaddr_in direccionCliente;
+	mi_addr.sin_family = AF_INET; // Ordenación de bytes de la máquina
+	mi_addr.sin_port = htons(MIPUERTO); // short, Ordenación de bytes de la red
+	mi_addr.sin_addr.s_addr = INADDR_ANY; // Rellenar con mi dirección IP
+	memset(&(mi_addr.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
+
+
+	//Bindear socket a cliente
+	if (bindearSocket(sockServ, &mi_addr)== -1) {
+	perror("bind");
+	exit(1);
+	}
+
+	//Dejar socket escuchando
+	if (listenearSocket(sockServ) == -1) {
+	perror("listen");
+	exit(1);
+	}
+
+	// Eliminar procesos muertos
+	sa.sa_handler = sigchld_handler;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART;
+	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+	perror("sigaction");
+	exit(1);
+	}
+
+	//Loop para accept con todas las conexiones
+	while(1) {
 	sin_size = sizeof(struct sockaddr_in);
-	int cliente = accept(servidor, (struct sockaddr*) &direccionCliente, &sin_size);
-
-		printf("Recibí una conexión en %d!!\n", cliente);
-
-		char* mensaje = "Holan te tengo fe!\n";
-		int len = strlen(mensaje);
-
-		int bytes_enviados = send(cliente, mensaje, len, 0);
-		if (bytes_enviados == -1){
-			printf("El send tuvo un error, revisalo que seguro lo arreglas!");
-		}
-
-		char buff[MAXDATASIZE];
-		int recibido = recv(cliente,buff,MAXDATASIZE-1,0);
-		if (recibido == -1){
-			printf("Error con syscall recv, pero como dijo michetti: levantate siempre");
-		}
-		printf("Me llegaron %d bytes que decian %s", recibido,buff );
-		free(buff);
-
-		return 0;
-}
-
-//Funciones creadas
-
-int crear_socket(){
-	int soc = socket(AF_INET,SOCK_STREAM,0);
-	if (soc == -1){
-		printf("El socket no se creo, pero metele que estas ahi!");
+	if ((sockAccept = acceptearSocket(sockServ, sin_size, &clie_addr)) == -1) {
+	perror("accept");
+	continue;
 	}
-	return soc;
-}
 
-int bindear(int socket, int puerto){
-	struct sockaddr_in miSocket;
-	miSocket.sin_family = AF_INET;
-	miSocket.sin_port = htons(MIPUERTO);
-	miSocket.sin_addr.s_addr = htonl(INADDR_ANY);
-	memset(&(miSocket.sin_zero), '\0', 8); //Poner cero al resto de la estructura
-
-	int enlace = bind(socket, (struct sockaddr*) &miSocket, sizeof(miSocket));
-	if (enlace == -1) {
-		perror ("No se puede enlazar a este puerto, ya esta enlazado a otro buachin \n");
+	printf("Server: Se establecio la coneccion con cliente %s\n",
+	inet_ntoa(clie_addr.sin_addr));
+	if (!fork()) { // Este es el proceso hijo
+	close(sockServ); // El hijo no necesita este descriptor
+	if (send(sockAccept, "Hello, world!\n", 14, 0) == -1)
+	perror("send");
+	close(sockAccept);
+	exit(0);
 	}
-	return enlace;
-
+	close(sockAccept); // Como el padre no lo necesita, lo cierro
+	}
+	return 0;
 }
-
