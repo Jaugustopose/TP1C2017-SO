@@ -47,7 +47,7 @@ int main(void)
 
 	//VARIABLES
 
-	int sockServ, sockAccept; // Escuchar sobre sockServ, nuevas conexiones sobre sockAccept
+	int sockServ, sockClie; // Escuchar sobre sockServ, nuevas conexiones sobre sockAccept
 	struct sockaddr_in mi_addr; // información sobre mi dirección
 	struct sockaddr_in clie_addr; // información sobre la dirección del cliente
 	int sin_size;
@@ -96,37 +96,45 @@ int main(void)
 	//Loop para accept con todas las conexiones
 	while(1) {
 	sin_size = sizeof(struct sockaddr_in);
-	if ((sockAccept = acceptearSocket(sockServ, sin_size, &clie_addr)) == -1) {
+	if ((sockClie = acceptearSocket(sockServ, sin_size, &clie_addr)) == -1) {
 	printf("Error al tratar de acceptear");
 	continue;
 	}
 
 	char mensaje[] = "Hola cliente! Como te va?\n";
-	char* buffer = malloc(10);
+	char* buffer = malloc(1000);
 
 	printf("Server: Se establecio la coneccion con cliente %s\n", inet_ntoa(clie_addr.sin_addr));
 	if (!fork()) { // Este es el proceso hijo que atiende al cliente
 
 		close(sockServ); // El hijo no necesita este descriptor
-		if (send(sockAccept, mensaje, strlen(mensaje), 0) == -1) {
+		if (send(sockClie, mensaje, strlen(mensaje), 0) == -1) {
 			printf("Error al sendear mensaje al cliente");
 		}
 
-		while(1) {
-		int recibido = recv(sockAccept,buffer, 4,MSG_WAITALL);
-		if (recibido <= 0) {
-			printf("Error al recibir info del cliente");
-			close(sockAccept);
-			exit(0);
-			}
+		while (1){
 
+			int bytesRecibidos = recv(sockClie, buffer, 1000, 0);
+					if (bytesRecibidos <= 0) {
+						perror("Se desconecto el cliente o siamo fuori de la copa");
+						return 1;
+					}
 
-		buffer[recibido] = '\0';
-		printf("Me llegaron %d bytes con %s", recibido, buffer);
+					buffer[bytesRecibidos] = '\0';
+					printf("Me llegaron %d bytes con %s\n", bytesRecibidos, buffer);
+
 		}
 
+
+		/*uint32_t tamanioPaquete;
+		recv(sockClie, &tamanioPaquete, 4, 0);
+
+		char* buff = malloc(tamanioPaquete);
+		recv(sockClie, buff, tamanioPaquete, MSG_WAITALL);
+*/
+
 	free(buffer);
-	close(sockAccept); // Como el padre no lo necesita, lo cierro
+	close(sockClie); // Como el padre no lo necesita, lo cierro
 	}
 
 	return 0;
