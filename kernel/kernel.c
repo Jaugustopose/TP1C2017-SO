@@ -56,13 +56,13 @@ int main(void)
 
 	//Creo el socket
 	if ((sockServ = crearSocket()) == -1) {
-	perror("socket");
+	printf("Error al crear socket");
 	exit(1);
 	}
 
 	//Lo hago reutilizable
 	if (reusarSocket(sockServ, yes) == -1) {
-	perror("setsockopt");
+	printf("Error al tratar de reusar socket");
 	exit(1);
 	}
 
@@ -74,13 +74,13 @@ int main(void)
 
 	//Bindear socket a cliente
 	if (bindearSocket(sockServ, &mi_addr)== -1) {
-	perror("bind");
+	printf("Error al tratar de bindear");
 	exit(1);
 	}
 
 	//Dejar socket escuchando
 	if (listenearSocket(sockServ) == -1) {
-	perror("listen");
+	printf("Error al tratar de listenear");
 	exit(1);
 	}
 
@@ -89,7 +89,7 @@ int main(void)
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART;
 	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-	perror("sigaction");
+	printf("Error al tratar de matar procesos zombies");
 	exit(1);
 	}
 
@@ -97,20 +97,38 @@ int main(void)
 	while(1) {
 	sin_size = sizeof(struct sockaddr_in);
 	if ((sockAccept = acceptearSocket(sockServ, sin_size, &clie_addr)) == -1) {
-	perror("accept");
+	printf("Error al tratar de acceptear");
 	continue;
 	}
 
-	printf("Server: Se establecio la coneccion con cliente %s\n",
-	inet_ntoa(clie_addr.sin_addr));
-	if (!fork()) { // Este es el proceso hijo
-	close(sockServ); // El hijo no necesita este descriptor
-	if (send(sockAccept, "Hello, world!\n", 14, 0) == -1)
-	perror("send");
-	close(sockAccept);
-	exit(0);
-	}
+	char mensaje[] = "Hola cliente! Como te va?\n";
+	char* buffer = malloc(10);
+
+	printf("Server: Se establecio la coneccion con cliente %s\n", inet_ntoa(clie_addr.sin_addr));
+	if (!fork()) { // Este es el proceso hijo que atiende al cliente
+
+		close(sockServ); // El hijo no necesita este descriptor
+		if (send(sockAccept, mensaje, strlen(mensaje), 0) == -1) {
+			printf("Error al sendear mensaje al cliente");
+		}
+
+		while(1) {
+		int recibido = recv(sockAccept,buffer, 4,MSG_WAITALL);
+		if (recibido <= 0) {
+			printf("Error al recibir info del cliente");
+			close(sockAccept);
+			exit(0);
+			}
+
+
+		buffer[recibido] = '\0';
+		printf("Me llegaron %d bytes con %s", recibido, buffer);
+		}
+
+	free(buffer);
 	close(sockAccept); // Como el padre no lo necesita, lo cierro
 	}
+
 	return 0;
+	}
 }
