@@ -7,8 +7,10 @@
 #include <string.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include "cpu.h"
 
-#define PUERTO 9040
+
+
 #define MAXBYTESREAD 100
 
 //Provisorio: le puse dos para luego factorizar con la de Kernel :D
@@ -26,6 +28,14 @@ void cerrarSocket(int socket)
    close(socket);
 }
 
+void cargarConfiguracion()
+{
+
+	t_config* configCpu = config_create("cpu.cfg");
+	config.IP_MEMORIA = config_get_int_value(configCpu, "IP_MEMORIA");
+    config.PUERTO_MEMORIA = config_get_string_value(configCpu, "PUERTO_MEMORIA");
+	config.PUERTO_KERNEL = config_get_string_value(configCpu, "PUERTO_KERNEL");
+}
 
 int main(void){
 
@@ -33,6 +43,8 @@ int main(void){
 	char buf[MAXBYTESREAD];
 	int socket;
 	int numeroBytes;
+
+	cargarConfiguracion();
 
 	if((socket = crearSocketDos()) == -1)
 	{
@@ -42,7 +54,7 @@ int main(void){
 
 	//Configuro Servidor
 	dirServidor.sin_family = AF_INET;
-	dirServidor.sin_port = htons(PUERTO);
+	dirServidor.sin_port = htons(atoi(config.PUERTO_KERNEL));
 	dirServidor.sin_addr.s_addr =  INADDR_ANY;
 	memset(&(dirServidor.sin_zero), '\0', 8);
 
