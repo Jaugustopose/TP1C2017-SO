@@ -52,7 +52,7 @@ int main(void)
 	int cantBytes; // La cantidad de bytes. Lo voy a usar para saber cuantos bytes me mandaron.
 	int addrlen; // El tamaño de la direccion del cliente
 	int i, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
-	char buff[256]; // Buffer para datos que me manda el cliente
+	//char buff[100]; // Buffer para datos que me manda el cliente
 	FD_ZERO(&master); // borra los conjuntos maestro y temporal por si tienen basura adentro (capaz no hacen falta pero por las dudas)
 	FD_ZERO(&read_fds);
 
@@ -102,7 +102,7 @@ int main(void)
 	// explorar conexiones existentes en busca de datos que leer
 	for(i = 0; i <= maxSock; i++) {
 		if (FD_ISSET(i, &read_fds)) { // Me fijo si tengo datos listos para leer
-			if (i == sockServ) { //si entro en este "if", significa .
+			if (i == sockServ) { //si entro en este "if", significa que tengo datos.
 				// gestionar nuevas conexiones
 				addrlen = sizeof(clie_addr);
 				if ((sockClie = accept(sockServ, (struct sockaddr*)&clie_addr, &addrlen)) == -1){
@@ -116,7 +116,9 @@ int main(void)
 								}
 			} else 	{
 				// gestionar datos de un cliente
-							if ((cantBytes = recv(i, buff, sizeof(buff), 0)) <= 0) {
+							char* buff = malloc(1000);
+
+							if ((cantBytes = recv(i, buff, 1000, 0)) <= 0) {
 
 								// error o conexión cerrada por el cliente
 								if (cantBytes == 0) {
@@ -130,6 +132,7 @@ int main(void)
 								FD_CLR(i, &master); // Eliminar del conjunto maestro
 							}
 								else{ // tenemos datos de algún cliente
+									printf("He recibido %d bytes de contenido: %s\n", cantBytes, buff);
 
 									for(j = 0; j <= maxSock; j++) { // Enviar a todo el mundo
 										if (FD_ISSET(j, &master)) { // Me fijo si esta en el master
@@ -141,6 +144,7 @@ int main(void)
 												}
 											}
 										}
+									free(buff);
 									}
 					}
 		}
