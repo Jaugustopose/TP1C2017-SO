@@ -1,12 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <string.h>
-#include <netinet/in.h>
-#include <unistd.h>
 #include "cpu.h"
 
 
@@ -30,11 +21,14 @@ void cerrarSocket(int socket)
 
 void cargarConfiguracion()
 {
-
-	t_config* configCpu = config_create("cpu.cfg");
+	char* pat = string_new();
+	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
+	string_append(&pat,getcwd(cwd,sizeof(cwd)));
+	string_append(&pat,"/cpu.cfg");
+	t_config* configCpu = config_create(pat);
 	config.IP_MEMORIA = config_get_int_value(configCpu, "IP_MEMORIA");
-    config.PUERTO_MEMORIA = config_get_string_value(configCpu, "PUERTO_MEMORIA");
-	config.PUERTO_KERNEL = config_get_string_value(configCpu, "PUERTO_KERNEL");
+    config.PUERTO_MEMORIA = config_get_int_value(configCpu, "PUERTO_MEMORIA");
+	config.PUERTO_KERNEL = config_get_int_value(configCpu, "PUERTO_KERNEL");
 }
 
 int main(void){
@@ -54,7 +48,7 @@ int main(void){
 
 	//Configuro Servidor
 	dirServidor.sin_family = AF_INET;
-	dirServidor.sin_port = htons(atoi(config.PUERTO_KERNEL));
+	dirServidor.sin_port = htons(config.PUERTO_KERNEL);
 	dirServidor.sin_addr.s_addr =  INADDR_ANY;
 	memset(&(dirServidor.sin_zero), '\0', 8);
 
