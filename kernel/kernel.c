@@ -13,7 +13,8 @@
 #include <sys/time.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#define MIPUERTO 9090 // Debera ser tomado del archivo de configuracion
+#include "kernel.h"
+#include <commons/string.h>
 #define BACKLOG 10
 
 int crearSocket() {
@@ -32,8 +33,39 @@ int listenearSocket(int sockServ) {
 	return listen(sockServ, BACKLOG);
 }
 
-int acceptearSocket(int sockServ, int sin_size, struct sockaddr_in* clie_addr) {
-	return accept(sockServ, (struct sockaddr*) &*clie_addr, &sin_size);
+void cargarConfiguracion()
+{
+	char* pat = string_new();
+	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
+	string_append(&pat,getcwd(cwd,sizeof(cwd)));
+	string_append(&pat,"/kernel.cfg");
+	t_config* configKernel = config_create(pat);
+	printf("El directorio sobre el que se esta trabajando es %s\n", pat);
+	free(pat);
+	if (config_has_property(configKernel, "IP_MEMORIA"))
+			config.IP_MEMORIA = config_get_string_value(configKernel,"IP_MEMORIA");
+	if (config_has_property(configKernel, "IP_FS"))
+				config.IP_FS = config_get_string_value(configKernel,"IP_FS");
+	if (config_has_property(configKernel, "PUERTO_KERNEL"))
+					config.PUERTO_KERNEL = config_get_int_value(configKernel,"PUERTO_KERNEL");
+	if (config_has_property(configKernel, "PUERTO_MEMORIA"))
+					config.PUERTO_MEMORIA = config_get_int_value(configKernel,"PUERTO_MEMORIA");
+	if (config_has_property(configKernel, "PUERTO_CPU"))
+					config.PUERTO_CPU = config_get_int_value(configKernel,"PUERTO_CPU");
+	if (config_has_property(configKernel, "PUERTO_FS"))
+					config.PUERTO_FS = config_get_int_value(configKernel,"PUERTO_FS");
+	if (config_has_property(configKernel, "PUERTO_CONSOLA"))
+					config.PUERTO_CONSOLA = config_get_int_value(configKernel,"PUERTO_CONSOLA");
+
+
+    /*config.PUERTO_MEMORIA = config_get_int_value(configKernel, "PUERTO_MEMORIA");
+	config.PUERTO_KERNEL = config_get_int_value(configKernel, "PUERTO_KERNEL");
+	config.PUERTO_FS = config_get_int_value(configKernel, "PUERTO_FS");
+	config.PUERTO_CPU = config_get_int_value(configKernel, "PUERTO_CPU");
+	config.PUERTO_CONSOLA = config_get_int_value(configKernel, "PUERTO_CONSOLA");
+	config.IP_MEMORIA = config_get_string_value(configKernel, "IP_MEMORIA");
+	config.IP_FS = config_get_string_value(configKernel, "IP_FS");
+	*/
 }
 
 int main(void)
@@ -56,9 +88,13 @@ int main(void)
 	FD_ZERO(&master); // borra los conjuntos maestro y temporal por si tienen basura adentro (capaz no hacen falta pero por las dudas)
 	FD_ZERO(&read_fds);
 
+
+	cargarConfiguracion();
+
+
 	//Creo el socket
 	if ((sockServ = crearSocket()) == -1) {
-	printf("Error al crear socket");
+	puts("Error al crear socket");
 	exit(1);
 	}
 
@@ -70,7 +106,7 @@ int main(void)
 
 	//Bindear socket a cliente
 	mi_addr.sin_family = AF_INET; // Ordenación de bytes de la máquina
-	mi_addr.sin_port = htons(MIPUERTO); // short, Ordenación de bytes de la red
+	mi_addr.sin_port = htons(config.PUERTO_KERNEL); // short, Ordenación de bytes de la red
 	mi_addr.sin_addr.s_addr = INADDR_ANY; // Rellenar con mi dirección IP
 	memset(&(mi_addr.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
 	if (bindearSocket(sockServ, &mi_addr)== -1) {
@@ -134,7 +170,7 @@ int main(void)
 								else{ // tenemos datos de algún cliente
 									printf("He recibido %d bytes de contenido: %s\n", cantBytes, buff);
 
-									for(j = 0; j <= maxSock; j++) { // Enviar a todo el mundo
+									for(j = 0; j <= maxSock; j++) { // Enviar a todos
 										if (FD_ISSET(j, &master)) { // Me fijo si esta en el master
 											// excepto al Servidor y al mismo hermoso que manda el mensaje
 											if (j != sockServ && j != i) {
