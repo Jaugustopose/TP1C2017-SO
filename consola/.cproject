@@ -30,13 +30,8 @@
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.402915079" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.debug.1610594876" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.debug">
-<<<<<<< HEAD
-								<option id="gnu.c.link.option.libs.564931618" superClass="gnu.c.link.option.libs" valueType="libs">
-									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="commons"/>
-=======
 								<option id="gnu.c.link.option.libs.775381355" superClass="gnu.c.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="commons"/>
->>>>>>> 4da95651251767aad893ce6fda07c1e6845580ed
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.1299071872" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
@@ -111,9 +106,6 @@
 		</scannerConfigBuildInfo>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-<<<<<<< HEAD
-	<storageModule moduleId="refreshScope"/>
-=======
 	<storageModule moduleId="refreshScope" versionNumber="2">
 		<configuration configurationName="Release">
 			<resource resourceType="PROJECT" workspacePath="/consola"/>
@@ -122,5 +114,4 @@
 			<resource resourceType="PROJECT" workspacePath="/consola"/>
 		</configuration>
 	</storageModule>
->>>>>>> 4da95651251767aad893ce6fda07c1e6845580ed
 </cproject>
