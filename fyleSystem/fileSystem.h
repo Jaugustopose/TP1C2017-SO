@@ -12,8 +12,8 @@
 #include <unistd.h>
 
 typedef struct configuracion {
-	char* ipKernel;
-	int puertoKernel;
+	char* IP_KERNEL;
+	int PUERTO_KERNEL;
 };
 
 t_config* configFs;
