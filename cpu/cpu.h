@@ -9,12 +9,13 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <commons/config.h>
+#include <commons/string.h>
 #include <unistd.h>
 
 struct configuracion{
-	int IP_MEMORIA;
-	char* PUERTO_MEMORIA;
-	char* PUERTO_KERNEL;
+	char* IP_MEMORIA;
+	int PUERTO_MEMORIA;
+	int PUERTO_KERNEL;
 };
 
 t_config* configCpu;

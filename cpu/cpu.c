@@ -26,9 +26,13 @@ void cargarConfiguracion()
 	string_append(&pat,getcwd(cwd,sizeof(cwd)));
 	string_append(&pat,"/cpu.cfg");
 	t_config* configCpu = config_create(pat);
-	config.IP_MEMORIA = config_get_int_value(configCpu, "IP_MEMORIA");
-    config.PUERTO_MEMORIA = config_get_int_value(configCpu, "PUERTO_MEMORIA");
-	config.PUERTO_KERNEL = config_get_int_value(configCpu, "PUERTO_KERNEL");
+	free(pat);
+//	if (config_has_property(configCpu, "IP_MEMORIA"))
+		config.IP_MEMORIA = config_get_string_value(configCpu, "IP_MEMORIA");
+//	if (config_has_property(configCpu, "PUERTO_MEMORIA"))
+		config.PUERTO_MEMORIA = config_get_int_value(configCpu, "PUERTO_MEMORIA");
+//	if (config_has_property(configCpu, "PUERTO_KERNEL"))
+		config.PUERTO_KERNEL = config_get_int_value(configCpu, "PUERTO_KERNEL");
 }
 
 int main(void){
