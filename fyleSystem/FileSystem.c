@@ -78,7 +78,7 @@ int main(void) {
 	  exit(1);
 	 }
 
-	//Recibo mensajes
+	//Recibo mensajes y muestro en pantalla
 	while (1) {
 		int bytesRecibidos = recv(cliente, buffer, 1000, 0);
 		if (bytesRecibidos <= 0) {
@@ -87,7 +87,7 @@ int main(void) {
 		}
 
 		buffer[bytesRecibidos] = '\0';
-		printf("Me llegaron %d bytes con %s\n", bytesRecibidos, buffer);
+		printf("Me llegaron %d bytes --> %s\n", bytesRecibidos, buffer);
 	}
 
 	free(buffer);
