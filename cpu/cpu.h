@@ -14,6 +14,7 @@
 
 struct configuracion{
 	char* IP_MEMORIA;
+	char* IP_KERNEL;
 	int PUERTO_MEMORIA;
 	int PUERTO_KERNEL;
 };

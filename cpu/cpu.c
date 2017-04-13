@@ -27,20 +27,22 @@ void cargarConfiguracion()
 	string_append(&pat,"/cpu.cfg");
 	t_config* configCpu = config_create(pat);
 	free(pat);
-//	if (config_has_property(configCpu, "IP_MEMORIA"))
+	if (config_has_property(configCpu, "IP_MEMORIA"))
 		config.IP_MEMORIA = config_get_string_value(configCpu, "IP_MEMORIA");
-//	if (config_has_property(configCpu, "PUERTO_MEMORIA"))
+	if (config_has_property(configCpu, "PUERTO_MEMORIA"))
 		config.PUERTO_MEMORIA = config_get_int_value(configCpu, "PUERTO_MEMORIA");
-//	if (config_has_property(configCpu, "PUERTO_KERNEL"))
+	if (config_has_property(configCpu, "PUERTO_KERNEL"))
 		config.PUERTO_KERNEL = config_get_int_value(configCpu, "PUERTO_KERNEL");
+	if (config_has_property(configCpu, "IP_KERNEL"))
+		config.IP_KERNEL = config_get_string_value(configCpu, "IP_KERNEL");
 }
 
 int main(void){
 
 	struct sockaddr_in dirServidor;
-	char buf[MAXBYTESREAD];
+	//char buf[MAXBYTESREAD];
+	char* buf = malloc(5);
 	int socket;
-	int numeroBytes;
 
 	cargarConfiguracion();
 
@@ -61,18 +63,18 @@ int main(void){
 		perror("No se pudo conectar");
 		exit(1);
 	}
-
-	if((numeroBytes =  recv(socket, buf, MAXBYTESREAD -1, 0))  == -1)
-	{
-		perror("Fallo el recv");
-		exit(1);
-	}
-
+	int bytesRecibidos =  recv(socket, buf, 4, 0);
+	if(bytesRecibidos < 0)
+		{
+			perror("Fallo el recv");
+			exit(1);
+		}
 	//Recibo mensaje e informo
-	buf[MAXBYTESREAD] = '\0';
+	buf[bytesRecibidos] = '\0';
 	printf("Recibi: %s", buf);
-	cerrarSocket(socket);
+	free(buf);
 
+	//cerrarSocket(socket);
 
 	return 0;
 }
