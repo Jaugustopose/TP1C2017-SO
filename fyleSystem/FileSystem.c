@@ -17,6 +17,11 @@
 #include <sys/time.h>
 #include "fileSystem.h"
 
+int conectarSocket(int socket, struct sockaddr_in* dirServidor)
+{
+ return connect(socket, (struct sockaddr*) &*dirServidor, sizeof(struct sockaddr));
+}
+
 void cargarConfiguracion()
 {
 	char* pat = string_new();
@@ -28,32 +33,48 @@ void cargarConfiguracion()
 	printf("El directorio sobre el que se esta trabajando es %s\n", pat);
 	free(pat);
 	printf("despues del free\n");
-	if (config_has_property(configFs, "IP_MEMORIA"))
+
+	if (config_has_property(configFs, "IP_KERNEL"))
 			config.IP_KERNEL = config_get_string_value(configFs,"IP_KERNEL");
 	printf("config.IP_KERNEL: %s\n", config.IP_KERNEL);
+
 	if (config_has_property(configFs, "PUERTO_KERNEL"))
 			config.PUERTO_KERNEL = config_get_int_value(configFs,"PUERTO_KERNEL");
 	printf("config.PUERTO_KERNEL: %d\n", config.PUERTO_KERNEL);
+
 }
 
 // Programa Principal
 int main(void) {
 	printf("Dentro del main\n");
-
 	cargarConfiguracion();//Cargo configuracion
+
     //Creo Cliente
 	struct sockaddr_in direccionServidor;//Estructura con la direccion del servidor
 	direccionServidor.sin_family = AF_INET;
 	direccionServidor.sin_addr.s_addr = inet_addr(config.IP_KERNEL);//IP a la que se conecta
+	direccionServidor.sin_addr.s_addr = INADDR_ANY;
 	direccionServidor.sin_port = htons(config.PUERTO_KERNEL);//Puerto al que se conecta
 
-	int cliente = socket(AF_INET, SOCK_STREAM, 0);//Pido un Socket
+	memset(&(direccionServidor.sin_zero), '\0', 8);
 
-	//Me conecto al Servidor
-	if (connect(cliente, (void*) &direccionServidor, sizeof(direccionServidor)) != 0) {
-		perror("Error al conectar");
-		return 1;
+	int cliente = socket(AF_INET, SOCK_STREAM, 0);//Pido un Socket
+	printf("cliente: %d\n", cliente);
+
+	if(conectarSocket(cliente, &direccionServidor) == -1)
+	 {
+	  perror("No se pudo conectar");
+	  exit(1);
+	 }
+
+	while (1) {
+		char mensaje[1000];
+		scanf("%s", mensaje);
+
+		send(cliente, mensaje, strlen(mensaje), 0);
 	}
+
+	close(cliente);
 
 	return 0;
 }
