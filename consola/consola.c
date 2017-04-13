@@ -4,11 +4,18 @@
 
 void cargarConfiguracion(){
 
-	struct configuracion config;
-	t_config* configConsola = config_create("../consola.cfg");
-	config.IP_KERNEL = config_get_string_value(configConsola, "IP_KERNEL");
-	config.PUERTO_KERNEL = config_get_int_value(configConsola, "PUERTO_KERNEL");
-     //return 1;
+
+	char* pat = string_new();
+		char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
+		string_append(&pat,getcwd(cwd,sizeof(cwd)));
+		string_append(&pat,"/consola.cfg");
+		t_config* configConsola = config_create(pat);
+		printf("El directorio sobre el que se esta trabajando es %s\n", pat);
+		free(pat);
+		if (config_has_property(configConsola, "IP_KERNEL"))
+				config.IP_KERNEL = config_get_string_value(configConsola,"IP_KERNEL");
+		if (config_has_property(configConsola, "PUERTO_KERNEL"))
+				config.PUERTO_KERNEL = config_get_int_value(configConsola,"PUERTO_KERNEL");
 }
 
 int crearSocket(){
@@ -25,9 +32,6 @@ void cerrarSocket(int socket){
 
 int main (void){
 
-	//if(cargarConfiguracion() == 1){  para mas adelante se eliminará el if, solo se puso para verificar que estaba
-		//printf("esta Ok");
-	//}
     cargarConfiguracion();
 
     int cliente = crearSocket();
