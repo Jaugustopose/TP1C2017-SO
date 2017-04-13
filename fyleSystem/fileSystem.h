@@ -14,6 +14,8 @@
 typedef struct configuracion {
 	char* IP_KERNEL;
 	int PUERTO_KERNEL;
+	char* IP_FS;
+	int PUERTO_FS;
 };
 
 t_config* configFs;

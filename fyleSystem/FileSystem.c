@@ -42,11 +42,22 @@ void cargarConfiguracion()
 			config.PUERTO_KERNEL = config_get_int_value(configFs,"PUERTO_KERNEL");
 	printf("config.PUERTO_KERNEL: %d\n", config.PUERTO_KERNEL);
 
+	if (config_has_property(configFs, "IP_FS"))
+			config.IP_FS = config_get_string_value(configFs,"IP_FS");
+	printf("config.IP_FS: %s\n", config.IP_FS);
+
+	if (config_has_property(configFs, "PUERTO_FS"))
+			config.PUERTO_FS = config_get_int_value(configFs,"PUERTO_FS");
+	printf("config.PUERTO_FS: %d\n", config.PUERTO_FS);
+
 }
 
 // Programa Principal
 int main(void) {
 	printf("Dentro del main\n");
+
+	char* buffer = malloc(5);
+
 	cargarConfiguracion();//Cargo configuracion
 
     //Creo Cliente
@@ -67,13 +78,28 @@ int main(void) {
 	  exit(1);
 	 }
 
+	//Recibo mensajes
+	while (1) {
+		int bytesRecibidos = recv(cliente, buffer, 1000, 0);
+		if (bytesRecibidos <= 0) {
+			perror("El socket se desconecto\n");
+			return 1;
+		}
+
+		buffer[bytesRecibidos] = '\0';
+		printf("Me llegaron %d bytes con %s\n", bytesRecibidos, buffer);
+	}
+
+	free(buffer);
+/*
+	//Envio mensajes
 	while (1) {
 		char mensaje[1000];
 		scanf("%s", mensaje);
 
 		send(cliente, mensaje, strlen(mensaje), 0);
 	}
-
+*/
 	close(cliente);
 
 	return 0;
