@@ -9,8 +9,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <string.h>
 #include "commons/config.h"
 //#include "memo.cfg"
 
