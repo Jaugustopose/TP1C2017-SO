@@ -37,6 +37,27 @@ void cargarConfiguracion()
 		config.IP_KERNEL = config_get_string_value(configCpu, "IP_KERNEL");
 }
 
+void recibir_mensajes_en_socket(int socket) {
+	char* buf = malloc(1000);
+	while (1) {
+		int bytesRecibidos = recv(socket, buf, 1000, 0);
+		if (bytesRecibidos < 0) {
+			perror("Ha ocurrido un error al recibir un mensaje");
+			exit(EXIT_FAILURE);
+		} else if (bytesRecibidos == 0) {
+			printf("Se terminó la conexión en el socket \n", socket);
+			close(socket);
+			exit(EXIT_FAILURE);
+		} else {
+			//Recibo mensaje e informo
+			buf[bytesRecibidos] = '\0';
+			printf("Recibí el mensaje de %i bytes: ", bytesRecibidos);
+			puts(buf);
+		}
+	}
+	free(buf);
+}
+
 int main(void){
 
 	struct sockaddr_in dirServidor;
@@ -69,12 +90,9 @@ int main(void){
 			perror("Fallo el recv");
 			exit(1);
 		}
-	//Recibo mensaje e informo
-	buf[bytesRecibidos] = '\0';
-	printf("Recibi: %s", buf);
-	free(buf);
 
-	//cerrarSocket(socket);
 
-	return 0;
+	recibir_mensajes_en_socket(socket);
+
+	return EXIT_SUCCESS;
 }
