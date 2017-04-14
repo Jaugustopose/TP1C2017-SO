@@ -49,10 +49,10 @@ int main (void){
 	}
 
 	while (1) {
-	char mensaje[1000];
-	scanf("%s", mensaje);
-	send(cliente, mensaje, strlen(mensaje), 0);
-	}
+			char mensaje[1000];
+			fgets(mensaje, sizeof mensaje, stdin);
+			send(cliente, mensaje, strlen(mensaje), 0);
+		}
 
 
 	return 0;

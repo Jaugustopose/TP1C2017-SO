@@ -62,7 +62,6 @@ int main(void){
 
 	struct sockaddr_in dirServidor;
 	//char buf[MAXBYTESREAD];
-	char* buf = malloc(5);
 	int socket;
 
 	cargarConfiguracion();
@@ -84,13 +83,6 @@ int main(void){
 		perror("No se pudo conectar");
 		exit(1);
 	}
-	int bytesRecibidos =  recv(socket, buf, 4, 0);
-	if(bytesRecibidos < 0)
-		{
-			perror("Fallo el recv");
-			exit(1);
-		}
-
 
 	recibir_mensajes_en_socket(socket);
 
