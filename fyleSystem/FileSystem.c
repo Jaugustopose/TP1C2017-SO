@@ -54,7 +54,7 @@ void cargarConfiguracion()
 
 // Programa Principal
 int main(void) {
-	printf("Dentro del main\n");
+	//printf("Dentro del main\n");
 
 	char* buffer = malloc(5);
 
