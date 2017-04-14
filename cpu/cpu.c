@@ -28,13 +28,25 @@ void cargarConfiguracion()
 	t_config* configCpu = config_create(pat);
 	free(pat);
 	if (config_has_property(configCpu, "IP_MEMORIA"))
+	{
 		config.IP_MEMORIA = config_get_string_value(configCpu, "IP_MEMORIA");
+		printf("config.IP_MEMORIA: %s\n", config.IP_MEMORIA);
+	}
 	if (config_has_property(configCpu, "PUERTO_MEMORIA"))
+	{
 		config.PUERTO_MEMORIA = config_get_int_value(configCpu, "PUERTO_MEMORIA");
+		printf("config.PUERTO_MEMORIA: %d\n", config.PUERTO_MEMORIA);
+	}
 	if (config_has_property(configCpu, "PUERTO_KERNEL"))
+	{
 		config.PUERTO_KERNEL = config_get_int_value(configCpu, "PUERTO_KERNEL");
+		printf("config.PUERTO_KERNEL: %d\n", config.PUERTO_KERNEL);
+	}
 	if (config_has_property(configCpu, "IP_KERNEL"))
+	{
 		config.IP_KERNEL = config_get_string_value(configCpu, "IP_KERNEL");
+		printf("config.IP_KERNEL: %s\n", config.IP_KERNEL);
+	}
 }
 
 void recibir_mensajes_en_socket(int socket) {
