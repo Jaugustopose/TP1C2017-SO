@@ -172,7 +172,8 @@ int main(void)
 								FD_CLR(i, &master); // Eliminar del conjunto maestro
 							}
 								else{ // tenemos datos de algún cliente
-									printf("He recibido %d bytes de contenido: %.*s\n", cantBytes, cantBytes, buff);
+									//Se manda cantBYtes -1 porque es lo que debe mostrar sin el /0
+									printf("He recibido %d bytes de contenido: %.*s\n", cantBytes, cantBytes -1, buff);
 
 									for(j = 0; j <= maxSock; j++) { // Enviar a todos
 										if (FD_ISSET(j, &master)) { // Me fijo si esta en el master
