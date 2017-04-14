@@ -40,32 +40,36 @@ void cargarConfiguracion()
 	string_append(&pat,getcwd(cwd,sizeof(cwd)));
 	string_append(&pat,"/kernel.cfg");
 	t_config* configKernel = config_create(pat);
-	printf("El directorio sobre el que se esta trabajando es %s\n", pat);
 	free(pat);
-	if (config_has_property(configKernel, "IP_MEMORIA"))
+
+	if (config_has_property(configKernel, "IP_MEMORIA")){
 			config.IP_MEMORIA = config_get_string_value(configKernel,"IP_MEMORIA");
-	if (config_has_property(configKernel, "IP_FS"))
+	printf("config.IP_MEMORIA: %s\n", config.IP_MEMORIA);
+	}
+	if (config_has_property(configKernel, "IP_FS")){
 				config.IP_FS = config_get_string_value(configKernel,"IP_FS");
-	if (config_has_property(configKernel, "PUERTO_KERNEL"))
+	printf("config.IP_FS: %s\n", config.IP_FS);
+	}
+	if (config_has_property(configKernel, "PUERTO_KERNEL")){
 					config.PUERTO_KERNEL = config_get_int_value(configKernel,"PUERTO_KERNEL");
-	if (config_has_property(configKernel, "PUERTO_MEMORIA"))
+	printf("config.PUERTO_KERNEL: %d\n", config.PUERTO_KERNEL);
+	}
+	if (config_has_property(configKernel, "PUERTO_MEMORIA")){
 					config.PUERTO_MEMORIA = config_get_int_value(configKernel,"PUERTO_MEMORIA");
-	if (config_has_property(configKernel, "PUERTO_CPU"))
+	printf("config.PUERTO_MEMORIA: %d\n", config.PUERTO_MEMORIA);
+	}
+	if (config_has_property(configKernel, "PUERTO_CPU")){
 					config.PUERTO_CPU = config_get_int_value(configKernel,"PUERTO_CPU");
-	if (config_has_property(configKernel, "PUERTO_FS"))
+	printf("config.PUERTO_CPU: %d\n", config.PUERTO_CPU);
+	}
+	if (config_has_property(configKernel, "PUERTO_FS")){
 					config.PUERTO_FS = config_get_int_value(configKernel,"PUERTO_FS");
-	if (config_has_property(configKernel, "PUERTO_CONSOLA"))
+	printf("config.PUERTO_FS: %d\n", config.PUERTO_FS);
+	}
+	if (config_has_property(configKernel, "PUERTO_CONSOLA")){
 					config.PUERTO_CONSOLA = config_get_int_value(configKernel,"PUERTO_CONSOLA");
-
-
-    /*config.PUERTO_MEMORIA = config_get_int_value(configKernel, "PUERTO_MEMORIA");
-	config.PUERTO_KERNEL = config_get_int_value(configKernel, "PUERTO_KERNEL");
-	config.PUERTO_FS = config_get_int_value(configKernel, "PUERTO_FS");
-	config.PUERTO_CPU = config_get_int_value(configKernel, "PUERTO_CPU");
-	config.PUERTO_CONSOLA = config_get_int_value(configKernel, "PUERTO_CONSOLA");
-	config.IP_MEMORIA = config_get_string_value(configKernel, "IP_MEMORIA");
-	config.IP_FS = config_get_string_value(configKernel, "IP_FS");
-	*/
+	printf("config.PUERTO_CONSOLA: %d\n", config.PUERTO_CONSOLA);
+	}
 }
 
 int main(void)

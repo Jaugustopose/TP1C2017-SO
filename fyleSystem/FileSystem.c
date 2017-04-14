@@ -34,22 +34,22 @@ void cargarConfiguracion()
 	free(pat);
 	printf("despues del free\n");
 
-	if (config_has_property(configFs, "IP_KERNEL"))
+	if (config_has_property(configFs, "IP_KERNEL")){
 			config.IP_KERNEL = config_get_string_value(configFs,"IP_KERNEL");
 	printf("config.IP_KERNEL: %s\n", config.IP_KERNEL);
-
-	if (config_has_property(configFs, "PUERTO_KERNEL"))
+	}
+	if (config_has_property(configFs, "PUERTO_KERNEL")){
 			config.PUERTO_KERNEL = config_get_int_value(configFs,"PUERTO_KERNEL");
 	printf("config.PUERTO_KERNEL: %d\n", config.PUERTO_KERNEL);
-
-	if (config_has_property(configFs, "IP_FS"))
+	}
+	if (config_has_property(configFs, "IP_FS")){
 			config.IP_FS = config_get_string_value(configFs,"IP_FS");
 	printf("config.IP_FS: %s\n", config.IP_FS);
-
-	if (config_has_property(configFs, "PUERTO_FS"))
+	}
+	if (config_has_property(configFs, "PUERTO_FS")){
 			config.PUERTO_FS = config_get_int_value(configFs,"PUERTO_FS");
 	printf("config.PUERTO_FS: %d\n", config.PUERTO_FS);
-
+	}
 }
 
 // Programa Principal
