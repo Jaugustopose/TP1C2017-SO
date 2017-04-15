@@ -14,8 +14,11 @@ void cargarConfiguracion(){
 		free(pat);
 		if (config_has_property(configConsola, "IP_KERNEL"))
 				config.IP_KERNEL = config_get_string_value(configConsola,"IP_KERNEL");
+		printf("config.IP_KERNEL: %s\n", config.IP_KERNEL);
+
 		if (config_has_property(configConsola, "PUERTO_KERNEL"))
 				config.PUERTO_KERNEL = config_get_int_value(configConsola,"PUERTO_KERNEL");
+		printf("config.PUERTO_KERNEL: %d\n", config.PUERTO_KERNEL);
 }
 
 int crearSocket(){
@@ -46,6 +49,7 @@ int main (void){
 
 	if(conectarSocket(cliente, &direccionServidor) != 0){ // no se está conectando al servidor
 		perror("No se realizó la conexión");
+		return EXIT_FAILURE;
 	}
 
 	while (1) {
