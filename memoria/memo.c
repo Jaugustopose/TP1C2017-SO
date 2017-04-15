@@ -8,12 +8,14 @@ void cargarConfigFile(){
 	string_append(&pat,getcwd(cwd,sizeof(cwd)));
 	string_append(&pat,"/memo.cfg");
 	t_config* configMemo = config_create(pat);
-	if (config_has_property(configMemo, "PUERTO_KERNEL"))
+	if (config_has_property(configMemo, "PUERTO_KERNEL")){
 		config.puertoKernel = config_get_int_value(configMemo, "PUERTO_KERNEL");
 	printf("config.PUERTO_KERNEL: %d\n", config.puertoKernel);
-	if (config_has_property(configMemo, "IP_KERNEL"))
+	}
+	if (config_has_property(configMemo, "IP_KERNEL")){
 		config.ipKernel = config_get_string_value(configMemo, "IP_KERNEL");
 	printf("config.IP_KERNEL: %s\n", config.ipKernel);
+	}
 }
 
 void enviar_mensajes(int cliente, unsigned int length) {

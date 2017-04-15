@@ -12,13 +12,15 @@ void cargarConfiguracion(){
 		t_config* configConsola = config_create(pat);
 		printf("El directorio sobre el que se esta trabajando es %s\n", pat);
 		free(pat);
-		if (config_has_property(configConsola, "IP_KERNEL"))
+		if (config_has_property(configConsola, "IP_KERNEL")){
 				config.IP_KERNEL = config_get_string_value(configConsola,"IP_KERNEL");
 		printf("config.IP_KERNEL: %s\n", config.IP_KERNEL);
+		}
 
-		if (config_has_property(configConsola, "PUERTO_KERNEL"))
+		if (config_has_property(configConsola, "PUERTO_KERNEL")){
 				config.PUERTO_KERNEL = config_get_int_value(configConsola,"PUERTO_KERNEL");
 		printf("config.PUERTO_KERNEL: %d\n", config.PUERTO_KERNEL);
+		}
 }
 
 int crearSocket(){
