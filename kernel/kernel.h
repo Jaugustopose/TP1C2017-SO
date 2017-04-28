@@ -11,6 +11,7 @@
 #include <commons/config.h>
 #include <unistd.h>
 
+
 struct configuracion {
 
 	int PUERTO_CONSOLA;
