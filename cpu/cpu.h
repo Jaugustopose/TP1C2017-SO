@@ -12,6 +12,7 @@
 #include <commons/string.h>
 #include <unistd.h>
 #include <cliente-servidor.h>
+#include <parser/parser.h>
 
 
 struct configuracion{
