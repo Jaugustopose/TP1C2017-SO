@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <cliente-servidor.h>
 
+
 struct configuracion{
 	char* IP_MEMORIA;
 	char* IP_KERNEL;
