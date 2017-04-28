@@ -8,10 +8,22 @@
 #ifndef KERNEL_H_
 #define KERNEL_H_
 
+#include <stdbool.h>
 #include <commons/config.h>
+#include <commons/string.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include "cliente-servidor.h"
 
-struct configuracion {
+struct configuracion{
 
 	int PUERTO_CONSOLA;
 	int PUERTO_FS;
@@ -22,8 +34,7 @@ struct configuracion {
 	char* IP_FS;
 	// FALTAN AGREGAR VARIABLES SEGUN AVANCE EL TP (SEMAFOROS, QUANTUM, ETC)
 };
-
-t_config* configKernel;
 struct configuracion config;
+
 
 #endif

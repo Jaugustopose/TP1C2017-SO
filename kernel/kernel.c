@@ -4,34 +4,9 @@
  *  Created on: 2/4/2017
  *      Author: utnso
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include "kernel.h"
-#include <commons/string.h>
-#define BACKLOG 10
 
-int crearSocket() {
-	return socket(AF_INET, SOCK_STREAM, 0);
-}
 
-int reusarSocket(int sockServ, int yes) {
-	return setsockopt(sockServ, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
-}
-
-int bindearSocket(int sockServ, const struct sockaddr_in* mi_addr) {
-	return bind(sockServ, (struct sockaddr*) &*mi_addr, sizeof(struct sockaddr));
-}
-
-int listenearSocket(int sockServ) {
-	return listen(sockServ, BACKLOG);
-}
 
 void cargarConfiguracion() {
 	char* pat = string_new();
@@ -74,14 +49,16 @@ void cargarConfiguracion() {
 	}
 }
 
-int main(void) {
+void atenderHandshake(){ // TODO
+}
 
+int main(void) {
 	//VARIABLES
 
 	fd_set master; // Conjunto maestro de file descriptor (Donde me voy a ir guardando todos los socket nuevos)
 	fd_set read_fds; // Conjunto temporal de file descriptors para pasarle al select()
-	struct sockaddr_in mi_addr; // Información sobre mi dirección
-	struct sockaddr_in clie_addr; // Información sobre la dirección del cliente
+	struct sockaddr_in direccionServidor; // Información sobre mi dirección
+	struct sockaddr_in direccionCliente; // Información sobre la dirección del cliente
 	int sockServ; // Socket de nueva conexion aceptada
 	int sockClie; // Socket a la escucha
 	int maxSock; // Numero del ultimo socket creado (maximo file descriptor)
@@ -89,39 +66,17 @@ int main(void) {
 	int cantBytes; // La cantidad de bytes. Lo voy a usar para saber cuantos bytes me mandaron.
 	int addrlen; // El tamaño de la direccion del cliente
 	int i, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
-	FD_ZERO(&master);// borra los conjuntos maestro y temporal por si tienen basura adentro (capaz no hacen falta pero por las dudas)
+	FD_ZERO(&master); // borra los conjuntos maestro y temporal por si tienen basura adentro (capaz no hacen falta pero por las dudas)
 	FD_ZERO(&read_fds);
 
 	cargarConfiguracion();
 
-	//Creo el socket
-	if ((sockServ = crearSocket()) == -1) {
-		puts("Error al crear socket");
-		exit(1);
-	}
-
-	//Lo hago reutilizable
-	if (reusarSocket(sockServ, yes) == -1) {
-		printf("Error al tratar de reusar socket");
-		exit(1);
-	}
-
-	//Bindear socket a cliente
-	mi_addr.sin_family = AF_INET; // Ordenación de bytes de la máquina
-	mi_addr.sin_port = htons(config.PUERTO_KERNEL); // short, Ordenación de bytes de la red
-	mi_addr.sin_addr.s_addr = INADDR_ANY; // Rellenar con mi dirección IP
-	memset(&(mi_addr.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
-	if (bindearSocket(sockServ, &mi_addr) == -1) {
-		printf("Error al tratar de bindear");
-		exit(1);
-	}
-
-	//Dejar socket escuchando
-	if (listenearSocket(sockServ) == -1) {
-		printf("Error al tratar de dejar el socket listeneando");
-		exit(1);
-	}
-	printf("Estoy escuchando\n");
+	//Crear,, reutilizar, bind y listen en el socket del servidor
+	sockServ = socket_w();
+	permitirReutilizacion(sockServ, 1);
+	direccionServidor = crearDireccionParaServidor(config.PUERTO_KERNEL);
+	bind_ws(sockServ, direccionServidor);
+	listen_ws(sockServ);
 
 	// añadir listener al conjunto maestro
 	FD_SET(sockServ, &master);
@@ -132,7 +87,7 @@ int main(void) {
 	// bucle principal
 	for (;;) {
 		read_fds = master; // Me paso lo que tenga en el master al temporal.
-		if (select(maxSock + 1, &read_fds, NULL, NULL, NULL) == -1) { //Compruebo los sockets al mismo tiempo. Los NULL son para los writefds, exceptfds y el timeval.
+		if (select(maxSock + 1, &read_fds, 0, 0, 0) == -1) { //Compruebo los sockets al mismo tiempo. Los 0 son para los writefds, exceptfds y el timeval.
 			perror("select");
 			exit(1);
 		}
@@ -142,9 +97,9 @@ int main(void) {
 			if (FD_ISSET(i, &read_fds)) { // Me fijo si tengo datos listos para leer
 				if (i == sockServ) { //si entro en este "if", significa que tengo datos.
 					// gestionar nuevas conexiones
-					addrlen = sizeof(clie_addr);
+					addrlen = sizeof(direccionCliente);
 					if ((sockClie = accept(sockServ,
-							(struct sockaddr*) &clie_addr, &addrlen)) == -1) {
+							(struct sockaddr*) &direccionCliente, &addrlen)) == -1) {
 						perror("accept");
 					} else {
 						FD_SET(sockClie, &master); // añadir al conjunto maestro
@@ -152,7 +107,7 @@ int main(void) {
 							maxSock = sockClie;
 						}
 						printf("Server: nueva conexion de %s en socket %d\n",
-								inet_ntoa(clie_addr.sin_addr), sockClie);
+								inet_ntoa(direccionCliente.sin_addr), sockClie);
 					}
 				} else {
 					// gestionar datos de un cliente
