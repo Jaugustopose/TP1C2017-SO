@@ -11,6 +11,7 @@
 #include <commons/config.h>
 #include <commons/string.h>
 #include <unistd.h>
+#include <cliente-servidor.h>
 
 struct configuracion{
 	char* IP_MEMORIA;
