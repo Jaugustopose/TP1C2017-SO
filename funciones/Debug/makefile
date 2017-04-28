@@ -22,26 +22,22 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: funcionesCompartidas
-
-dependents:
-	-cd /home/utnso/workspace/commons/Debug && $(MAKE) all
+all: libfunciones.so
 
 # Tool invocations
-funcionesCompartidas: $(OBJS) $(USER_OBJS) /home/utnso/workspace/commons/Debug/libcommons.so
+libfunciones.so: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -L"/home/utnso/workspace/commons/Debug" -o "funcionesCompartidas" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -shared -o "libfunciones.so" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(OBJS)$(C_DEPS)$(EXECUTABLES) funcionesCompartidas
+	-$(RM) $(OBJS)$(C_DEPS)$(LIBRARIES) libfunciones.so
 	-@echo ' '
 
 .PHONY: all clean dependents
 .SECONDARY:
-/home/utnso/workspace/commons/Debug/libcommons.so:
 
 -include ../makefile.targets

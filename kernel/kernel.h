@@ -23,7 +23,12 @@
 #include <arpa/inet.h>
 #include "cliente-servidor.h"
 
+<<<<<<< HEAD:kernel/kernel.h
 struct configuracion{
+=======
+
+struct configuracion {
+>>>>>>> d0a32bed51155ca9effd44b78b9f93f21e5224a3:kernel/kernel.h
 
 	int PUERTO_CONSOLA;
 	int PUERTO_FS;

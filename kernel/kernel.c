@@ -5,6 +5,12 @@
  *      Author: utnso
  */
 #include "kernel.h"
+<<<<<<< HEAD:kernel/kernel.c
+=======
+#include <commons/string.h>
+
+#define BACKLOG 10
+>>>>>>> d0a32bed51155ca9effd44b78b9f93f21e5224a3:kernel/kernel.c
 
 
 
