@@ -1,4 +1,5 @@
 
+
 #include "consola.h"
 
 
@@ -27,8 +28,12 @@ int crearSocket(){
 	return socket(AF_INET,SOCK_STREAM,0);
 }
 
-int conectarSocket(int socket, struct sockaddr_in* direccionServidor){
+int conectarSocket(int socket, struct sockaddr_in* direccionServidor,int identidad){
+	//int con;
+	//char* ident[1];
+	//ident[1] = (char) identidad;
 	return connect(socket, (struct sockaddr*) &*direccionServidor, sizeof(struct sockaddr));
+	//send(socket, ident[1], sizeof((char) identidad),0);
 }
 
 void cerrarSocket(int socket){
@@ -36,6 +41,11 @@ void cerrarSocket(int socket){
 }
 
 int main (void){
+
+	//VARIABLES
+
+	int identidad = 1; // El 1 se usa para consolas
+
 
     cargarConfiguracion();
 
@@ -49,17 +59,23 @@ int main (void){
 	direccionServidor.sin_addr.s_addr = inet_addr(config.IP_KERNEL);
 	direccionServidor.sin_port = htons(config.PUERTO_KERNEL);
 
-	if(conectarSocket(cliente, &direccionServidor) != 0){ // no se está conectando al servidor
+	if(conectarSocket(cliente, &direccionServidor,identidad) != 0){ // no se está conectando al servidor
 		perror("No se realizó la conexión");
 		return EXIT_FAILURE;
 	}
+	char* ident[1];
+	ident[1] = (char) identidad;
+	send(socket, ident[1], sizeof((char) identidad),0);
 
 	while (1) {
 			char mensaje[1000];
 			fgets(mensaje, sizeof mensaje, stdin);
 			send(cliente, mensaje, strlen(mensaje), 0);
+			recibir_mensajes_en_socket(cliente);
 		}
 
 
 	return 0;
 }
+
+
