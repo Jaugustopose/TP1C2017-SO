@@ -4,8 +4,17 @@
  *  Created on: 2/4/2017
  *      Author: utnso
  */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include "kernel.h"
-#include <commons/config.h>
+#include <commons/string.h>
 
 void cargarConfiguracion() {
 	char* pat = string_new();
@@ -48,14 +57,21 @@ void cargarConfiguracion() {
 	}
 }
 
-void atenderHandshake(){ // TODO
+void comprobarSockets(int maxSock, fd_set* read_fds) {
+	if (select(maxSock + 1, &read_fds, NULL, NULL, NULL) == -1) { //Compruebo los sockets al mismo tiempo. Los NULL son para los writefds, exceptfds y el timeval.
+		perror("select");
+		exit(1);
+	}
 }
 
 int main(void) {
+
 	//VARIABLES
 
 	fd_set master; // Conjunto maestro de file descriptor (Donde me voy a ir guardando todos los socket nuevos)
 	fd_set read_fds; // Conjunto temporal de file descriptors para pasarle al select()
+	fd_set bolsaConsolas; // Bolsa de consolas
+	fd_set bolsaCpus; //Bolsa de bolsaCpus
 	struct sockaddr_in direccionServidor; // Información sobre mi dirección
 	struct sockaddr_in direccionCliente; // Información sobre la dirección del cliente
 	int sockServ; // Socket de nueva conexion aceptada
@@ -64,18 +80,21 @@ int main(void) {
 	int yes = 1;
 	int cantBytes; // La cantidad de bytes. Lo voy a usar para saber cuantos bytes me mandaron.
 	int addrlen; // El tamaño de la direccion del cliente
+	char identidadCliente;
 	int i, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
-	FD_ZERO(&master); // borra los conjuntos maestro y temporal por si tienen basura adentro (capaz no hacen falta pero por las dudas)
+	FD_ZERO(&master); // Borro por si tienen basura adentro (capaz no hacen falta pero por las dudas)
 	FD_ZERO(&read_fds);
+	FD_ZERO(&bolsaConsolas);
+	FD_ZERO(&bolsaCpus);
 
 	cargarConfiguracion();
 
-	//Crear,, reutilizar, bind y listen en el socket del servidor
-	sockServ = socket_w();
-	permitirReutilizacion(sockServ, 1);
-	direccionServidor = crearDireccionParaServidor(config.PUERTO_KERNEL);
-	bind_ws(sockServ, direccionServidor);
-	listen_ws(sockServ);
+	//Crear socket. Dejar reutilizable. Crear direccion del servidor. Bind. Listen.
+	sockServ = crearSocket();
+	reusarSocket(sockServ, yes);
+	direccionServidor = crearDireccionServidor(config.PUERTO_KERNEL);
+	bind_w(sockServ, &direccionServidor);
+	listen_w(sockServ);
 
 	// añadir listener al conjunto maestro
 	FD_SET(sockServ, &master);
@@ -86,10 +105,7 @@ int main(void) {
 	// bucle principal
 	for (;;) {
 		read_fds = master; // Me paso lo que tenga en el master al temporal.
-		if (select(maxSock + 1, &read_fds, 0, 0, 0) == -1) { //Compruebo los sockets al mismo tiempo. Los 0 son para los writefds, exceptfds y el timeval.
-			perror("select");
-			exit(1);
-		}
+		comprobarSockets(maxSock, &read_fds);
 
 		// explorar conexiones existentes en busca de datos que leer
 		for (i = 0; i <= maxSock; i++) {
@@ -98,15 +114,20 @@ int main(void) {
 					// gestionar nuevas conexiones
 					addrlen = sizeof(direccionCliente);
 					if ((sockClie = accept(sockServ,
-							(struct sockaddr*) &direccionCliente, &addrlen)) == -1) {
+							(struct sockaddr*) &direccionCliente, &addrlen))
+							== -1) {
 						perror("accept");
 					} else {
+						printf("Server: nueva conexion de %s en socket %d\n", inet_ntoa(direccionCliente.sin_addr), sockClie);
+
 						FD_SET(sockClie, &master); // añadir al conjunto maestro
+						identidadCliente = procesarIdentidad(sockClie);
+						printf("todos putos\n");
+						colocarSegunBolsa(sockClie, identidadCliente, bolsaConsolas, bolsaCpus);
 						if (sockClie > maxSock) { // actualizar el máximo
 							maxSock = sockClie;
 						}
-						printf("Server: nueva conexion de %s en socket %d\n",
-								inet_ntoa(direccionCliente.sin_addr), sockClie);
+
 					}
 				} else {
 					// gestionar datos de un cliente
@@ -132,12 +153,18 @@ int main(void) {
 
 						for (j = 0; j <= maxSock; j++) { // Enviar a todos
 							if (FD_ISSET(j, &master)) { // Me fijo si esta en el master
-								// excepto al Servidor y al mismo hermoso que manda el mensaje
-								if (j != sockServ && j != i) {
+								//Hago cosas en función de la bolsa en la que este.
+
+								if (FD_ISSET(j, &bolsaConsolas)) {
+									send(j,buff,cantBytes,0);
+								}
+								// if (FD_ISSET(j,&bolsaCpus)) hago otra cosa
+
+								/*if (j != sockServ && j!=i) {
 									if (send(j, buff, cantBytes, 0) == -1) {
 										perror("send");
 									}
-								}
+								}*/
 							}
 						}
 						free(buff);
@@ -158,3 +185,4 @@ int main(void) {
 	return 0;
 
 }
+
