@@ -9,9 +9,9 @@ void cargarConfiguracion(){
 	char* pat = string_new();
 		char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 		string_append(&pat,getcwd(cwd,sizeof(cwd)));
-		string_append(&pat,"/consola.cfg");
-		t_config* configConsola = config_create(pat);
+		string_append(&pat,"/Debug/consola.cfg");
 		printf("El directorio sobre el que se esta trabajando es %s\n", pat);
+		t_config* configConsola = config_create(pat);
 		free(pat);
 		if (config_has_property(configConsola, "IP_KERNEL")){
 				config.IP_KERNEL = config_get_string_value(configConsola,"IP_KERNEL");
@@ -28,7 +28,7 @@ int crearSocket(){
 	return socket(AF_INET,SOCK_STREAM,0);
 }
 
-int conectarSocket(int socket, struct sockaddr_in* direccionServidor,int identidad){
+int conectarSocket(int socket, struct sockaddr_in* direccionServidor){
 	//int con;
 	//char* ident[1];
 	//ident[1] = (char) identidad;
@@ -44,7 +44,7 @@ int main (void){
 
 	//VARIABLES
 
-	int identidad = 1; // El 1 se usa para consolas
+	char identidad = 1; // El 1 se usa para consolas
 
 
     cargarConfiguracion();
@@ -59,13 +59,12 @@ int main (void){
 	direccionServidor.sin_addr.s_addr = inet_addr(config.IP_KERNEL);
 	direccionServidor.sin_port = htons(config.PUERTO_KERNEL);
 
-	if(conectarSocket(cliente, &direccionServidor,identidad) != 0){ // no se está conectando al servidor
+	if(conectarSocket(cliente, &direccionServidor) != 0){ // no se está conectando al servidor
 		perror("No se realizó la conexión");
 		return EXIT_FAILURE;
 	}
-	char* ident[1];
-	ident[1] = (char) identidad;
-	send(socket, ident[1], sizeof((char) identidad),0);
+
+	send(cliente, identidad, sizeof(identidad),0);
 
 	while (1) {
 			char mensaje[1000];
@@ -73,6 +72,7 @@ int main (void){
 			send(cliente, mensaje, strlen(mensaje), 0);
 			recibir_mensajes_en_socket(cliente);
 		}
+
 
 
 	return 0;

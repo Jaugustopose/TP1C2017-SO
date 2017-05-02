@@ -14,13 +14,13 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "kernel.h"
-#include <commons/string.h>
 
 void cargarConfiguracion() {
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
 	string_append(&pat, "/kernel.cfg");
+	printf("El directorio sobre el que se esta trabajando es %s\n", pat);
 	t_config* configKernel = config_create(pat);
 	free(pat);
 
@@ -118,12 +118,13 @@ int main(void) {
 							== -1) {
 						perror("accept");
 					} else {
-						printf("Server: nueva conexion de %s en socket %d\n", inet_ntoa(direccionCliente.sin_addr), sockClie);
+						printf("Server: nueva conexion de %s en socket %d\n",
+								inet_ntoa(direccionCliente.sin_addr), sockClie);
 
 						FD_SET(sockClie, &master); // añadir al conjunto maestro
 						identidadCliente = procesarIdentidad(sockClie);
-						printf("todos putos\n");
-						colocarSegunBolsa(sockClie, identidadCliente, bolsaConsolas, bolsaCpus);
+						colocarSegunBolsa(sockClie, identidadCliente,
+								bolsaConsolas, bolsaCpus);
 						if (sockClie > maxSock) { // actualizar el máximo
 							maxSock = sockClie;
 						}
@@ -156,33 +157,38 @@ int main(void) {
 								//Hago cosas en función de la bolsa en la que este.
 
 								if (FD_ISSET(j, &bolsaConsolas)) {
-									send(j,buff,cantBytes,0);
-								}
-								// if (FD_ISSET(j,&bolsaCpus)) hago otra cosa
+									printf("Hola consolas");
+									send(j, buff, cantBytes, 0);
 
-								/*if (j != sockServ && j!=i) {
-									if (send(j, buff, cantBytes, 0) == -1) {
-										perror("send");
+								} else {
+									if (FD_ISSET(j, &bolsaCpus)) {
+										printf("Hola cpus");
+										send(j, buff, cantBytes, 0);
+
 									}
-								}*/
+								/*if (j != sockServ && j!=i) {
+								 if (send(j, buff, cantBytes, 0) == -1) {
+								 perror("send");
+								 }*/
 							}
 						}
-						free(buff);
 					}
+					free(buff);
 				}
 			}
-
-			/* PARA EL FUTURO PROTOCOLO DE ENVIO DE MENSAJES
-
-			 uint32_t tamanioPaquete;
-			 recv(sockClie, &tamanioPaquete, 4, 0);
-
-			 char* buff = malloc(tamanioPaquete);
-			 recv(sockClie, buff, tamanioPaquete, MSG_WAITALL);
-			 */
 		}
+
+		/* PARA EL FUTURO PROTOCOLO DE ENVIO DE MENSAJES
+
+		 uint32_t tamanioPaquete;
+		 recv(sockClie, &tamanioPaquete, 4, 0);
+
+		 char* buff = malloc(tamanioPaquete);
+		 recv(sockClie, buff, tamanioPaquete, MSG_WAITALL);
+		 */
 	}
-	return 0;
+}
+return 0;
 
 }
 

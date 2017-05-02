@@ -21,4 +21,23 @@ struct configuracion{
 t_config* configConsola;
 struct configuracion config;
 
+void recibir_mensajes_en_socket(int socket) {
+	char* buf = malloc(1000);
+	while (1) {
+		int bytesRecibidos = recv(socket, buf, 1000, 0);
+		if (bytesRecibidos < 0) {
+			perror("Ha ocurrido un error al recibir un mensaje");
+			exit(EXIT_FAILURE);
+		} else if (bytesRecibidos == 0) {
+			printf("Se terminó la conexión en el socket \n", socket);
+			close(socket);
+			exit(EXIT_FAILURE);
+		} else {
+			//Recibo mensaje e informo
+			buf[bytesRecibidos] = '\0';
+			printf("Recibí el mensaje de %i bytes: ", bytesRecibidos);
+			puts(buf);
+		}
+	}
+}
 #endif
