@@ -71,25 +71,26 @@ struct sockaddr_in crearDireccionServidor(unsigned short PORT) {
 	return direccionServidor;
 }
 
-
-char* procesarIdentidad(int sock){
-	char* buf= malloc(sizeof(char));
-	recv(sock,buf,sizeof(char),0);
+/*int procesarIdentidad(int sock){
+	int* buf= malloc(sizeof(int));
+	recv(sock,(int*)buf,sizeof(int),0); //HASTA LO ESTOY CASTEANDO DOBLEMENTE ACA!!!!!
 	printf("hola estoy en el procesar ID\n");
-	printf("El valor de la identidad del cliente es %c\n",&buf);
+	printf("El valor de la identidad del cliente es %d\n",*buf);
 	return buf;
 }
 
-void colocarSegunBolsa(int sockClie, char identidad, fd_set bolsa1, fd_set bolsa2){
+void colocarSegunBolsa(int sockClie, int identidad, fd_set bolsa1, fd_set bolsa2){
 
 	switch(identidad){
 
-		case 1: FD_SET(sockClie,&bolsa1); //agrego una nueva consola a la bolsa de consolas
-				break;
-		case 2: FD_SET(sockClie,&bolsa2); //agrego un nuevo cpu a la bolsa de cpus
-				break;
+		case (int) 1: FD_SET(sockClie,&bolsa1); //agrego una nueva consola a la bolsa de consolas
+						break;
+		case (int) 2: FD_SET(sockClie,&bolsa2); //agrego un nuevo cpu a la bolsa de cpus
+						break;
 	}
-}
+}*/
+
+
 
 
 #endif

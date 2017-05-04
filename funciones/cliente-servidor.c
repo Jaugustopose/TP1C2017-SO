@@ -51,21 +51,3 @@ struct sockaddr_in crearDireccionServidor(unsigned short PORT) {
 	return direccionServidor;
 }
 
-
-int procesarIdentidad(int sock){
-	char buf[1];
-	recv(sock,buf,sizeof(char),0);
-	return (int) buf[1];
-}
-
-void colocarSegunBolsa(int sockClie, int identidad, fd_set bolsa1, fd_set bolsa2){
-
-	switch(identidad){
-
-		case 1: FD_SET(sockClie,&bolsa1); //agrego una nueva consola a la bolsa de consolas
-				break;
-		case 2: FD_SET(sockClie,&bolsa2); //agrego un nuevo cpu a la bolsa de cpus
-				break;
-	}
-}
-

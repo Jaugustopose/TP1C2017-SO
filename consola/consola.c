@@ -43,8 +43,11 @@ void cerrarSocket(int socket){
 int main (void){
 
 	//VARIABLES
-
-	char identidad = 1; // El 1 se usa para consolas
+	/*int* identidad = malloc(sizeof(int));
+	*identidad = 1; //El 1 se usa para consolas
+	printf("%d\n",*identidad);
+	*/
+	int identidad = 1;
 
 
     cargarConfiguracion();
@@ -64,7 +67,7 @@ int main (void){
 		return EXIT_FAILURE;
 	}
 
-	send(cliente, identidad, sizeof(identidad),0);
+	send(cliente,&identidad, sizeof(int),0);
 
 	while (1) {
 			char mensaje[1000];

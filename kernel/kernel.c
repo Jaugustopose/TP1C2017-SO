@@ -80,7 +80,7 @@ int main(void) {
 	int yes = 1;
 	int cantBytes; // La cantidad de bytes. Lo voy a usar para saber cuantos bytes me mandaron.
 	int addrlen; // El tamaño de la direccion del cliente
-	char identidadCliente;
+	int identidadCliente;
 	int i, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
 	FD_ZERO(&master); // Borro por si tienen basura adentro (capaz no hacen falta pero por las dudas)
 	FD_ZERO(&read_fds);
@@ -105,12 +105,15 @@ int main(void) {
 	// bucle principal
 	for (;;) {
 		read_fds = master; // Me paso lo que tenga en el master al temporal.
-		comprobarSockets(maxSock, &read_fds);
-
+		if (select(maxSock + 1, &read_fds, NULL, NULL, NULL) == -1) { //Compruebo los sockets al mismo tiempo. Los NULL son para los writefds, exceptfds y el timeval.
+			perror("select");
+			exit(1);
+		};
 		// explorar conexiones existentes en busca de datos que leer
 		for (i = 0; i <= maxSock; i++) {
 			if (FD_ISSET(i, &read_fds)) { // Me fijo si tengo datos listos para leer
 				if (i == sockServ) { //si entro en este "if", significa que tengo datos.
+
 					// gestionar nuevas conexiones
 					addrlen = sizeof(direccionCliente);
 					if ((sockClie = accept(sockServ,
@@ -122,9 +125,21 @@ int main(void) {
 								inet_ntoa(direccionCliente.sin_addr), sockClie);
 
 						FD_SET(sockClie, &master); // añadir al conjunto maestro
-						identidadCliente = procesarIdentidad(sockClie);
-						colocarSegunBolsa(sockClie, identidadCliente,
-								bolsaConsolas, bolsaCpus);
+
+						//Recibo identidad y coloco en la bolsa correspondiente
+
+						int* buf = malloc(sizeof(int));
+						recv(sockClie, (int*) buf, sizeof(int), 0); //HASTA LO ESTOY CASTEANDO DOBLEMENTE ACA!!!!!
+						identidadCliente = *buf;
+						switch (identidadCliente) {
+
+						case (int) 1:
+							FD_SET(sockClie, bolsaConsolas); //agrego una nueva consola a la bolsa de consolas
+							break;
+						case (int) 2:
+							FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
+							break;
+						}
 						if (sockClie > maxSock) { // actualizar el máximo
 							maxSock = sockClie;
 						}
@@ -166,29 +181,29 @@ int main(void) {
 										send(j, buff, cantBytes, 0);
 
 									}
-								/*if (j != sockServ && j!=i) {
-								 if (send(j, buff, cantBytes, 0) == -1) {
-								 perror("send");
-								 }*/
+									/*if (j != sockServ && j!=i) {
+									 if (send(j, buff, cantBytes, 0) == -1) {
+									 perror("send");
+									 }*/
+								}
 							}
 						}
+						free(buff);
 					}
-					free(buff);
 				}
 			}
+
+			/* PARA EL FUTURO PROTOCOLO DE ENVIO DE MENSAJES
+
+			 uint32_t tamanioPaquete;
+			 recv(sockClie, &tamanioPaquete, 4, 0);
+
+			 char* buff = malloc(tamanioPaquete);
+			 recv(sockClie, buff, tamanioPaquete, MSG_WAITALL);
+			 */
 		}
-
-		/* PARA EL FUTURO PROTOCOLO DE ENVIO DE MENSAJES
-
-		 uint32_t tamanioPaquete;
-		 recv(sockClie, &tamanioPaquete, 4, 0);
-
-		 char* buff = malloc(tamanioPaquete);
-		 recv(sockClie, buff, tamanioPaquete, MSG_WAITALL);
-		 */
 	}
-}
-return 0;
+	return 0;
 
 }
 
