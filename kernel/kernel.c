@@ -19,7 +19,7 @@ void cargarConfiguracion() {
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	string_append(&pat, "/kernel.cfg");
+	string_append(&pat, "/Debug/kernel.cfg");
 	printf("El directorio sobre el que se esta trabajando es %s\n", pat);
 	t_config* configKernel = config_create(pat);
 	free(pat);
@@ -134,7 +134,7 @@ int main(void) {
 						switch (identidadCliente) {
 
 						case (int) 1:
-							FD_SET(sockClie, bolsaConsolas); //agrego una nueva consola a la bolsa de consolas
+							FD_SET(sockClie, &bolsaConsolas); //agrego una nueva consola a la bolsa de consolas
 							break;
 						case (int) 2:
 							FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
@@ -172,12 +172,12 @@ int main(void) {
 								//Hago cosas en función de la bolsa en la que este.
 
 								if (FD_ISSET(j, &bolsaConsolas)) {
-									printf("Hola consolas");
+									puts("Hola consolas");
 									send(j, buff, cantBytes, 0);
 
 								} else {
 									if (FD_ISSET(j, &bolsaCpus)) {
-										printf("Hola cpus");
+										puts("Hola cpus");
 										send(j, buff, cantBytes, 0);
 
 									}
