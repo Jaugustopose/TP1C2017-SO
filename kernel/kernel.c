@@ -55,6 +55,11 @@ void cargarConfiguracion() {
 				"PUERTO_CONSOLA");
 		printf("config.PUERTO_CONSOLA: %d\n", config.PUERTO_CONSOLA);
 	}
+	if (config_has_property(configKernel, "GRADO_MULTIPROG")) {
+		config.GRADO_MULTIPROG = config_get_int_value(configKernel,
+				"GRADO_MULTIPROG");
+		printf("config.GRADO_MULTIPROG: %d\n", config.GRADO_MULTIPROG);
+	}
 }
 
 void comprobarSockets(int maxSock, fd_set* read_fds) {
@@ -82,6 +87,7 @@ int main(void) {
 	int addrlen; // El tamaño de la direccion del cliente
 	int identidadCliente;
 	int i, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
+	int consolasEnBolsa = 0;
 	FD_ZERO(&master); // Borro por si tienen basura adentro (capaz no hacen falta pero por las dudas)
 	FD_ZERO(&read_fds);
 	FD_ZERO(&bolsaConsolas);
@@ -134,7 +140,13 @@ int main(void) {
 						switch (identidadCliente) {
 
 						case (int) 1:
-							FD_SET(sockClie, &bolsaConsolas); //agrego una nueva consola a la bolsa de consolas
+							if (consolasEnBolsa < config.GRADO_MULTIPROG) {
+								FD_SET(sockClie, &bolsaConsolas); //agrego una nueva consola a la bolsa de consolas
+								consolasEnBolsa++;
+							} else {
+								printf(
+										"Se ha conectado una nueva consola, pero no fue agregada a bolsaConsolas\n");
+							}
 							break;
 						case (int) 2:
 							FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
@@ -160,8 +172,18 @@ int main(void) {
 						} else {
 							perror("recv");
 						}
-						close(i); // Si se perdio la conexion, nos vimos en disney
-						FD_CLR(i, &master); // Eliminar del conjunto maestro
+
+						// Eliminar del conjunto maestro y su respectiva bolsa
+						FD_CLR(i, &master);
+						if (FD_ISSET(i, &bolsaConsolas)) {
+							FD_CLR(i, &bolsaConsolas);
+							consolasEnBolsa--;
+							printf("La cantidad de consolas en bolsaConsolas es: %d\n", consolasEnBolsa);
+						} else {
+							FD_CLR(i, &bolsaCpus);
+						}
+						close(i); // Si se perdio la conexion, la cierro.
+
 					} else { // tenemos datos de algún cliente
 							 //Se manda cantBYtes -1 porque es lo que debe mostrar sin el /0
 						printf("He recibido %d bytes de contenido: %.*s\n",
@@ -181,10 +203,6 @@ int main(void) {
 										send(j, buff, cantBytes, 0);
 
 									}
-									/*if (j != sockServ && j!=i) {
-									 if (send(j, buff, cantBytes, 0) == -1) {
-									 perror("send");
-									 }*/
 								}
 							}
 						}

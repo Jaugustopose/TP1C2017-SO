@@ -22,6 +22,7 @@ struct configuracion {
 	int PUERTO_KERNEL;
 	char* IP_MEMORIA;
 	char* IP_FS;
+	int GRADO_MULTIPROG;
 	// FALTAN AGREGAR VARIABLES SEGUN AVANCE EL TP (SEMAFOROS, QUANTUM, ETC)
 };
 t_config* configKernel;
