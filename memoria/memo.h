@@ -17,11 +17,36 @@
 //#include "memo.cfg"
 
 typedef struct configMemo {
-	char* ipKernel;
-	int puertoKernel;
+	char* ip_kernel;
+	int puerto_kernel;
+	int marcos;
+	int marco_size;
 } config_t;
+
+/**
+ * No incluimos el atributo nroFrame ya que armamos
+ * esta estructura para incluirla en un array. Como
+ * los nros de frame son continuos y contiguos sin
+ * repetirse y 0-based, usaremos la posición del array
+ * para referir al frame, lo que nos ahorrará espacio
+ */
+typedef struct tablaPaginaStruct {
+	int pid;
+	int	nroPagina;
+} tablaPagina_t;
 
 t_config* configMemo;
 config_t config;
+
+char* memoria;
+int tamanioMemoria;
+int tamanioTablaPagina;
+
+
+//Prototipos
+void cargarConfigFile();
+void crearMemoria();
+void inicializarMemoria();
+void inicializarTablaDeFrames();
 
 #endif /* MEMO_H_ */
