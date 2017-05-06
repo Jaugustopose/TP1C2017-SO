@@ -11,8 +11,7 @@
 #include <commons/config.h>
 #include <commons/string.h>
 #include <unistd.h>
-#include <cliente-servidor.h>
-#include <parser/parser.h>
+
 
 
 struct configuracion{
@@ -24,6 +23,8 @@ struct configuracion{
 
 t_config* configCpu;
 struct configuracion config;
+
+int* identidad = 2;
 
 
 

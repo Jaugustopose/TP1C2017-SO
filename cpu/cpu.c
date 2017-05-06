@@ -1,8 +1,9 @@
+
 #include "cpu.h"
 
 
-
 #define MAXBYTESREAD 100
+
 
 //Provisorio: le puse dos para luego factorizar con la de Kernel :D
 int crearSocketDos() {
@@ -24,7 +25,7 @@ void cargarConfiguracion()
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat,getcwd(cwd,sizeof(cwd)));
-	string_append(&pat,"/cpu.cfg");
+	string_append(&pat,"/Debug/cpu.cfg");
 	t_config* configCpu = config_create(pat);
 	free(pat);
 	if (config_has_property(configCpu, "IP_MEMORIA"))
@@ -48,56 +49,66 @@ void cargarConfiguracion()
 		printf("config.IP_KERNEL: %s\n", config.IP_KERNEL);
 	}
 }
+int socket_ws() {
+	int sock;
 
-void recibir_mensajes_en_socket(int socket) {
-	char* buf = malloc(1000);
-	while (1) {
-		int bytesRecibidos = recv(socket, buf, 1000, 0);
-		if (bytesRecibidos < 0) {
-			perror("Ha ocurrido un error al recibir un mensaje");
-			exit(EXIT_FAILURE);
-		} else if (bytesRecibidos == 0) {
-			printf("Se terminó la conexión en el socket \n", socket);
-			close(socket);
-			exit(EXIT_FAILURE);
-		} else {
-			//Recibo mensaje e informo
-			buf[bytesRecibidos] = '\0';
-			printf("Recibí el mensaje de %i bytes: ", bytesRecibidos);
-			puts(buf);
-		}
+	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1){
+		puts("Error al crear socket");
+		exit(1);
 	}
-	free(buf);
+	return sock;
 }
+
+void connect_w(int cliente, struct sockaddr_in* direccionServidor) {
+	if (connect(cliente, (void*) direccionServidor, sizeof(*direccionServidor))
+			!= 0) {
+		perror("No se pudo conectar");
+		exit(1);
+	}
+}
+
+struct sockaddr_in crearDireccionParaCliente(unsigned short PORT, char* IP) {
+	struct sockaddr_in direccionServidor;
+	direccionServidor.sin_family = AF_INET;
+	direccionServidor.sin_addr.s_addr = inet_addr(IP);
+	direccionServidor.sin_port = htons(PORT);
+	return direccionServidor;
+}
+
+
+void conectarConKernel() {
+	struct sockaddr_in dirKernel;
+	int kernel;
+
+
+	//Handshake
+	dirKernel = crearDireccionParaCliente(config.PUERTO_KERNEL, config.IP_KERNEL);
+
+	kernel = socket_ws();
+	connect_w(kernel, &dirKernel);
+	printf("Conectado a Kernel");
+
+	send(kernel,&identidad, sizeof(int),0);
+
+}
+void conectarConMemoria() {
+
+	struct sockaddr_in dirMemoria;
+	int memoria;
+
+	dirMemoria = crearDireccionParaCliente(config.PUERTO_MEMORIA, config.IP_MEMORIA);
+	memoria = socket_ws();
+	connect_w(memoria, &dirMemoria);
+	printf("Conectado a Memoria");
+
+	}
+
 
 int main(void){
 
-	//struct sockaddr_in dirServidor;
-	//int socket;
-
 	cargarConfiguracion();
 	conectarConKernel();
-	conectarConMemoria();
-
-//	if((socket = crearSocketDos()) == -1)
-//	{
-//		perror("No se creo el socket correctamente");
-//		exit(1);
-//	}
-//
-//	//Configuro Servidor
-//	dirServidor.sin_family = AF_INET;
-//	dirServidor.sin_port = htons(config.PUERTO_KERNEL);
-//	dirServidor.sin_addr.s_addr =  INADDR_ANY;
-//	memset(&(dirServidor.sin_zero), '\0', 8);
-//
-//	if(conectarSocket(socket, &dirServidor) == -1)
-//	{
-//		perror("No se pudo conectar");
-//		exit(1);
-//	}
-//
-//	recibir_mensajes_en_socket(socket);
+	///conectarConMemoria();
 
 	return EXIT_SUCCESS;
 }
