@@ -104,11 +104,14 @@ void conectarConMemoria() {
 	}
 
 
+
+
 int main(void){
 
 	cargarConfiguracion();
+	inicializarPrimitivas();
 	conectarConKernel();
-	///conectarConMemoria();
+ //conectarConMemoria();
 
 	return EXIT_SUCCESS;
 }

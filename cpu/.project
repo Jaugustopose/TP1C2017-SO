@@ -5,6 +5,7 @@
 	<projects>
 		<project>commons</project>
 		<project>funciones</project>
+		<project>parser</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

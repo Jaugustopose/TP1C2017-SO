@@ -1,5 +1,6 @@
-#ifndef cpu_h
-#define cpu_h
+
+#ifndef PRIMITIVAS_H_
+#define PRIMITIVAS_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,21 +18,12 @@
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
 
+AnSISOP_funciones funciones;
 
 
+t_puntero definir_variable(t_nombre_variable variable);
+t_puntero obtener_posicion_de(t_nombre_variable variable);
 
-struct configuracion{
-	char* IP_MEMORIA;
-	char* IP_KERNEL;
-	int PUERTO_MEMORIA;
-	int PUERTO_KERNEL;
-};
+void inicializarPrimitivas();
 
-t_config* configCpu;
-struct configuracion config;
-
-int* identidad = 2;
-
-
-
-#endif
+#endif /* PRIMITIVAS_H_ */

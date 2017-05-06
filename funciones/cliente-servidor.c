@@ -51,3 +51,29 @@ struct sockaddr_in crearDireccionServidor(unsigned short PORT) {
 	return direccionServidor;
 }
 
+struct sockaddr_in crearDireccionParaCliente(unsigned short PORT, char* IP) {
+	struct sockaddr_in direccionServidor;
+	direccionServidor.sin_family = AF_INET;
+	direccionServidor.sin_addr.s_addr = inet_addr(IP);
+	direccionServidor.sin_port = htons(PORT);
+	return direccionServidor;
+}
+
+int socket_ws() {
+	int sock;
+
+	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1){
+		puts("Error al crear socket");
+		exit(1);
+	}
+	return sock;
+}
+
+void connect_w(int cliente, struct sockaddr_in* direccionServidor) {
+	if (connect(cliente, (void*) direccionServidor, sizeof(*direccionServidor))
+			!= 0) {
+		perror("No se pudo conectar");
+		exit(1);
+	}
+}
+
