@@ -87,7 +87,6 @@ int main(void) {
 	int addrlen; // El tamaño de la direccion del cliente
 	int identidadCliente;
 	int i, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
-	int consolasEnBolsa = 0;
 	FD_ZERO(&master); // Borro por si tienen basura adentro (capaz no hacen falta pero por las dudas)
 	FD_ZERO(&read_fds);
 	FD_ZERO(&bolsaConsolas);
@@ -140,14 +139,10 @@ int main(void) {
 						switch (identidadCliente) {
 
 						case (int) 1:
-							if (consolasEnBolsa < config.GRADO_MULTIPROG) {
-								FD_SET(sockClie, &bolsaConsolas); //agrego una nueva consola a la bolsa de consolas
-								consolasEnBolsa++;
-							} else {
-								printf(
-										"Se ha conectado una nueva consola, pero no fue agregada a bolsaConsolas\n");
-							}
+							FD_SET(sockClie, &bolsaConsolas); //agrego una nueva consola a la bolsa de consolas
+							printf("Se ha conectado una nueva consola, pero no fue agregada a bolsaConsolas\n");
 							break;
+
 						case (int) 2:
 							FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
 							break;
@@ -177,8 +172,6 @@ int main(void) {
 						FD_CLR(i, &master);
 						if (FD_ISSET(i, &bolsaConsolas)) {
 							FD_CLR(i, &bolsaConsolas);
-							consolasEnBolsa--;
-							printf("La cantidad de consolas en bolsaConsolas es: %d\n", consolasEnBolsa);
 						} else {
 							FD_CLR(i, &bolsaCpus);
 						}
@@ -194,11 +187,13 @@ int main(void) {
 								//Hago cosas en función de la bolsa en la que este.
 
 								if (FD_ISSET(j, &bolsaConsolas)) {
+									// Aca adentro va todo lo que quiero hacer si el cliente es una Consola
 									puts("Hola consolas");
 									send(j, buff, cantBytes, 0);
 
 								} else {
 									if (FD_ISSET(j, &bolsaCpus)) {
+										// Aca adentro va todo lo que quiero hacer si el cliente es un CPU
 										puts("Hola cpus");
 										send(j, buff, cantBytes, 0);
 
