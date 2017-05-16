@@ -8,18 +8,16 @@
 
 #include <stdio.h>
 
-typedef struct header tipoHeader;
-
-struct header {
+typedef struct {
 	int id;
 	int tamanio;
-};
+}tipoHeader;
 
-void* serializar(tipoHeader head, void* contenidoDelMensaje) {
+void* serializar(tipoHeader header, void* contenidoDelMensaje) {
 
-	void* buffer = malloc(sizeof(contenidoDelMensaje) + sizeof(head));
-	memcpy(buffer,&head, 4); //PRIMERO EL ID
-	memcpy(buffer,&head, 4); //SEGUNDO EL TAMAÑO
+	void* buffer = malloc(sizeof(contenidoDelMensaje) + sizeof(header));
+	memcpy(buffer,&header, 4); //PRIMERO EL ID
+	memcpy(buffer,&header, 4); //SEGUNDO EL TAMAÑO
 	memcpy(buffer, contenidoDelMensaje, sizeof(contenidoDelMensaje)); // TERCERA LA DATA
 
 	return buffer;

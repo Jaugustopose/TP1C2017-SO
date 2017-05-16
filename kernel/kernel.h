@@ -28,6 +28,12 @@ struct configuracion {
 t_config* configKernel;
 struct configuracion config;
 
+typedef struct {
+
+	int PID;
+	int contadorPaginas;
+}t_PCB;
+
 int crearSocket() {
 	int sock;
 	sock = socket(AF_INET, SOCK_STREAM, 0);

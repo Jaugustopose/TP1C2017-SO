@@ -188,6 +188,7 @@ int main(void) {
 								if (FD_ISSET(j, &bolsaConsolas)) {
 									// Aca adentro va todo lo que quiero hacer si el cliente es una Consola
 									puts("Hola consolas");
+									t_PCB pcb; //Creo el PCB cuando la consola manda codigo
 									send(j, buff, cantBytes, 0);
 
 								} else {
