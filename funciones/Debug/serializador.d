@@ -1,1 +1,0 @@
-serializador.d: ../serializador.c

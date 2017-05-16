@@ -20,46 +20,53 @@ void cargarConfiguracion() {
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
 	string_append(&pat, "/Debug/kernel.cfg");
-	printf("El directorio sobre el que se esta trabajando es %s\n", pat);
 	t_config* configKernel = config_create(pat);
 	free(pat);
 
 	if (config_has_property(configKernel, "IP_MEMORIA")) {
 		config.IP_MEMORIA = config_get_string_value(configKernel, "IP_MEMORIA");
-		printf("config.IP_MEMORIA: %s\n", config.IP_MEMORIA);
+		printf("IP_MEMORIA: %s\n", config.IP_MEMORIA);
 	}
 	if (config_has_property(configKernel, "IP_FS")) {
 		config.IP_FS = config_get_string_value(configKernel, "IP_FS");
-		printf("config.IP_FS: %s\n", config.IP_FS);
+		printf("IP_FS: %s\n", config.IP_FS);
 	}
 	if (config_has_property(configKernel, "PUERTO_KERNEL")) {
 		config.PUERTO_KERNEL = config_get_int_value(configKernel,
 				"PUERTO_KERNEL");
-		printf("config.PUERTO_KERNEL: %d\n", config.PUERTO_KERNEL);
+		printf("PUERTO_KERNEL: %d\n", config.PUERTO_KERNEL);
 	}
 	if (config_has_property(configKernel, "PUERTO_MEMORIA")) {
 		config.PUERTO_MEMORIA = config_get_int_value(configKernel,
 				"PUERTO_MEMORIA");
-		printf("config.PUERTO_MEMORIA: %d\n", config.PUERTO_MEMORIA);
+		printf("PUERTO_MEMORIA: %d\n", config.PUERTO_MEMORIA);
 	}
 	if (config_has_property(configKernel, "PUERTO_CPU")) {
 		config.PUERTO_CPU = config_get_int_value(configKernel, "PUERTO_CPU");
-		printf("config.PUERTO_CPU: %d\n", config.PUERTO_CPU);
+		printf("PUERTO_CPU: %d\n", config.PUERTO_CPU);
 	}
 	if (config_has_property(configKernel, "PUERTO_FS")) {
 		config.PUERTO_FS = config_get_int_value(configKernel, "PUERTO_FS");
-		printf("config.PUERTO_FS: %d\n", config.PUERTO_FS);
+		printf("PUERTO_FS: %d\n", config.PUERTO_FS);
 	}
 	if (config_has_property(configKernel, "PUERTO_CONSOLA")) {
 		config.PUERTO_CONSOLA = config_get_int_value(configKernel,
 				"PUERTO_CONSOLA");
-		printf("config.PUERTO_CONSOLA: %d\n", config.PUERTO_CONSOLA);
+		printf("PUERTO_CONSOLA: %d\n", config.PUERTO_CONSOLA);
 	}
 	if (config_has_property(configKernel, "GRADO_MULTIPROG")) {
 		config.GRADO_MULTIPROG = config_get_int_value(configKernel,
 				"GRADO_MULTIPROG");
-		printf("config.GRADO_MULTIPROG: %d\n", config.GRADO_MULTIPROG);
+		printf("GRADO_MULTIPROG: %d\n\n\n", config.GRADO_MULTIPROG);
 	}
+
+	printf("--------------Configuración cargada exitosamente--------------\n\n");
+	printf("Seleccione la opción que desee realizar:\n"
+			"1) Listado de procesos del sistema\n"
+			"2) Finalizar un proceso\n"
+			"3) Consultar estado de un proceso\n"
+			"4) Detener planificación\n");
+
 }
 
 void comprobarSockets(int maxSock, fd_set* read_fds) {

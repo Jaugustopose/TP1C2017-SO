@@ -32,6 +32,7 @@ typedef struct {
 
 	int PID;
 	int contadorPaginas;
+	int exit_code;
 }t_PCB;
 
 int crearSocket() {
@@ -66,7 +67,7 @@ void listen_w(int sockServ) {
 	if (list ==-1) {
 		printf("Error al tratar de dejar el socket listeneando");
 		exit(1);
-	}else printf("Estoy escuchando\n");
+	}
 }
 
 struct sockaddr_in crearDireccionServidor(unsigned short PORT) {
