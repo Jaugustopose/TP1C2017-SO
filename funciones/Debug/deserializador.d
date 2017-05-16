@@ -1,0 +1,1 @@
+deserializador.d: ../deserializador.c

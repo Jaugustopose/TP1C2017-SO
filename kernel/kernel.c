@@ -134,7 +134,7 @@ int main(void) {
 						//Recibo identidad y coloco en la bolsa correspondiente
 
 						int* buf = malloc(sizeof(int));
-						recv(sockClie, (int*) buf, sizeof(int), 0); //HASTA LO ESTOY CASTEANDO DOBLEMENTE ACA!!!!!
+						recv(sockClie, (int*) buf, sizeof(int), 0);
 						identidadCliente = *buf;
 						switch (identidadCliente) {
 
@@ -156,7 +156,7 @@ int main(void) {
 					// gestionar datos de un cliente
 					char* buff = malloc(1000);
 
-					if ((cantBytes = recv(i, buff, 1000, 0)) <= 0) {
+					if ((cantBytes = recv(i, buff, 5, 0)) <= 0) {
 
 						// error o conexión cerrada por el cliente
 						if (cantBytes == 0) {
@@ -181,7 +181,6 @@ int main(void) {
 							 //Se manda cantBYtes -1 porque es lo que debe mostrar sin el /0
 						printf("He recibido %d bytes de contenido: %.*s\n",
 								cantBytes, cantBytes - 1, buff);
-
 						for (j = 0; j <= maxSock; j++) { // Enviar a todos
 							if (FD_ISSET(j, &master)) { // Me fijo si esta en el master
 								//Hago cosas en función de la bolsa en la que este.
@@ -205,15 +204,6 @@ int main(void) {
 					}
 				}
 			}
-
-			/* PARA EL FUTURO PROTOCOLO DE ENVIO DE MENSAJES
-
-			 uint32_t tamanioPaquete;
-			 recv(sockClie, &tamanioPaquete, 4, 0);
-
-			 char* buff = malloc(tamanioPaquete);
-			 recv(sockClie, buff, tamanioPaquete, MSG_WAITALL);
-			 */
 		}
 	}
 	return 0;
