@@ -14,6 +14,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "kernel.h"
+#include "cliente-servidor.h"
 
 void cargarConfiguracion() {
 	char* pat = string_new();
