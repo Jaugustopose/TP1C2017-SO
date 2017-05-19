@@ -21,6 +21,7 @@ typedef struct configMemo {
 	int puerto_kernel;
 	int marcos;
 	int marco_size;
+	int retardo_memoria;
 } config_t;
 
 /**
@@ -41,6 +42,7 @@ config_t config;
 char* memoria;
 int tamanioMemoria;
 int tamanioTablaPagina;
+//tablaPagina_t* tablaPaginasInvertida;
 
 
 //Prototipos
