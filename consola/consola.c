@@ -1,6 +1,7 @@
 
 
 #include "consola.h"
+#include "cliente-servidor.h"
 
 
 void cargarConfiguracion(){
@@ -24,20 +25,12 @@ void cargarConfiguracion(){
 		}
 }
 
-int crearSocket(){
-	return socket(AF_INET,SOCK_STREAM,0);
-}
-
 int conectarSocket(int socket, struct sockaddr_in* direccionServidor){
 	//int con;
 	//char* ident[1];
 	//ident[1] = (char) identidad;
 	return connect(socket, (struct sockaddr*) &*direccionServidor, sizeof(struct sockaddr));
 	//send(socket, ident[1], sizeof((char) identidad),0);
-}
-
-void cerrarSocket(int socket){
-	close(socket);
 }
 
 int main (void){
