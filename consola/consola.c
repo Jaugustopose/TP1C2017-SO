@@ -33,6 +33,31 @@ int conectarSocket(int socket, struct sockaddr_in* direccionServidor){
 	//send(socket, ident[1], sizeof((char) identidad),0);
 }
 
+void cargarArchivo()
+{
+	char* bufferArchivo = 0;
+	long lenght;
+	FILE* archivo = fopen("/home/utnso/Escritorio/facil.ansisop","rb");
+
+	if(archivo){
+		fseek(archivo,0,SEEK_END);
+		lenght = ftell(archivo);
+		fseek(archivo,0,SEEK_SET);
+		bufferArchivo = (char*)malloc((lenght +1)*sizeof(char));
+		if(bufferArchivo)
+		{
+			fread(bufferArchivo,1,lenght,archivo);
+			printf("He recibido %d bytes de contenido: %.*s\n",lenght, lenght + 1, bufferArchivo);
+		}else
+		{
+			fclose(archivo);
+		}
+
+	}
+
+
+}
+
 int main (void){
 
 	//VARIABLES
@@ -44,6 +69,8 @@ int main (void){
 
 
     cargarConfiguracion();
+    cargarArchivo();
+
 
     int cliente = crearSocket();
 	if(cliente == -1){  // Se valida de que se pudo crear el socket sin inconvenientes, retornando de "crearSocket un valor >=0.En caso de devolver -1 se visualizará el error.

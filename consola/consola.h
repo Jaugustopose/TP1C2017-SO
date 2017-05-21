@@ -11,6 +11,7 @@
 #include <sys/time.h>
 #include <netinet/in.h>
 #include <commons/string.h>
+#include <stdio.h>
 
 
 struct configuracion{
