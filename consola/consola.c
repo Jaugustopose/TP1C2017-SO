@@ -1,7 +1,6 @@
-
-
 #include "consola.h"
 #include "cliente-servidor.h"
+#include "serializador.h"
 
 
 void cargarConfiguracion(){
@@ -26,28 +25,35 @@ void cargarConfiguracion(){
 }
 
 int conectarSocket(int socket, struct sockaddr_in* direccionServidor){
-	//int con;
-	//char* ident[1];
-	//ident[1] = (char) identidad;
+
 	return connect(socket, (struct sockaddr*) &*direccionServidor, sizeof(struct sockaddr));
-	//send(socket, ident[1], sizeof((char) identidad),0);
+
 }
 
-void cargarArchivo()
+void cargar_y_enviar_archivo(int sock)
 {
 	char* bufferArchivo = 0;
-	long lenght;
+	long length;
 	FILE* archivo = fopen("/home/utnso/Escritorio/facil.ansisop","rb");
 
 	if(archivo){
 		fseek(archivo,0,SEEK_END);
-		lenght = ftell(archivo);
+		length = ftell(archivo);
 		fseek(archivo,0,SEEK_SET);
-		bufferArchivo = (char*)malloc((lenght +1)*sizeof(char));
+		bufferArchivo = (char*)malloc((length +1)*sizeof(char));
 		if(bufferArchivo)
 		{
-			fread(bufferArchivo,1,lenght,archivo);
-			printf("He recibido %d bytes de contenido: %.*s\n",lenght, lenght + 1, bufferArchivo);
+			fread(bufferArchivo,1,length,archivo);
+			printf("He recibido %d bytes de contenido: %.*s\n",length, length + 1, bufferArchivo);
+
+			//Creo el header antes de enviar mensaje
+
+			t_header cabeza;
+			cabeza.id = 1;
+			cabeza.tamanio = length;
+			serializar(cabeza,bufferArchivo);
+
+			send(sock,bufferArchivo,length,0); // Envio archivo serializado
 		}else
 		{
 			fclose(archivo);
@@ -60,17 +66,10 @@ void cargarArchivo()
 
 int main (void){
 
-	//VARIABLES
-	/*int* identidad = malloc(sizeof(int));
-	*identidad = 1; //El 1 se usa para consolas
-	printf("%d\n",*identidad);
-	*/
 	int identidad = 1;
 
 
     cargarConfiguracion();
-    cargarArchivo();
-
 
     int cliente = crearSocket();
 	if(cliente == -1){  // Se valida de que se pudo crear el socket sin inconvenientes, retornando de "crearSocket un valor >=0.En caso de devolver -1 se visualizará el error.
@@ -88,12 +87,16 @@ int main (void){
 	}
 
 	send(cliente,&identidad, sizeof(int),0);
+	cargar_y_enviar_archivo(cliente);
 
 	while (1) {
-			char mensaje[1000];
+			/*char mensaje[1000];
 			fgets(mensaje, sizeof mensaje, stdin);
-			send(cliente, mensaje, strlen(mensaje), 0);
+			send(cliente, mensaje, strlen(mensaje), 0);*/
+
 			recibir_mensajes_en_socket(cliente);
+
+
 		}
 
 

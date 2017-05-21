@@ -15,6 +15,7 @@
 #include <arpa/inet.h>
 #include "kernel.h"
 #include "cliente-servidor.h"
+#include "deserializador.h"
 
 void cargarConfiguracion() {
 	char* pat = string_new();
@@ -75,6 +76,19 @@ void comprobarSockets(int maxSock, fd_set* read_fds) {
 		perror("select");
 		exit(1);
 	}
+}
+
+void recibir_archivo(void* buffer){
+
+	FILE* archivo =	fopen("archivo recibido.txt","w");
+	if (archivo){
+		fputs(buffer,archivo);
+		fclose(archivo);
+	}
+
+
+
+
 }
 
 int main(void) {
@@ -162,7 +176,9 @@ int main(void) {
 					}
 				} else {
 					// gestionar datos de un cliente
-					char* buff = malloc(1000);
+
+					void* buff = deserializar(i);
+					recibir_archivo(buff);
 
 					if ((cantBytes = recv(i, buff, 5, 0)) <= 0) {
 
