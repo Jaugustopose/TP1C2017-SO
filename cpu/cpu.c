@@ -77,9 +77,6 @@ struct sockaddr_in crearDireccionParaCliente(unsigned short PORT, char* IP) {
 
 
 void conectarConKernel() {
-	struct sockaddr_in dirKernel;
-	int kernel;
-
 
 	//Handshake
 	dirKernel = crearDireccionParaCliente(config.PUERTO_KERNEL, config.IP_KERNEL);
@@ -93,25 +90,144 @@ void conectarConKernel() {
 }
 void conectarConMemoria() {
 
-	struct sockaddr_in dirMemoria;
-	int memoria;
-
+	//Handshake
 	dirMemoria = crearDireccionParaCliente(config.PUERTO_MEMORIA, config.IP_MEMORIA);
 	memoria = socket_ws();
 	connect_w(memoria, &dirMemoria);
 	printf("Conectado a Memoria");
 
+}
+
+void solicitarTamanioPaginaAMemoria()
+{
+	//Hacer lo mismo que memoria haga con kernel
+}
+
+void deserializarPCB(t_PCB* pcbNuevo, t_PCB* pcbSerializado)
+{
+
+}
+
+void obtenerPCB()
+{
+	pcbNuevo = malloc(sizeof(t_PCB));
+	//char* pcbSerializado = deserializar(1); //le paso sock kernel
+
+}
+
+void obtenerSentencia(int* tamanio)
+{
+	//Una sentencia puede estar repartida en una o mas paginas
+	int pid = pcbNuevo->PID;
+	int inicioSentencia;
+	int longitudSentencia;
+	int nroPaginaInicial;
+
+	//Esta informacion limita la sentencia
+	t_sentencia* sentenciaLimites = list_get(pcbNuevo->indiceCodigo, pcbNuevo->contadorPrograma);
+	inicioSentencia = sentenciaLimites->offset_inicio;
+	longitudSentencia = sentenciaLimites->longitud;
+
+    nroPaginaInicial = (int)(inicioSentencia / tamanioPaginas);
+
+    int sentenciaEnUnaPagina = (inicioSentencia + longitudSentencia) > tamanioPaginas;
+
+    if(sentenciaEnUnaPagina)
+    {
+		send(memoria,((int)AccionPedirSentencia),1,0);
+		t_solicitud solicitud;
+		solicitud.offset = inicioSentencia;
+		solicitud.nroPagina = nroPaginaInicial;
+		solicitud.size = longitudSentencia;
+
+		char* solicitudRecibida = string_new();
+		memcpy(solicitudRecibida, &solicitud, sizeof(t_solicitud));
+		int tamanioSol = sizeof(t_solicitud);
+		send(memoria, solicitudRecibida, tamanioSol, 0);
+		free(solicitudRecibida);
+
+		char* buffer = malloc(tamanioSol);
+		char* serialSentencia = recv(memoria, buffer, tamanioSol, MSG_WAITALL);
+
+		if(serialSentencia[tamanioSol - 1]=='\n'){
+
+			serialSentencia[tamanioSol - 1]='\0';
+		}
+
+		char* sentenciaRecibida = malloc(tamanioSol+1);
+		sentenciaRecibida[tamanioSol]='\0';
+		memcpy(sentenciaRecibida,serialSentencia,tamanioSol);
+		string_append(&sentencia, sentenciaRecibida);
+		free(serialSentencia);
+		free(sentenciaRecibida);
+
+
+    }else{
+    	//Entonces la sentencia esta en mas de una pagina
+
+
+    	   // int byteUltimaPagCompleta = nroPaginaInicial * tamanioPaginas;
+    	   // int primerosBytes = inicioSentencia - byteUltimaPagCompleta;
+    	   // int tamanioSentenciaPag = tamanioPaginas - primerosBytes;
+
+    }
+
+}
+
+void parsear(char* sentencia)
+{
+
+}
+void pedirSentencia()
+{
+	int tamanio;
+
+	sentencia = string_new();
+	obtenerSentencia(&tamanio);
+	parsear(sentencia);
+
+	free(sentencia);
+
+}
+
+void recibirOrdenes(char* accion)
+{
+
+	switch((int)accion){
+
+		case AccionObtenerPCB: //Recibir nuevo PCB
+			obtenerPCB();
+			break;
+
+		case AccionPedirSentencia: //Obtener y parsear sentencias
+			if(ejecutar){
+				pedirSentencia();
+			}
+			break;
 	}
 
+}
 
+void esperarProgramas()
+{
+	char* accion;
+	ejecutar = 1;
 
+		while (1) {
+			recv(memoria, accion, 1, MSG_WAITALL);
+			recibirOrdenes(accion);
+			free(accion);
+		}
+}
 
 int main(void){
 
 	cargarConfiguracion();
 	inicializarPrimitivas();
 	conectarConKernel();
+	esperarProgramas();
  //conectarConMemoria();
+	solicitarTamanioPaginaAMemoria();
 
 	return EXIT_SUCCESS;
 }

@@ -17,6 +17,26 @@
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
 
+//GLOBALES
+struct sockaddr_in dirKernel;
+int kernel;
+struct sockaddr_in dirMemoria;
+int memoria;
+int ejecutar;
+int tamanioPaginas;
+char* sentencia;
+int* identidad = 2;
+
+typedef enum {
+	AccionObtenerPCB, //0
+	AccionPedirSentencia //1
+}t_accion;
+
+typedef struct {
+	int nroPagina;
+	int offset;
+	int size;
+}t_solicitud;
 
 
 
@@ -30,7 +50,22 @@ struct configuracion{
 t_config* configCpu;
 struct configuracion config;
 
-int* identidad = 2;
+//Factorizar:nucleo tiene LO MISMO
+typedef struct {
+	int PID;
+	int contadorPaginas;
+	int contadorPrograma;
+	t_list* indiceCodigo;
+}t_PCB;
+
+typedef struct{
+	int offset_inicio;
+	int longitud;
+
+}t_sentencia;
+
+t_PCB* pcbNuevo;
+
 
 
 
