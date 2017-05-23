@@ -13,16 +13,7 @@ typedef struct {
 	int tamanio;
 }t_header;
 
-void* serializar(t_header header, void* contenidoDelMensaje) {
-
-	void* buffer = malloc(sizeof(contenidoDelMensaje) + sizeof(header));
-	memcpy(buffer,&header.id, 4); //PRIMERO EL ID
-	memcpy(buffer,&header.tamanio, 4); //SEGUNDO EL TAMAÑO
-	memcpy(buffer, contenidoDelMensaje, sizeof(contenidoDelMensaje)); // TERCERA LA DATA
-
-	return buffer;
-}
-
-
+void* serializar(t_header header, void* contenidoDelMensaje);
+void* serializarMemoria(int codigoAccion, void* contenidoDelMensaje, int tamanioMensaje);
 
 #endif /* SERIALIZADOR_H_ */
