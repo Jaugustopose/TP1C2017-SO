@@ -1,0 +1,6 @@
+Código Error	Descripción
+
+-10				Marco no encontrado para pid y #pagina especificados
+-11				Imposibilidad de asignar páginas a proceso por fata de espacio
+-12				El pedido de bytes excede el tamaño de página
+-13				No reconozco el código de acción

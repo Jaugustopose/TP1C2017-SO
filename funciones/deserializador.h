@@ -18,9 +18,9 @@
 
 */
 
-void* deserializar(int sock) {
-	int id;
+void* deserializar(int sock);
 
+/*
 	recv(sock, &id, 4, 0); //Aca recibo la identidad del mensaje (archivo, texto, programa, etc)
 	switch(id) {
 
@@ -37,7 +37,7 @@ void* deserializar(int sock) {
 
 	}
 
-}
+}*/
 
 /*	TODO: Hacer este refactor para el case 1
 
@@ -50,5 +50,7 @@ void* deserializar(int sock) {
 
 	return buffer;
 }*/
+void* deserializar_archivo(int sock);
+
 
 #endif /* DESERIALIZADOR_H_ */

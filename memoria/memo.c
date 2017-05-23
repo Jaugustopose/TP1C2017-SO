@@ -7,13 +7,16 @@ void cargarConfigFile() {
 	string_append(&pat, "/memo.cfg");
 	t_config* configMemo = config_create(pat);
 	if (config_has_property(configMemo, "PUERTO_KERNEL")) {
-		config.puerto_kernel = config_get_int_value(configMemo,
-				"PUERTO_KERNEL");
+		config.puerto_kernel = config_get_int_value(configMemo, "PUERTO_KERNEL");
 		printf("config.PUERTO_KERNEL: %d\n", config.puerto_kernel);
 	}
 	if (config_has_property(configMemo, "IP_KERNEL")) {
 		config.ip_kernel = config_get_string_value(configMemo, "IP_KERNEL");
 		printf("config.IP_KERNEL: %s\n", config.ip_kernel);
+	}
+	if (config_has_property(configMemo, "PUERTO")) {
+		config.puerto = config_get_int_value(configMemo, "PUERTO");
+		printf("config.PUERTO: %d\n", config.puerto);
 	}
 	if (config_has_property(configMemo, "MARCOS")) {
 		config.marcos = config_get_int_value(configMemo, "MARCOS");
@@ -133,9 +136,9 @@ char* solicitarBytes(int pid, int nroPagina, int offset, int tamanio, tablaPagin
 	int marco = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
 	printf("Marco encontrado solicitarBytes: %d\n", marco);
 	if (marco == -10){
-		printf("El nro de página %d para el pid %d no existe", pid, nroPagina);
+		printf("El nro de página %d para el pid %d no existe\n", pid, nroPagina);
 	} else if ((offset + tamanio) > config.marco_size) {
-		printf("El pedido de lectura excede el tamaño de la página");
+		printf("El pedido de lectura excede el tamaño de la página\n");
 	} else {
 		printf("Tamaño solicitado: %d\n", tamanio);
 		bytesSolicitados = malloc(tamanio);
@@ -208,15 +211,17 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 		}
 	}
 	//TODO SEMAFORO HASTA ACÁ
-
+	printf("Paginas asignadas con éxito\n");
 	return EXIT_SUCCESS;
 
 }
 
-int main(void) {
+int main(void){
+
 	//Setea config_t config
 	cargarConfigFile();
 
+	//Inicializacion tabla de páginas invertida
 	tablaPagina_t tablaPaginasInvertida[config.marcos];
 	tamanioTablaPagina = config.marcos * sizeof(tablaPagina_t);
 
@@ -228,8 +233,6 @@ int main(void) {
 	}
 	printf("Cantidad de marcos que ocupa la tabla de páginas invertida: %d\n", cantMarcosOcupaTablaPaginas);
 
-
-	//Inicializamos tabla invertida de páginas
 	int i;
 	for (i = 0; i < config.marcos; ++i) {
 		//Si son los primeros espacios, ya está ocupada por la tabla de páginas invertida
@@ -241,59 +244,136 @@ int main(void) {
 			tablaPaginasInvertida[i].nroPagina = -1;
 		}
 	}
+	printf("Tabla de páginas invertida inicializada\n");
+	//Fin inicialización tabla de páginas invertida
 
+	//Inicialización memoria
 	tamanioMemoria = config.marco_size * config.marcos;
 	printf("Inicializando la memoria de %d bytes\n", tamanioMemoria);
 	memoria = malloc(tamanioMemoria);
 	memcpy(memoria, tablaPaginasInvertida, tamanioTablaPagina);
+	//Fin inicialización memoria
+	printf("Memoria inicializada\n");
 
-	/***********************************************************************/
-	/*PRUEBAS*/
-	int h = inicializarPrograma(1, 2, tablaPaginasInvertida);
-	printf("Resultado inicializarPrograma: %d\n", h);
-	h = inicializarPrograma(2, 6, tablaPaginasInvertida);
-	printf("Resultado inicializarPrograma: %d\n", h);
-	h = solicitarAsignacionPaginas(1, 50, tablaPaginasInvertida);
-	printf("Resultado solicitarAsignacionPaginas: %d\n", h);
-	h = inicializarPrograma(3, 71, tablaPaginasInvertida);
-	printf("Resultado inicializarPrograma: %d\n", h);
-	h = inicializarPrograma(4, 1, tablaPaginasInvertida);
-	printf("Resultado inicializarPrograma: %d\n", h);
-	h = solicitarAsignacionPaginas(1, 1, tablaPaginasInvertida);
-	printf("Resultado solicitarAsignacionPaginas: %d\n", h);
+	struct sockaddr_in direccionServidor; // Información sobre mi dirección
+	struct sockaddr_in direccionCliente; // Información sobre la dirección del cliente
+	int addrlen; // El tamaño de la direccion del cliente
+	int sockServ; // Socket de nueva conexion aceptada
+	int sockClie; // Socket a la escucha
+	int cantBytesRecibidos;
 
-	char* buffer = "hola";
-	printf("tamaño de 'hola': %d\n", sizeof("hola\0"));
+	//Crear socket. Dejar reutilizable. Crear direccion del servidor. Bind. Listen.
+	sockServ = crearSocket();
+	reusarSocket(sockServ, 1);
+	direccionServidor = crearDireccionServidor(config.puerto);
+	bind_w(sockServ, &direccionServidor);
+	listen_w(sockServ);
+	printf("Escuchando en el puerto %d...\n", config.puerto);
 
-	h = almacenarBytes(1, 0, 0, 6, buffer, tablaPaginasInvertida);
-	printf("Resultado almacenarBytes: %d\n", h);
+	// gestionar nuevas conexiones
+	addrlen = sizeof(direccionCliente);
+	for(;;){
+		if ((sockClie = accept(sockServ, (struct sockaddr*) &direccionCliente, &addrlen)) == -1) {
+			perror("Error en el accept");
+		} else {
+			printf("Server: nueva conexion de %s en socket %d\n", inet_ntoa(direccionCliente.sin_addr), sockClie);
+			for (;;) {
+				// Gestionar datos de un cliente. Recibimos el código de acción que quiere realizar.
+				int codAccion;
+				if ((cantBytesRecibidos = recv(sockClie, &codAccion, sizeof(int), 0)) <= 0) {
+					// error o conexión cerrada por el cliente
+					if (cantBytesRecibidos == 0) {
+						// conexión cerrada
+						printf("Server: socket %d termino la conexion\n", sockClie);
+						close(sockClie);
+						break;
+					} else {
+						perror("Se ha producido un error en el Recv");
+						break;
+					}
+				} else {
+					printf("He recibido %d bytes con la acción: %d\n", cantBytesRecibidos, codAccion);
+					pedidoSolicitudPaginas_t pedidoPaginas;
+					pedidoBytesMemoria_t pedidoBytes;
+					pedidoAlmacenarBytesMemoria_t pedidoAlmacenarBytes;
+					char* bytesAEscribir;
+					char* bytesSolicitados;
+					int resultAccion;
 
-	char* bytesSolicitados = solicitarBytes(1, 0, 0, 6, tablaPaginasInvertida);
-	printf("Resultado solicitarBytes: %s\n", bytesSolicitados);
+					switch (codAccion) {
 
-	buffer = "chau\0";
-	h = almacenarBytes(1, 0, 6, 6, buffer, tablaPaginasInvertida);
-	printf("Resultado almacenarBytes: %d\n", h);
+					case inicializarProgramaAccion:
+						recv(sockClie, &pedidoPaginas, sizeof(pedidoPaginas), 0);
+						printf("Recibida solicitud de %d páginas para el pid %d\n", pedidoPaginas.cantidadPaginas, pedidoPaginas.pid);
+						printf("Se procede a inicializar programa\n");
+						resultAccion = inicializarPrograma(pedidoPaginas.pid,
+								pedidoPaginas.cantidadPaginas,
+								tablaPaginasInvertida);
+						printf("Inicializar programa en Memoria terminó con resultado de acción: %d\n", resultAccion);
+						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
+						break;
 
-	bytesSolicitados = solicitarBytes(1, 0, 0, 12, tablaPaginasInvertida);
-	//Parto en dos el resultado de solicitar 12 bytes porque los strings terminan con el caracter nulo
-	// y el printf con el parámetro %s deja de escribir si encuentra el caracter nulo. Por lo cual cuando
-	// hacía printf(%s, bytesSolicitados) me imprimía sólo el "hola" y cortaba cuando encontraba el nulo
-	char* segundaParte = malloc(6);
-	memcpy(segundaParte, bytesSolicitados + 6, 6);
-	printf("Resultado solicitarBytes: %s%s\n", bytesSolicitados, segundaParte);
+					case solicitarPaginasAccion:
+						recv(sockClie, &pedidoPaginas, sizeof(pedidoPaginas), 0);
+						printf("Recibida solicitud de %d páginas para el pid %d\n", pedidoPaginas.cantidadPaginas, pedidoPaginas.pid);
+						printf("Se procede a solicitar páginas del programa\n");
+						resultAccion = solicitarAsignacionPaginas(
+								pedidoPaginas.pid,
+								pedidoPaginas.cantidadPaginas,
+								tablaPaginasInvertida);
+						printf("Solicitar páginas adicionales terminó con resultado de acción: %d\n", resultAccion);
+						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
+						break;
 
-	for (i = 0; i < config.marcos; ++i) {
-		printf("Marco=%d PID=%d nroPagina=%d\n", i,
-				tablaPaginasInvertida[i].pid,
-				tablaPaginasInvertida[i].nroPagina);
+					case almacenarBytesAccion:
+						recv(sockClie, &pedidoAlmacenarBytes.pedidoBytes, sizeof(pedidoAlmacenarBytes.pedidoBytes), 0);
+						bytesAEscribir = malloc(pedidoAlmacenarBytes.pedidoBytes.tamanio);
+						recv(sockClie, bytesAEscribir, pedidoAlmacenarBytes.pedidoBytes.tamanio, 0);
+						pedidoAlmacenarBytes.buffer = bytesAEscribir;
+						printf("Recibida solicitud de almacenar %d bytes para el pid %d en su página %d\n con un offset de %d\n",
+								pedidoAlmacenarBytes.pedidoBytes.tamanio,
+								pedidoAlmacenarBytes.pedidoBytes.pid,
+								pedidoAlmacenarBytes.pedidoBytes.nroPagina,
+								pedidoAlmacenarBytes.pedidoBytes.offset);
+						printf("Se procede a almacenar bytes: %s\n", pedidoAlmacenarBytes.buffer);
+						int resultAlmacenar = almacenarBytes(
+								pedidoAlmacenarBytes.pedidoBytes.pid,
+								pedidoAlmacenarBytes.pedidoBytes.nroPagina,
+								pedidoAlmacenarBytes.pedidoBytes.offset,
+								pedidoAlmacenarBytes.pedidoBytes.tamanio,
+								pedidoAlmacenarBytes.buffer,
+								tablaPaginasInvertida);
+						printf("Solicitud de almacenar bytes terminó con resultado de acción: %d\n", resultAccion);
+						send(sockClie, &resultAlmacenar, sizeof(resultAlmacenar), 0);
+						free(bytesAEscribir);
+						break;
+
+					case solicitarBytesAccion:
+						recv(sockClie, &pedidoBytes, sizeof(pedidoBytes), 0);
+						printf("Recibida solicitud de %d bytes para el pid %d en su página %d\n con un offset de %d\n",
+								pedidoAlmacenarBytes.pedidoBytes.tamanio,
+								pedidoAlmacenarBytes.pedidoBytes.pid,
+								pedidoAlmacenarBytes.pedidoBytes.nroPagina,
+								pedidoAlmacenarBytes.pedidoBytes.offset);
+						printf("Se procede a solicitar bytes\n");
+						bytesSolicitados = solicitarBytes(pedidoBytes.pid,
+								pedidoBytes.nroPagina, pedidoBytes.offset,
+								pedidoBytes.tamanio, tablaPaginasInvertida);
+						printf("Solicitar bytes devolvió los Bytes solicitados: %s\n", bytesSolicitados);
+						send(sockClie, bytesSolicitados, pedidoBytes.tamanio, 0);
+						free(bytesSolicitados);
+						break;
+
+					default:
+						printf("No reconozco el código de acción\n");
+						resultAccion = -13;
+						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
+					}
+					printf("Fin atención acción\n");
+				}
+			}
+		}
 	}
 
-	free(segundaParte);
-	free(bytesSolicitados);
-	/*FIN PRUEBAS*/
-	/***********************************************************************/
 
-	free(memoria);
-	return EXIT_SUCCESS;
 }

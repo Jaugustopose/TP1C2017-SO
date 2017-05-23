@@ -16,7 +16,7 @@ typedef struct {
 	int tamanio;
 }t_header;
 
-char* serializar(t_header header, char* contenidoDelMensaje) {
+/*char* serializar(t_header header, char* contenidoDelMensaje) {
 
 	char* buffer = malloc(header.tamanio + sizeof(t_header));
 	memcpy(buffer, &header.id, sizeof(int)); //PRIMERO EL ID
@@ -25,8 +25,10 @@ char* serializar(t_header header, char* contenidoDelMensaje) {
 
 	return buffer;
 	free(buffer);
-}
+}*/
 
 
+void* serializar(t_header header, void* contenidoDelMensaje);
+void* serializarMemoria(int codigoAccion, void* contenidoDelMensaje, int tamanioMensaje);
 
 #endif /* SERIALIZADOR_H_ */
