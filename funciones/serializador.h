@@ -8,19 +8,23 @@
 #ifndef SERIALIZADOR_H_
 #define SERIALIZADOR_H_
 
+#include <stdlib.h>
+#include <string.h>
+
 typedef struct {
 	int id;
 	int tamanio;
 }t_header;
 
-void* serializar(t_header header, void* contenidoDelMensaje) {
+char* serializar(t_header header, char* contenidoDelMensaje) {
 
-	void* buffer = malloc(sizeof(contenidoDelMensaje) + sizeof(header));
-	memcpy(buffer,&header.id, 4); //PRIMERO EL ID
-	memcpy(buffer,&header.tamanio, 4); //SEGUNDO EL TAMAÑO
-	memcpy(buffer, contenidoDelMensaje, sizeof(contenidoDelMensaje)); // TERCERA LA DATA
+	char* buffer = malloc(header.tamanio + sizeof(t_header));
+	memcpy(buffer, &header.id, sizeof(int)); //PRIMERO EL ID
+	memcpy(buffer + 1, &header.tamanio, sizeof(int)); //SEGUNDO EL TAMAÑO
+	memcpy(buffer + 2, contenidoDelMensaje, header.tamanio); // TERCERA LA DATA
 
 	return buffer;
+	free(buffer);
 }
 
 

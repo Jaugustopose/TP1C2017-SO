@@ -51,9 +51,14 @@ void cargar_y_enviar_archivo(int sock)
 			t_header cabeza;
 			cabeza.id = 1;
 			cabeza.tamanio = length;
-			serializar(cabeza,bufferArchivo);
 
-			send(sock,bufferArchivo,length,0); // Envio archivo serializado
+			//Serializo el buffer con el mensaje
+			void* bufferSerializado = malloc(cabeza.tamanio + sizeof(t_header));
+			memcpy(bufferSerializado, &cabeza.id, sizeof(int)); //PRIMERO EL ID
+			memcpy(bufferSerializado + sizeof(cabeza.id), &cabeza.tamanio, sizeof(int)); //SEGUNDO EL TAMAÑO
+			memcpy(bufferSerializado + sizeof(t_header), bufferArchivo, cabeza.tamanio); // TERCERA LA DATA
+
+			send(sock,bufferSerializado,length,0); // Envio archivo serializado
 		}else
 		{
 			fclose(archivo);
@@ -87,7 +92,41 @@ int main (void){
 	}
 
 	send(cliente,&identidad, sizeof(int),0);
-	cargar_y_enviar_archivo(cliente);
+
+	char* bufferArchivo = 0;
+		long length;
+		FILE* archivo = fopen("/home/utnso/Escritorio/facil.ansisop","rb");
+
+		if(archivo){
+			fseek(archivo,0,SEEK_END);
+			length = ftell(archivo);
+			fseek(archivo,0,SEEK_SET);
+			bufferArchivo = (char*)malloc((length +1)*sizeof(char));
+			if(bufferArchivo)
+			{
+				fread(bufferArchivo,1,length,archivo);
+				printf("He recibido %d bytes de contenido: %.*s\n",length, length + 1, bufferArchivo);
+
+				//Creo el header antes de enviar mensaje
+
+				t_header cabeza;
+				cabeza.id = 1;
+				cabeza.tamanio = length;
+
+				void* buffer = malloc(sizeof(t_header) + cabeza.tamanio);
+				memcpy(buffer,&cabeza.id,sizeof(int));
+				memcpy(buffer + sizeof(int), &cabeza.tamanio, sizeof(int));
+				memcpy(buffer + sizeof(int)*2, bufferArchivo, cabeza.tamanio);
+				send(cliente,buffer, (sizeof(int)*2) + (cabeza.tamanio),0);
+
+
+			}else
+			{
+				fclose(archivo);
+			}
+		}
+
+
 
 	while (1) {
 			/*char mensaje[1000];

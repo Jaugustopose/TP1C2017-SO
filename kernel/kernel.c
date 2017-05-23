@@ -177,8 +177,44 @@ int main(void) {
 				} else {
 					// gestionar datos de un cliente
 
-					void* buff = deserializar(i);
-					recibir_archivo(buff);
+					////////////DESERIALIZAR MENSAJE///////////////
+
+					int* buff = malloc(1000);
+					recv(i,buff,4,0);
+					int supuestoID = *buff;
+					printf("el valor de numerito es: %d\n", supuestoID);
+
+					recv(i,buff,4,0);
+					int supuestoTamanio = *buff;
+					printf("el valor de otroNumerito es: %d\n", supuestoTamanio);
+					//realloc((char*) buff,otroNumerito);
+					recv(i,(char*) buff,supuestoTamanio,0);
+					char* cadena = *buff;
+					printf("el valor de cadena es: %s\n", cadena);
+
+
+					/*recv(i, (int*) buff, 4, 0); //Aca recibo la identidad del mensaje (archivo, texto, programa, etc)
+					int idMensaje = (int) *buff;
+					printf("la variable idMensaje vale: %d", idMensaje);
+					switch(idMensaje) {
+
+						case 1:  { //ES UN ARCHIVO
+
+								recv(i, (int*) buff, 4, 0); //Recibo el tamaño de lo que me estan enviando.
+								int tamanio = (int) *buff;
+								printf("la variable tamanio vale: %d", tamanio);
+								realloc(buff,tamanio);
+								recv(i, buff, tamanio,0); //Recibo lo que viene atras. Por ahora es o un archivo o un texto asi que al ser tod0 del mismo tipo, no pasa nada. Caso contrario habrá que ir separandolo con varios recv.
+
+								FILE* archivo =	fopen("archivo recibido.txt","w");
+									if (archivo){
+										fputs(buff,archivo);
+										fclose(archivo);
+									}
+						}
+					}*/
+
+					///////////FIN DE DESERIALIZADOR///////////////
 
 					if ((cantBytes = recv(i, buff, 5, 0)) <= 0) {
 
@@ -232,6 +268,7 @@ int main(void) {
 		}
 	}
 	return 0;
-
 }
+
+
 
