@@ -6,6 +6,7 @@
 
 
 //Provisorio: le puse dos para luego factorizar con la de Kernel :D
+
 int crearSocketDos() {
 	return socket(AF_INET, SOCK_STREAM, 0);
 }
@@ -49,6 +50,7 @@ void cargarConfiguracion()
 		printf("config.IP_KERNEL: %s\n", config.IP_KERNEL);
 	}
 }
+
 int socket_ws() {
 	int sock;
 
@@ -75,7 +77,6 @@ struct sockaddr_in crearDireccionParaCliente(unsigned short PORT, char* IP) {
 	return direccionServidor;
 }
 
-
 void conectarConKernel() {
 
 	//Handshake
@@ -88,6 +89,7 @@ void conectarConKernel() {
 	send(kernel,&identidad, sizeof(int),0);
 
 }
+
 void conectarConMemoria() {
 
 	//Handshake
@@ -178,6 +180,7 @@ void parsear(char* sentencia)
 {
 
 }
+
 void pedirSentencia()
 {
 	int tamanio;
