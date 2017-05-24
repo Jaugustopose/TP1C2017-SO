@@ -12,31 +12,34 @@
 #include <unistd.h>
 #include <commons/config.h>
 #include <commons/string.h>
-#include <parser/parser/parser.h>
 #include <commons/collections/dictionary.h>
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
+#include <stdbool.h>
+#include "primitivas.h"
 
 //GLOBALES
 struct sockaddr_in dirKernel;
 int kernel;
 struct sockaddr_in dirMemoria;
 int memoria;
-int ejecutar;
+bool ejecutar;
 int tamanioPaginas;
-char* sentencia;
+char* sentenciaPedida;
 int* identidad = 2;
 
 typedef enum {
 	AccionObtenerPCB, //0
-	AccionPedirSentencia //1
+	AccionPedirSentencia, //1
+	AccionFinInstruccion, //2
+	AccionFinProceso //2
 }t_accion;
 
 typedef struct {
 	int nroPagina;
 	int offset;
 	int size;
-}t_solicitud;
+}t_pedido;
 
 
 
@@ -59,12 +62,21 @@ typedef struct {
 }t_PCB;
 
 typedef struct{
-	int offset_inicio;
-	int longitud;
+	int inicio;
+	int fin;
 
 }t_sentencia;
 
 t_PCB* pcbNuevo;
+
+static const char* PROGRAMA =
+		"begin\n"
+		"variables a, b\n"
+		"a = 3\n"
+		"b = 5\n"
+		"a = b + 12\n"
+		"end\n"
+		"\n";
 
 
 

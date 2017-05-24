@@ -4,21 +4,14 @@
 
 #define MAXBYTESREAD 100
 
-
-//Provisorio: le puse dos para luego factorizar con la de Kernel :D
-
-int crearSocketDos() {
-	return socket(AF_INET, SOCK_STREAM, 0);
+int minimo(int a, int b) {
+	return a < b ? a : b;
 }
 
-int conectarSocket(int socket, struct sockaddr_in* dirServidor)
-{
-	return connect(socket, (struct sockaddr*) &*dirServidor, sizeof(struct sockaddr));
-}
-
-void cerrarSocket(int socket)
-{
-   close(socket);
+void sacarSaltoDeLinea(char* texto, int ultPos){
+	if(texto[ultPos-1]=='\n'){
+		texto[ultPos-1]='\0';
+	}
 }
 
 void cargarConfiguracion()
@@ -117,79 +110,177 @@ void obtenerPCB()
 
 }
 
-void obtenerSentencia(int* tamanio)
-{
-	//Una sentencia puede estar repartida en una o mas paginas
-	int pid = pcbNuevo->PID;
-	int inicioSentencia;
-	int longitudSentencia;
-	int nroPaginaInicial;
+void finalizarProceso(bool normalmente){
 
-	//Esta informacion limita la sentencia
-	t_sentencia* sentenciaLimites = list_get(pcbNuevo->indiceCodigo, pcbNuevo->contadorPrograma);
-	inicioSentencia = sentenciaLimites->offset_inicio;
-	longitudSentencia = sentenciaLimites->longitud;
+	char* accion = (char)AccionFinProceso;
+    send(kernel, accion, 1, 0);
+	free(accion);
 
-    nroPaginaInicial = (int)(inicioSentencia / tamanioPaginas);
+	//TODO:destruir pcb
+	ejecutar = false;
+	pcbNuevo = NULL;
+}
 
-    int sentenciaEnUnaPagina = (inicioSentencia + longitudSentencia) > tamanioPaginas;
+/**********FUNCIONES PARA MANEJO DE SENTENCIAS*********************************************************************/
 
-    if(sentenciaEnUnaPagina)
-    {
-		send(memoria,((int)AccionPedirSentencia),1,0);
-		t_solicitud solicitud;
-		solicitud.offset = inicioSentencia;
-		solicitud.nroPagina = nroPaginaInicial;
-		solicitud.size = longitudSentencia;
+void enviarSolicitudSentencia(int pagina, int offset, int size) {
 
-		char* solicitudRecibida = string_new();
-		memcpy(solicitudRecibida, &solicitud, sizeof(t_solicitud));
-		int tamanioSol = sizeof(t_solicitud);
-		send(memoria, solicitudRecibida, tamanioSol, 0);
-		free(solicitudRecibida);
+	t_pedido pedido;
+	pedido.offset = offset;
+	pedido.nroPagina = pagina;
+	pedido.size = size;
 
-		char* buffer = malloc(tamanioSol);
-		char* serialSentencia = recv(memoria, buffer, tamanioSol, MSG_WAITALL);
+	char* solicitud = string_new();
 
-		if(serialSentencia[tamanioSol - 1]=='\n'){
+	//VER LA SERIALIZACION
+//	int tamanio = serializar_pedido(solicitud, &pedido);
+	int tamanio = 0;
+	send(memoria, solicitud, tamanio, 0);
 
-			serialSentencia[tamanioSol - 1]='\0';
-		}
+	free(solicitud);
+}
 
-		char* sentenciaRecibida = malloc(tamanioSol+1);
-		sentenciaRecibida[tamanioSol]='\0';
-		memcpy(sentenciaRecibida,serialSentencia,tamanioSol);
-		string_append(&sentencia, sentenciaRecibida);
-		free(serialSentencia);
-		free(sentenciaRecibida);
+t_sentencia* obtenerSentenciaRelativa(int* paginaInicioSentencia) {
 
+	t_sentencia* sentenciaAbsoluta = list_get(pcbNuevo->indiceCodigo, pcbNuevo->contadorPrograma);
+	t_sentencia* sentenciaRelativa = malloc(sizeof(t_sentencia));
 
-    }else{
-    	//Entonces la sentencia esta en mas de una pagina
+	    int inicioAbsoluto = sentenciaAbsoluta->inicio;
+		int paginaInicio = (int) (inicioAbsoluto / tamanioPaginas);
+		int inicioRelativo = inicioAbsoluto % tamanioPaginas;
+		sentenciaRelativa->inicio = inicioRelativo;
+		sentenciaRelativa->fin = inicioRelativo + longitudSentencia(sentenciaAbsoluta);
 
+		(*paginaInicioSentencia) = paginaInicio;
 
-    	   // int byteUltimaPagCompleta = nroPaginaInicial * tamanioPaginas;
-    	   // int primerosBytes = inicioSentencia - byteUltimaPagCompleta;
-    	   // int tamanioSentenciaPag = tamanioPaginas - primerosBytes;
+	return sentenciaRelativa;
+}
 
-    }
+int longitudSentencia(t_sentencia* sentencia) {
+	return sentencia->fin - sentencia->inicio;
+}
+
+int esPaginaCompleta(int longitudRestante) {
+	return longitudRestante >= tamanioPaginas;
+}
+
+void recibirPedazoDeSentencia(int size){
+
+	char* buffer = malloc(size);
+	recv(memoria, buffer, size, MSG_WAITALL);
+	sacarSaltoDeLinea(buffer, size);
+	char* sentencia = malloc(size+1);
+	sentencia[size]='\0';
+	memcpy(sentencia,buffer,size);
+
+	string_append(&sentenciaPedida, sentencia);
+
+	free(buffer);
+	free(sentencia);
 
 }
 
+void pedirPrimeraSentencia(t_sentencia* sentenciaRelativa, int pagina, int* longitudRestante) {
+
+ int tamanioPrimeraSentencia = minimo(*longitudRestante,	tamanioPaginas - sentenciaRelativa->inicio);
+
+char* accion = (char)AccionPedirSentencia;
+send(memoria, accion, 1, 0);
+free(accion);
+
+enviarSolicitudSentencia(pagina, sentenciaRelativa->inicio,tamanioPrimeraSentencia);
+(*longitudRestante) = longitudRestante - tamanioPrimeraSentencia;
+
+recibirPedazoDeSentencia(tamanioPrimeraSentencia);
+}
+
+void pedirPaginaCompleta(int nroPagina) {
+
+	char* accion = (char)AccionPedirSentencia;
+	send(memoria, accion, 1, 0);
+	free(accion);
+
+	enviarSolicitudSentencia(nroPagina, 0, tamanioPaginas);
+	recibirPedazoDeSentencia(tamanioPaginas);
+}
+
+void pedirUltimaSentencia(t_sentencia* sentenciaRelativa, int pagina, int longitudRestante) {
+
+	char* accion = (char)AccionPedirSentencia;
+	send(memoria, accion, 1, 0);
+	free(accion);
+	enviarSolicitudSentencia(pagina, 0, longitudRestante);
+	recibirPedazoDeSentencia(longitudRestante);
+
+}
+
+void obtenerSentencia(int* tamanio)
+{
+	/*Una sentencia puede estar repartida en una o mas paginas*/
+
+	int pid = pcbNuevo->PID;
+	int inicioSentencia; //primer byte de la sentencia
+	int longitudTotalSentencia; //desplazamiento desde el primer byte de la sentencia
+	int paginaAPedir;
+
+	t_sentencia* sentenciaRelativa = obtenerSentenciaRelativa(&paginaAPedir);
+	int longitudRestante = longitudSentencia(sentenciaRelativa);
+	(*tamanio) = longitudRestante;
+
+	// Pido la primera pagina
+	pedirPrimeraSentencia(sentenciaRelativa, paginaAPedir, &longitudRestante);
+	paginaAPedir++;
+
+	//Pido las paginas que siguen de forma completa
+	while (esPaginaCompleta(longitudRestante)) {
+		pedirPaginaCompleta(paginaAPedir);
+		longitudRestante = longitudRestante - tamanioPaginas;
+		paginaAPedir++;
+	}
+
+	//Si queda alguna pagina INCOMPLETA la pido
+	if(longitudRestante>0){
+		pedirUltimaSentencia(sentenciaRelativa, paginaAPedir, longitudRestante);
+		paginaAPedir++;
+	}
+
+	free(sentenciaRelativa);
+
+}
+
+int sentenciaNoFinaliza(char* sentencia){
+	return strcmp(sentencia,"end")!=0 && strcmp(sentencia,"\tend")!=0 && strcmp(sentencia,"\t\tend")!=0;
+}
+
+/***********FUNCIONES DEL CIRCUITO DE PARSEO DE SENTENCIAS*****************************************/
+
 void parsear(char* sentencia)
 {
+	pcbNuevo->contadorPrograma++;
 
+	if(sentenciaNoFinaliza(sentencia)){
+
+	//Le paso sentencia, set de primitivas de CPU y set de primitivas de kernel
+	analizadorLinea(sentencia, &funciones, &funcionesKernel);
+
+	char* accion = (char)AccionFinInstruccion;
+	send(kernel, accion, 1, 0);
+	free(accion);
+
+	}else{
+		  finalizarProceso(true);
+	}
 }
 
 void pedirSentencia()
 {
 	int tamanio;
 
-	sentencia = string_new();
+	sentenciaPedida = string_new();
 	obtenerSentencia(&tamanio);
-	parsear(sentencia);
+	parsear(sentenciaPedida);
 
-	free(sentencia);
+	free(sentenciaPedida);
 
 }
 
@@ -214,10 +305,10 @@ void recibirOrdenes(char* accion)
 void esperarProgramas()
 {
 	char* accion;
-	ejecutar = 1;
+	ejecutar = true;
 
 		while (1) {
-			recv(memoria, accion, 1, MSG_WAITALL);
+			recv(kernel, accion, 1, MSG_WAITALL);
 			recibirOrdenes(accion);
 			free(accion);
 		}
@@ -228,9 +319,11 @@ int main(void){
 	cargarConfiguracion();
 	inicializarPrimitivas();
 	conectarConKernel();
-	esperarProgramas();
- //conectarConMemoria();
-	solicitarTamanioPaginaAMemoria();
+    conectarConMemoria();
+	//solicitarTamanioPaginaAMemoria();
+
+    //esperarProgramas();
+
 
 	return EXIT_SUCCESS;
 }

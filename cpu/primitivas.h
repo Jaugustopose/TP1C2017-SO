@@ -14,11 +14,13 @@
 #include <commons/config.h>
 #include <commons/string.h>
 #include <parser/parser/parser.h>
+#include <parser/parser/metadata_program.h>
 #include <commons/collections/dictionary.h>
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
 
 AnSISOP_funciones funciones;
+AnSISOP_kernel  funcionesKernel;
 
 
 t_puntero definir_variable(t_nombre_variable variable);
