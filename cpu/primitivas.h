@@ -25,6 +25,10 @@ AnSISOP_kernel  funcionesKernel;
 
 t_puntero definir_variable(t_nombre_variable variable);
 t_puntero obtener_posicion_de(t_nombre_variable variable);
+t_valor_variable desreferenciar_variable(t_puntero direccion_variable);
+void asignar(t_puntero direccion_variable, t_valor_variable valor);
+void finalizar(void);
+
 
 void inicializarPrimitivas();
 
