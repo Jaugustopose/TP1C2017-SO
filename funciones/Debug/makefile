@@ -24,11 +24,14 @@ endif
 # All Target
 all: libfunciones.so
 
+dependents:
+	-cd /home/utnso/workspace/parser/Debug && $(MAKE) all
+
 # Tool invocations
-libfunciones.so: $(OBJS) $(USER_OBJS)
+libfunciones.so: $(OBJS) $(USER_OBJS) /home/utnso/workspace/parser/Debug/libparser.so
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -shared -o "libfunciones.so" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L"/home/utnso/workspace/parser/Debug" -shared -o "libfunciones.so" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -39,5 +42,6 @@ clean:
 
 .PHONY: all clean dependents
 .SECONDARY:
+/home/utnso/workspace/parser/Debug/libparser.so:
 
 -include ../makefile.targets

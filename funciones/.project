@@ -3,6 +3,7 @@
 	<name>funciones</name>
 	<comment></comment>
 	<projects>
+		<project>parser</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
