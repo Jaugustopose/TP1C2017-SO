@@ -4,8 +4,8 @@
 	<comment></comment>
 	<projects>
 		<project>commons</project>
-		<project>funciones</project>
 		<project>parser</project>
+		<project>funciones</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

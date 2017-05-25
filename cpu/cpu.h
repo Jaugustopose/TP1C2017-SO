@@ -3,10 +3,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <arpa/inet.h>
 #include <errno.h>
-#include <sys/types.h>
 #include <string.h>
 #include <netinet/in.h>
 #include <unistd.h>
@@ -15,8 +16,9 @@
 #include <commons/collections/dictionary.h>
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
-#include <stdbool.h>
 #include "primitivas.h"
+#include "serializador.h"
+#include "estructurasCompartidas.h"
 
 //GLOBALES
 struct sockaddr_in dirKernel;
@@ -26,22 +28,7 @@ int memoria;
 bool ejecutar;
 int tamanioPaginas;
 char* sentenciaPedida;
-int* identidad = 2;
-
-typedef enum {
-	AccionObtenerPCB, //0
-	AccionPedirSentencia, //1
-	AccionFinInstruccion, //2
-	AccionFinProceso //2
-}t_accion;
-
-typedef struct {
-	int nroPagina;
-	int offset;
-	int size;
-}t_pedido;
-
-
+t_identidad identidad = SOYCPU;
 
 struct configuracion{
 	char* IP_MEMORIA;

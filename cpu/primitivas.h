@@ -18,6 +18,7 @@
 #include <commons/collections/dictionary.h>
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
+#include "estructurasCompartidas.h"
 
 AnSISOP_funciones funciones;
 AnSISOP_kernel  funcionesKernel;
