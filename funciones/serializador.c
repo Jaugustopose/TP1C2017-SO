@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include "serializador.h"
+#include "estructurasCompartidas.h"
 
 
 void* serializar(t_header header, void* contenidoDelMensaje) {
@@ -29,33 +30,74 @@ void* serializarMemoria(int codigoAccion, void* contenidoDelMensaje, int tamanio
 	return buffer;
 }
 
-int serializar_lista(char* destino, t_list* fuente, int pesoElemento) {
+int serializar_pedido(char* destino, t_pedido* origen) {
+	memcpy(destino, origen, sizeof(t_pedido));
+	return sizeof(t_pedido);
+}
+
+int serializar_sentencia(char* destino, t_sentencia* origen) {
+	memcpy(destino, origen, sizeof(t_sentencia));
+	return sizeof(t_sentencia);
+}
+
+int serializar_lista(char* destino, t_list* origen, int pesoElemento) {
 	int i, offset = 1;
-	destino[0] = list_size(fuente);
+	destino[0] = list_size(origen);
 	for (i = 0; i < destino[0]; i++) {
-		memcpy(destino + offset, list_get(fuente, i), pesoElemento);
+		memcpy(destino + offset, list_get(origen, i), pesoElemento);
 		offset += pesoElemento;
 	}
 	return offset;
+}
+
+int serializar_int(char* destino, int* origen) {
+	memcpy(destino, origen, sizeof(int));
+	return sizeof(int);
+}
+
+int serializar_t_puntero(char* destino, t_puntero* origen) {
+	memcpy(destino, origen, sizeof(t_puntero));
+	return sizeof(t_puntero);
+}
+
+int serializar_stack_elem(char* destino, t_elemento_stack* origen) {
+	int desplazamiento = 0;
+
+	desplazamiento += serializar_int(destino + desplazamiento, &(origen->pos));
+	desplazamiento += serializar_list(destino + desplazamiento, origen->argumentos,	sizeof(t_pedido));
+	desplazamiento += serializar_dictionary(destino + desplazamiento, origen->identificadores, sizeof(t_pedido));
+	desplazamiento += serializar_t_puntero(destino + desplazamiento, &(origen->posRetorno));
+	desplazamiento += serializar_pedido(destino + desplazamiento, &(origen->valRetorno));
+
+	return desplazamiento;
+}
+
+int serializar_stack(char* destino, t_stack* origen) {
+	int i;
+	int desplazamiento = 1;
+
+	// Cantidad de items
+	destino[0] = stack_size(origen);
+
+	for (i = 0; i < destino[0]; i++) {
+		desplazamiento += serializar_stack_item(destino + desplazamiento, list_get(origen, i));
+	}
+	return desplazamiento;
 }
 
 void* serializar_PCB(t_PCB* pcb, int sock, int codigoAccion) {
 	char* pcbSerializado;
 	int desplazamiento = 0;
 
-	memcpy(pcbSerializado + desplazamiento, &(pcb->PID),sizeof(int));
-	desplazamiento = desplazamiento + sizeof(int);
+	desplazamiento = desplazamiento + serializar_int(pcbSerializado + desplazamiento, &(pcb->PID));
 
-	memcpy(pcbSerializado + desplazamiento, &(pcb->contadorPrograma), sizeof(int));
-	desplazamiento = desplazamiento + sizeof(int);
+	desplazamiento = desplazamiento + serializar_int(pcbSerializado + desplazamiento, &(pcb->contadorPrograma));
 
-	memcpy(pcbSerializado + desplazamiento, &(pcb->cantidadPaginas), sizeof(int));
-	desplazamiento = desplazamiento + sizeof(int);
+	desplazamiento = desplazamiento + serializar_int(pcbSerializado + desplazamiento, &(pcb->cantidadPaginas));
 
-	printf("serializacion: %.*s\n",pcbSerializado + desplazamiento ,pcbSerializado);
-	//desplazamiento = desplazamiento + serializar_lista(pcbSerializado + desplazamiento, pcb->indiceCodigo, sizeof(t_sentencia));
+	desplazamiento = desplazamiento + serializar_lista(pcbSerializado + desplazamiento, pcb->indiceCodigo, sizeof(t_sentencia));
 
-	//desplazamiento = desplazamiento + deserializar_stack(pcbNuevo->stackPointer, pcbSerializado + desplazamiento);
+	desplazamiento = desplazamiento + serializar_stack(pcbSerializado + desplazamiento, pcb->stackPointer);
 
 
 	void* buffer = malloc(desplazamiento + sizeof(codigoAccion));

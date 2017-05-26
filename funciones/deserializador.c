@@ -41,33 +41,70 @@ void* deserializar_archivo(int sock) {
 	return buffer;
 }
 
-
-int deserializar_lista(t_list* destino, char* fuente, int pesoElemento) {
+int deserializar_lista(t_list* destino, char* origen, int pesoElemento) {
 	int i;
 	int offset = 1; // Se va a guardar en la primera posicion la cantidad de elementos
 	char* buffer;
 
-	for (i = 0; i < fuente[0]; i++) {
+	for (i = 0; i < origen[0]; i++) {
 		buffer = malloc(pesoElemento);
-		memcpy(buffer, fuente + offset, pesoElemento);
+		memcpy(buffer, origen + offset, pesoElemento);
 		list_add(destino, buffer);
 		offset = offset + pesoElemento;
 	}
 	return offset;
 }
 
-//int deserializar_stack_item(t_stack_elemento* destino, char* fuente) {
-//	int offset = 0;
-//	destino->argumentos=list_create();
-//	destino->identificadores=dictionary_create();
-//	offset += deserializar_int(&destino->posicion, fuente + offset);
-//	offset += deserializar_list(destino->argumentos, fuente + offset, sizeof(t_pedido));
-//	offset += deserializar_dictionary(destino->identificadores, fuente + offset, sizeof(t_pedido));
-//	offset += deserializar_t_puntero(&destino->posicionRetorno, fuente + offset);
-//	offset += deserializar_pedido(&(destino->valorRetorno), fuente + offset);
-//	return offset;
-//}
+int deserializar_pedido(t_pedido* destino, char* origen) {
+	memcpy(destino, origen, sizeof(t_pedido));
+	return sizeof(t_pedido);
+}
+int deserializar_sentencia(t_sentencia* destino, char* origen) {
+	memcpy(destino, origen, sizeof(t_sentencia));
+	return sizeof(t_sentencia);
 
+}
+
+int deserializar_int(int* destino, char* origen) {
+	memcpy(destino, origen, sizeof(int));
+	return sizeof(int);
+}
+
+int deserializar_t_puntero(t_puntero* destino, char* origen) {
+	memcpy(destino, origen, sizeof(t_puntero));
+	return sizeof(t_puntero);
+}
+int deserializar_stack_elem(t_elemento_stack* elemStack, char* origen) {
+	int desplazamiento = 0;
+
+	elemStack->argumentos=list_create();
+	elemStack->identificadores=dictionary_create();
+
+	desplazamiento += deserializar_int(&elemStack->pos, origen + desplazamiento);
+	desplazamiento += deserializar_list(elemStack->argumentos, origen + desplazamiento, sizeof(t_pedido));
+	desplazamiento += deserializar_dictionary(elemStack->identificadores, origen + desplazamiento, sizeof(t_pedido));
+	desplazamiento += deserializar_t_puntero(&elemStack->posRetorno, origen + desplazamiento);
+	desplazamiento += deserializar_pedido(&(elemStack->valRetorno), origen + desplazamiento);
+
+	return desplazamiento;
+}
+
+int deserializar_stack(t_stack* destino, char* origen) {
+
+	t_elemento_stack* elemen;
+	int i;
+	int desplazamiento = 1;
+
+	for (i = 0; i < origen[0]; i++) {
+
+		//Tamaño del item como puntero en si
+		elemen = malloc(sizeof(t_elemento_stack));
+		desplazamiento += deserializar_stack_item(elemen, origen + desplazamiento);
+		stack_push(destino, elemen);
+	}
+
+	return desplazamiento;
+}
 void* deserializar_PCB(t_PCB* pcbNuevo, int sock) {
 	int tamanio;
 
@@ -80,22 +117,17 @@ void* deserializar_PCB(t_PCB* pcbNuevo, int sock) {
 	pcbNuevo->indiceCodigo = list_create();
 	pcbNuevo->stackPointer = stack_crear();
 
+	desplazamiento = desplazamiento + serializar_int(&(pcbNuevo->PID), pcbSerializado + desplazamiento);
 
-	memcpy(&(pcbNuevo->PID), pcbSerializado + desplazamiento, sizeof(int));
-	desplazamiento = desplazamiento + sizeof(int);
-	printf("PID: %d\n", pcbNuevo->PID);
+	desplazamiento = desplazamiento + serializar_int(&(pcbNuevo->contadorPrograma), pcbSerializado + desplazamiento);
 
-	memcpy(&(pcbNuevo->contadorPrograma), pcbSerializado + desplazamiento, sizeof(int));
-	desplazamiento = desplazamiento + sizeof(int);
-	printf("PC: %d\n", pcbNuevo->contadorPrograma);
+	desplazamiento = desplazamiento + serializar_int(&(pcbNuevo->cantidadPaginas), pcbSerializado + desplazamiento);
 
-	memcpy(&(pcbNuevo->cantidadPaginas), pcbSerializado + desplazamiento, sizeof(int));
-	desplazamiento = desplazamiento + sizeof(int);
-	printf("CantPag: %d\n", pcbNuevo->cantidadPaginas);
-	//desplazamiento = desplazamiento + deserializar_lista(pcbNuevo->indiceCodigo, pcbSerializado + desplazamiento, sizeof(t_sentencia));
+	desplazamiento = desplazamiento + deserializar_lista(pcbNuevo->indiceCodigo, pcbSerializado + desplazamiento, sizeof(t_sentencia));
 
-	//desplazamiento = desplazamiento + deserializar_stack(pcbNuevo->stackPointer, pcbSerializado + desplazamiento);
+	desplazamiento = desplazamiento + deserializar_stack(pcbNuevo->stackPointer, pcbSerializado + desplazamiento);
 
 
 	return 0;
 }
+
