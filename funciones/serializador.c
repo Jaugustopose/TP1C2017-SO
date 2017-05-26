@@ -7,6 +7,7 @@
  */
 
 #include <stdio.h>
+#include <sys/socket.h>
 #include "serializador.h"
 #include "estructurasCompartidas.h"
 
@@ -64,8 +65,8 @@ int serializar_stack_elem(char* destino, t_elemento_stack* origen) {
 	int desplazamiento = 0;
 
 	desplazamiento += serializar_int(destino + desplazamiento, &(origen->pos));
-	desplazamiento += serializar_list(destino + desplazamiento, origen->argumentos,	sizeof(t_pedido));
-	desplazamiento += serializar_dictionary(destino + desplazamiento, origen->identificadores, sizeof(t_pedido));
+	desplazamiento += serializar_lista(destino + desplazamiento, origen->argumentos,	sizeof(t_pedido));
+//	desplazamiento += serializar_dictionary(destino + desplazamiento, origen->identificadores, sizeof(t_pedido));
 	desplazamiento += serializar_t_puntero(destino + desplazamiento, &(origen->posRetorno));
 	desplazamiento += serializar_pedido(destino + desplazamiento, &(origen->valRetorno));
 
@@ -77,10 +78,10 @@ int serializar_stack(char* destino, t_stack* origen) {
 	int desplazamiento = 1;
 
 	// Cantidad de items
-	destino[0] = stack_size(origen);
+	destino[0] = stack_tamanio(origen);
 
 	for (i = 0; i < destino[0]; i++) {
-		desplazamiento += serializar_stack_item(destino + desplazamiento, list_get(origen, i));
+		desplazamiento += serializar_stack_elem(destino + desplazamiento, list_get(origen, i));
 	}
 	return desplazamiento;
 }

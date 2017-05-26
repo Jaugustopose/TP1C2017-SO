@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include "deserializador.h"
+#include "estructurasCompartidas.h"
 
 /* Tabla de serializacion:
 
@@ -81,8 +82,8 @@ int deserializar_stack_elem(t_elemento_stack* elemStack, char* origen) {
 	elemStack->identificadores=dictionary_create();
 
 	desplazamiento += deserializar_int(&elemStack->pos, origen + desplazamiento);
-	desplazamiento += deserializar_list(elemStack->argumentos, origen + desplazamiento, sizeof(t_pedido));
-	desplazamiento += deserializar_dictionary(elemStack->identificadores, origen + desplazamiento, sizeof(t_pedido));
+	desplazamiento += deserializar_lista(elemStack->argumentos, origen + desplazamiento, sizeof(t_pedido));
+	//desplazamiento += deserializar_dictionary(elemStack->identificadores, origen + desplazamiento, sizeof(t_pedido));
 	desplazamiento += deserializar_t_puntero(&elemStack->posRetorno, origen + desplazamiento);
 	desplazamiento += deserializar_pedido(&(elemStack->valRetorno), origen + desplazamiento);
 
@@ -99,7 +100,7 @@ int deserializar_stack(t_stack* destino, char* origen) {
 
 		//Tamaño del item como puntero en si
 		elemen = malloc(sizeof(t_elemento_stack));
-		desplazamiento += deserializar_stack_item(elemen, origen + desplazamiento);
+		desplazamiento += deserializar_stack_elem(elemen, origen + desplazamiento);
 		stack_push(destino, elemen);
 	}
 

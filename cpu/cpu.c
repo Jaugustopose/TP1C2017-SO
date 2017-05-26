@@ -319,7 +319,7 @@ int main(void){
 	cargarConfiguracion();
 	inicializarPrimitivas();
 	conectarConKernel();
-    conectarConMemoria();
+   // conectarConMemoria();
 	//solicitarTamanioPaginaAMemoria();
 
     esperarProgramas();
