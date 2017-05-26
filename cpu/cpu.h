@@ -40,32 +40,7 @@ struct configuracion{
 t_config* configCpu;
 struct configuracion config;
 
-//Factorizar:nucleo tiene LO MISMO
-typedef struct {
-	int PID;
-	int contadorPaginas;
-	int contadorPrograma;
-	t_list* indiceCodigo;
-}t_PCB;
-
-typedef struct{
-	int inicio;
-	int fin;
-
-}t_sentencia;
-
 t_PCB* pcbNuevo;
-
-static const char* PROGRAMA =
-		"begin\n"
-		"variables a, b\n"
-		"a = 3\n"
-		"b = 5\n"
-		"a = b + 12\n"
-		"end\n"
-		"\n";
-
-
 
 
 #endif

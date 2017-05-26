@@ -48,7 +48,7 @@ int stack_tamanio_memoria(t_stack* stack) {
 	int i = 0;
 	int bytes = 0;
 	for (i = 0; i < stack_tamanio(stack); i++) {
-	t_elemento_stack* elem = stack_get(stack, i);
+	t_elemento_stack* elem = stack_obtener(stack, i);
 	bytes = bytes + (list_size(elem->argumentos) + dictionary_size(elem->identificadores))* sizeof(int);
 	}
 	return bytes;
@@ -61,7 +61,7 @@ int stack_tamanio(t_stack* stack){
 t_pedido* stack_proximo_pedido(t_stack* stack, int tamanioPagina) {
 
 	t_pedido* pedido = malloc(sizeof(t_pedido));
-	int tamanioActualDeStack = stack_memory_size(stack);
+	int tamanioActualDeStack = stack_tamanio_memoria(stack);
 	pedido->nroPagina = tamanioActualDeStack / tamanioPagina;
 	pedido->offset = tamanioActualDeStack - pedido->nroPagina * tamanioPagina;
 	pedido->size = sizeof(int);

@@ -3,7 +3,8 @@
 	<name>funciones</name>
 	<comment></comment>
 	<projects>
-		<project>parser</project>
+		<project>parser-ansisop</project>
+		<project>commons</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

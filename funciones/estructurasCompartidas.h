@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <commons/collections/list.h>
 #include <commons/collections/dictionary.h>
-#include <parser/parser/parser.h>
-#include <parser/parser/metadata_program.h>
+#include <parser/parser.h>
+#include <parser/metadata_program.h>
 
 typedef enum {
 
@@ -42,5 +42,17 @@ typedef struct {
 	t_pedido valRetorno;
 } t_elemento_stack;
 
+typedef struct {
+	int PID;
+	int cantidadPaginas;
+	int contadorPrograma;
+	t_list* indiceCodigo;
+	t_stack* stackPointer;
+}t_PCB;
+
+typedef struct{
+	int inicio;
+	int fin;
+}t_sentencia;
 
 #endif /* ESTRUCTURASCOMPARTIDAS_H_ */

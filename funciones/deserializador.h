@@ -7,6 +7,11 @@
 
 #ifndef DESERIALIZADOR_H_
 #define DESERIALIZADOR_H_
+#include <commons/collections/dictionary.h>
+#include <commons/collections/queue.h>
+#include <commons/collections/list.h>
+#include "estructurasCompartidas.h"
+
 
 /* Tabla de serializacion:
 
@@ -51,6 +56,6 @@ void* deserializar(int sock);
 	return buffer;
 }*/
 void* deserializar_archivo(int sock);
-
+void* deserializar_PCB(t_PCB* pcbNuevo, int sock);
 
 #endif /* DESERIALIZADOR_H_ */

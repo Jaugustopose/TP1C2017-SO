@@ -7,14 +7,18 @@
 
 #ifndef SERIALIZADOR_H_
 #define SERIALIZADOR_H_
-
+#include <commons/collections/dictionary.h>
+#include <commons/collections/queue.h>
+#include <commons/collections/list.h>
 #include <stdlib.h>
 #include <string.h>
+#include "estructurasCompartidas.h"
 
 typedef struct {
 	int id;
 	int tamanio;
 }t_header;
+
 
 /*char* serializar(t_header header, char* contenidoDelMensaje) {
 

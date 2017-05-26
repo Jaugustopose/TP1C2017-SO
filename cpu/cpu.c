@@ -19,7 +19,7 @@ void cargarConfiguracion()
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat,getcwd(cwd,sizeof(cwd)));
-	string_append(&pat,"/Debug/cpu.cfg");
+	string_append(&pat,"/cpu.cfg");
 	t_config* configCpu = config_create(pat);
 	free(pat);
 	if (config_has_property(configCpu, "IP_MEMORIA"))
@@ -106,13 +106,13 @@ void deserializarPCB(t_PCB* pcbNuevo, t_PCB* pcbSerializado)
 void obtenerPCB()
 {
 	pcbNuevo = malloc(sizeof(t_PCB));
-	//char* pcbSerializado = deserializar(1); //le paso sock kernel
+	deserializar_PCB(&pcbNuevo, kernel);
 
 }
 
 void finalizarProceso(bool normalmente){
 
-	char* accion = (char)AccionFinProceso;
+	char* accion = (char*)AccionFinProceso;
     send(kernel, accion, 1, 0);
 	free(accion);
 
@@ -184,12 +184,12 @@ void pedirPrimeraSentencia(t_sentencia* sentenciaRelativa, int pagina, int* long
 
  int tamanioPrimeraSentencia = minimo(*longitudRestante,	tamanioPaginas - sentenciaRelativa->inicio);
 
-char* accion = (char)AccionPedirSentencia;
+char* accion = (char*)AccionPedirSentencia;
 send(memoria, accion, 1, 0);
 free(accion);
 
 enviarSolicitudSentencia(pagina, sentenciaRelativa->inicio,tamanioPrimeraSentencia);
-(*longitudRestante) = longitudRestante - tamanioPrimeraSentencia;
+(*longitudRestante) = (int)(longitudRestante - tamanioPrimeraSentencia);
 
 recibirPedazoDeSentencia(tamanioPrimeraSentencia);
 }
@@ -206,7 +206,7 @@ void pedirPaginaCompleta(int nroPagina) {
 
 void pedirUltimaSentencia(t_sentencia* sentenciaRelativa, int pagina, int longitudRestante) {
 
-	char* accion = (char)AccionPedirSentencia;
+	char* accion = (char*)AccionPedirSentencia;
 	send(memoria, accion, 1, 0);
 	free(accion);
 	enviarSolicitudSentencia(pagina, 0, longitudRestante);
@@ -263,7 +263,7 @@ void parsear(char* sentencia)
 	//Le paso sentencia, set de primitivas de CPU y set de primitivas de kernel
 	analizadorLinea(sentencia, &funciones, &funcionesKernel);
 
-	char* accion = (char)AccionFinInstruccion;
+	char* accion = (char*)AccionFinInstruccion;
 	send(kernel, accion, 1, 0);
 	free(accion);
 
@@ -322,7 +322,7 @@ int main(void){
     conectarConMemoria();
 	//solicitarTamanioPaginaAMemoria();
 
-    //esperarProgramas();
+    esperarProgramas();
 
 
 	return EXIT_SUCCESS;

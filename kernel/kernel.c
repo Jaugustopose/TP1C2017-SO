@@ -1,27 +1,12 @@
-/*
- * kernel.c
- *
- *  Created on: 2/4/2017
- *      Author: utnso
- */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+
 #include "kernel.h"
-#include "cliente-servidor.h"
-#include "deserializador.h"
+
 
 void cargarConfiguracion() {
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	string_append(&pat, "/Debug/kernel.cfg");
+	string_append(&pat, "/kernel.cfg");
 	t_config* configKernel = config_create(pat);
 	free(pat);
 
@@ -256,6 +241,8 @@ int main(void) {
 										// Aca adentro va todo lo que quiero hacer si el cliente es un CPU
 										puts("Hola cpus");
 										send(j, buff, cantBytes, 0);
+
+
 
 									}
 								}
