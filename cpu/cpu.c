@@ -133,8 +133,7 @@ void enviarSolicitudSentencia(int pagina, int offset, int size) {
 	char* solicitud = string_new();
 
 	//VER LA SERIALIZACION
-//	int tamanio = serializar_pedido(solicitud, &pedido);
-	int tamanio = 0;
+	int tamanio = serializar_pedido(solicitud, &pedido);
 	send(memoria, solicitud, tamanio, 0);
 
 	free(solicitud);
@@ -185,7 +184,7 @@ void pedirPrimeraSentencia(t_sentencia* sentenciaRelativa, int pagina, int* long
  int tamanioPrimeraSentencia = minimo(*longitudRestante,	tamanioPaginas - sentenciaRelativa->inicio);
 
 char* accion = (char*)AccionPedirSentencia;
-send(memoria, accion, 1, 0);
+send(memoria, accion, sizeof(accion), 0);
 free(accion);
 
 enviarSolicitudSentencia(pagina, sentenciaRelativa->inicio,tamanioPrimeraSentencia);
@@ -197,7 +196,7 @@ recibirPedazoDeSentencia(tamanioPrimeraSentencia);
 void pedirPaginaCompleta(int nroPagina) {
 
 	char* accion = (char)AccionPedirSentencia;
-	send(memoria, accion, 1, 0);
+	send(memoria, accion, sizeof(accion), 0);
 	free(accion);
 
 	enviarSolicitudSentencia(nroPagina, 0, tamanioPaginas);
@@ -207,7 +206,7 @@ void pedirPaginaCompleta(int nroPagina) {
 void pedirUltimaSentencia(t_sentencia* sentenciaRelativa, int pagina, int longitudRestante) {
 
 	char* accion = (char*)AccionPedirSentencia;
-	send(memoria, accion, 1, 0);
+	send(memoria, accion, sizeof(accion), 0);
 	free(accion);
 	enviarSolicitudSentencia(pagina, 0, longitudRestante);
 	recibirPedazoDeSentencia(longitudRestante);
@@ -318,8 +317,8 @@ int main(void){
 
 	cargarConfiguracion();
 	inicializarPrimitivas();
-	conectarConKernel();
-   // conectarConMemoria();
+	//conectarConKernel();
+    conectarConMemoria();
 	//solicitarTamanioPaginaAMemoria();
 
     esperarProgramas();
