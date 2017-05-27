@@ -30,6 +30,7 @@ void* deserializar(int sock) {
 			break;
 
 	}
+	return 0;
 }
 
 void* deserializar_archivo(int sock) {
