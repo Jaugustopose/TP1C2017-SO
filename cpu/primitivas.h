@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <errno.h>
@@ -19,6 +20,7 @@
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
 #include "estructurasCompartidas.h"
+#include "cpu.h"
 
 AnSISOP_funciones funciones;
 AnSISOP_kernel  funcionesKernel;
