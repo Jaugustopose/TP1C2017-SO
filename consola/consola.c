@@ -95,10 +95,12 @@ int main (void){
 
 	char* bufferArchivo = 0;
 		long length;
+		long saisof;
 		FILE* archivo = fopen("/home/utnso/Escritorio/facil.ansisop","rb");
 
 		if(archivo){
 			fseek(archivo,0,SEEK_END);
+			saisof = sizeof(archivo);
 			length = ftell(archivo);
 			fseek(archivo,0,SEEK_SET);
 			bufferArchivo = (char*)malloc((length +1)*sizeof(char));
@@ -111,7 +113,7 @@ int main (void){
 
 				t_header cabeza;
 				cabeza.id = 1;
-				cabeza.tamanio = length;
+				cabeza.tamanio = length + 1;
 
 				void* buffer = malloc(sizeof(t_header) + cabeza.tamanio);
 				memcpy(buffer,&cabeza.id,sizeof(int));

@@ -28,7 +28,7 @@ int memoria;
 bool ejecutar;
 int tamanioPaginas;
 char* sentenciaPedida;
-t_identidad identidad = SOYCPU;
+
 
 struct configuracion{
 	char* IP_MEMORIA;

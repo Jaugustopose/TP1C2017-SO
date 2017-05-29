@@ -6,7 +6,7 @@ void cargarConfiguracion() {
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	string_append(&pat, "/kernel.cfg");
+	string_append(&pat, "/Debug/kernel.cfg");
 	t_config* configKernel = config_create(pat);
 	free(pat);
 
@@ -147,7 +147,7 @@ int main(void) {
 
 						case (int) 1:
 							FD_SET(sockClie, &bolsaConsolas); //agrego una nueva consola a la bolsa de consolas
-							printf("Se ha conectado una nueva consola, pero no fue agregada a bolsaConsolas\n");
+							printf("Se ha conectado una nueva consola \n");
 							break;
 
 						case (int) 2:
@@ -163,41 +163,39 @@ int main(void) {
 					// gestionar datos de un cliente
 
 					////////////DESERIALIZAR MENSAJE///////////////
+					int* supuestoTamanio;
+					int* supuestoID;
+					char* cadena;
+					int idMensaje;
+					int tamanio;
+					void* buff = malloc(4);
 
-					int* buff = malloc(1000);
-					recv(i,buff,4,0);
-					int supuestoID = *buff;
-					printf("el valor de numerito es: %d\n", supuestoID);
+					recv(i,buff,sizeof(int32_t),0);
+					memcpy(&supuestoID,&buff,sizeof(int32_t));
+					idMensaje = *supuestoID;
+					printf("el valor de idMensaje es: %d\n", idMensaje);
 
-					recv(i,buff,4,0);
-					int supuestoTamanio = *buff;
-					printf("el valor de otroNumerito es: %d\n", supuestoTamanio);
-					//realloc((char*) buff,otroNumerito);
-					recv(i,(char*) buff,supuestoTamanio,0);
-					char* cadena = *buff;
-					printf("el valor de cadena es: %s\n", cadena);
-
-
-					/*recv(i, (int*) buff, 4, 0); //Aca recibo la identidad del mensaje (archivo, texto, programa, etc)
-					int idMensaje = (int) *buff;
-					printf("la variable idMensaje vale: %d", idMensaje);
 					switch(idMensaje) {
 
-						case 1:  { //ES UN ARCHIVO
+					case 1:
+						recv(i,buff,4,0);
+						memcpy(&supuestoTamanio,&buff,sizeof(int32_t));
+						tamanio = *supuestoTamanio;
+						printf("el valor de tamanio es: %d\n", tamanio);
+						realloc(buff,tamanio * sizeof(char));
+						recv(i,buff,tamanio,0);
+						memcpy(&cadena,&buff,tamanio);
+						printf("el valor de cadena es: %s\n", cadena);
 
-								recv(i, (int*) buff, 4, 0); //Recibo el tamaño de lo que me estan enviando.
-								int tamanio = (int) *buff;
-								printf("la variable tamanio vale: %d", tamanio);
-								realloc(buff,tamanio);
-								recv(i, buff, tamanio,0); //Recibo lo que viene atras. Por ahora es o un archivo o un texto asi que al ser tod0 del mismo tipo, no pasa nada. Caso contrario habrá que ir separandolo con varios recv.
+						FILE* archivo =	fopen("archivo recibido.txt","w");
+							if (archivo){
+								fputs(cadena,archivo);
+								fclose(archivo);
+							}
 
-								FILE* archivo =	fopen("archivo recibido.txt","w");
-									if (archivo){
-										fputs(buff,archivo);
-										fclose(archivo);
-									}
-						}
-					}*/
+					}
+
+					free (buff);
 
 					///////////FIN DE DESERIALIZADOR///////////////
 

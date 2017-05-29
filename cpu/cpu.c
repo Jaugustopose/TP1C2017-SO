@@ -4,6 +4,8 @@
 
 #define MAXBYTESREAD 100
 
+t_identidad* identidadCpu = SOYCPU;
+
 int minimo(int a, int b) {
 	return a < b ? a : b;
 }
@@ -79,7 +81,7 @@ void conectarConKernel() {
 	connect_w(kernel, &dirKernel);
 	printf("Conectado a Kernel");
 
-	send(kernel,&identidad, sizeof(int),0);
+	send(kernel,&identidadCpu, sizeof(int),0);
 
 }
 

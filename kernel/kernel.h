@@ -41,6 +41,7 @@ struct configuracion {
 	int GRADO_MULTIPROG;
 	// FALTAN AGREGAR VARIABLES SEGUN AVANCE EL TP (SEMAFOROS, QUANTUM, ETC)
 };
+
 t_config* configKernel;
 struct configuracion config;
 
