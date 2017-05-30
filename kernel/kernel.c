@@ -71,9 +71,6 @@ void recibir_archivo(void* buffer){
 		fclose(archivo);
 	}
 
-
-
-
 }
 
 int main(void) {
@@ -88,7 +85,7 @@ int main(void) {
 	struct sockaddr_in direccionCliente; // Información sobre la dirección del cliente
 	int sockServ; // Socket de nueva conexion aceptada
 	int sockClie; // Socket a la escucha
-	int maxSock; // Numero del ultimo socket creado (maximo file descriptor)
+	int maxFd; // Numero del ultimo socket creado (maximo file descriptor)
 	int yes = 1;
 	int cantBytes; // La cantidad de bytes. Lo voy a usar para saber cuantos bytes me mandaron.
 	int addrlen; // El tamaño de la direccion del cliente
@@ -112,17 +109,17 @@ int main(void) {
 	FD_SET(sockServ, &master);
 
 	// Mantener actualizado cual es el maxSock
-	maxSock = sockServ;
+	maxFd = sockServ;
 
 	// bucle principal
 	for (;;) {
 		read_fds = master; // Me paso lo que tenga en el master al temporal.
-		if (select(maxSock + 1, &read_fds, NULL, NULL, NULL) == -1) { //Compruebo los sockets al mismo tiempo. Los NULL son para los writefds, exceptfds y el timeval.
+		if (select(maxFd + 1, &read_fds, NULL, NULL, NULL) == -1) { //Compruebo los sockets al mismo tiempo. Los NULL son para los writefds, exceptfds y el timeval.
 			perror("select");
 			exit(1);
 		};
 		// explorar conexiones existentes en busca de datos que leer
-		for (i = 0; i <= maxSock; i++) {
+		for (i = 0; i <= maxFd; i++) {
 			if (FD_ISSET(i, &read_fds)) { // Me fijo si tengo datos listos para leer
 				if (i == sockServ) { //si entro en este "if", significa que tengo datos.
 
@@ -154,59 +151,27 @@ int main(void) {
 							FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
 							break;
 						}
-						if (sockClie > maxSock) { // actualizar el máximo
-							maxSock = sockClie;
+						if (sockClie > maxFd) { // actualizar el máximo
+							maxFd = sockClie;
 						}
 
 					}
 				} else {
 					// gestionar datos de un cliente
 
-					////////////DESERIALIZAR MENSAJE///////////////
 					int* supuestoTamanio;
 					int* supuestoID;
-					char* cadena;
 					int idMensaje;
 					int tamanio;
 					void* buff = malloc(4);
 
-					recv(i,buff,sizeof(int32_t),0);
-					memcpy(&supuestoID,&buff,sizeof(int32_t));
-					idMensaje = *supuestoID;
-					printf("el valor de idMensaje es: %d\n", idMensaje);
 
-					switch(idMensaje) {
-
-					case 1:
-						recv(i,buff,4,0);
-						memcpy(&supuestoTamanio,&buff,sizeof(int32_t));
-						tamanio = *supuestoTamanio;
-						printf("el valor de tamanio es: %d\n", tamanio);
-						realloc(buff,tamanio * sizeof(char));
-						recv(i,buff,tamanio,0);
-						memcpy(&cadena,&buff,tamanio);
-						printf("el valor de cadena es: %s\n", cadena);
-
-						FILE* archivo =	fopen("archivo recibido.txt","w");
-							if (archivo){
-								fputs(cadena,archivo);
-								fclose(archivo);
-							}
-
-					}
-
-					free (buff);
-
-					///////////FIN DE DESERIALIZADOR///////////////
-
-					if ((cantBytes = recv(i, buff, 5, 0)) <= 0) {
+					if ((cantBytes = recv(i, buff, sizeof(int32_t), 0)) <= 0) {
 
 						// error o conexión cerrada por el cliente
 						if (cantBytes == 0) {
-
 							// conexión cerrada
-							printf("Server: socket %d termino la conexion\n",
-									i);
+							printf("Server: socket %d termino la conexion\n", i);
 						} else {
 							perror("recv");
 						}
@@ -220,27 +185,50 @@ int main(void) {
 						}
 						close(i); // Si se perdio la conexion, la cierro.
 
-					} else { // tenemos datos de algún cliente
-							 //Se manda cantBYtes -1 porque es lo que debe mostrar sin el /0
-						printf("He recibido %d bytes de contenido: %.*s\n",
-								cantBytes, cantBytes - 1, buff);
-						for (j = 0; j <= maxSock; j++) { // Enviar a todos
-							if (FD_ISSET(j, &master)) { // Me fijo si esta en el master
-								//Hago cosas en función de la bolsa en la que este.
+					} else {
+						////////////DESERIALIZAR MENSAJE///////////////
+						memcpy(&supuestoID,&buff,sizeof(int32_t));
+						idMensaje = *supuestoID;
+						printf("el valor de idMensaje es: %d\n", idMensaje);
 
+						switch(idMensaje) {
+
+						case 1:
+							recv(i,buff,sizeof(int32_t),0);
+							memcpy(&supuestoTamanio,&buff,sizeof(int32_t));
+							tamanio = *supuestoTamanio;
+							printf("el valor de tamanio es: %d\n", tamanio);
+							realloc(buff,tamanio * sizeof(char));
+							char* cadena = malloc(tamanio*sizeof(char));
+							recv(i,buff,tamanio*sizeof(char),0);
+							memcpy(cadena,buff,tamanio * sizeof(char));
+							printf("el valor de cadena es: %s\n", cadena);
+						///////////FIN DE DESERIALIZADOR///////////////
+
+							recibir_archivo(cadena);
+
+						}
+
+
+
+						// Con los datos que me envió la consola, hago algo:
+
+						for (j = 0; j <= maxFd; j++) { // Para todos los que estan conectados
+							if (FD_ISSET(j, &master)) { // Me fijo si esta en el master
+
+								//Hago cosas en función de la bolsa en la que este.
 								if (FD_ISSET(j, &bolsaConsolas)) {
 									// Aca adentro va todo lo que quiero hacer si el cliente es una Consola
+
 									puts("Hola consolas");
 									t_PCB pcb; //Creo el PCB cuando la consola manda codigo
-									send(j, buff, cantBytes, 0);
+									puts("Cree el PCB!\n");
 
 								} else {
 									if (FD_ISSET(j, &bolsaCpus)) {
 										// Aca adentro va todo lo que quiero hacer si el cliente es un CPU
 										puts("Hola cpus");
-										send(j, buff, cantBytes, 0);
-
-
+										puts("Decime que queres que haga cpu!\n");
 
 									}
 								}

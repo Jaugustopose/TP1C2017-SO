@@ -25,14 +25,13 @@ endif
 all: libfunciones.so
 
 dependents:
-	-cd /home/utnso/workspace/parser-ansisop/Debug && $(MAKE) clean all
-	-cd /home/utnso/tp-2017-1c-No-Se-Recursa/commons/Debug && $(MAKE) clean all
+	-cd /home/utnso/workspace/commons/Debug && $(MAKE) all
 
 # Tool invocations
-libfunciones.so: $(OBJS) $(USER_OBJS) /home/utnso/workspace/parser-ansisop/Debug/libparser-ansisop.so /home/utnso/tp-2017-1c-No-Se-Recursa/commons/Debug/libcommons.so
+libfunciones.so: $(OBJS) $(USER_OBJS) /home/utnso/workspace/commons/Debug/libcommons.so
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -L"/home/utnso/tp-2017-1c-No-Se-Recursa/commons/Debug" -L"/home/utnso/workspace/parser-ansisop/Debug" -shared -o "libfunciones.so" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L"/home/utnso/workspace/commons/Debug" -shared -o "libfunciones.so" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -43,7 +42,6 @@ clean:
 
 .PHONY: all clean dependents
 .SECONDARY:
-/home/utnso/workspace/parser-ansisop/Debug/libparser-ansisop.so:
-/home/utnso/tp-2017-1c-No-Se-Recursa/commons/Debug/libcommons.so:
+/home/utnso/workspace/commons/Debug/libcommons.so:
 
 -include ../makefile.targets

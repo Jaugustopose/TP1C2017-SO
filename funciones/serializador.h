@@ -15,8 +15,8 @@
 #include "estructurasCompartidas.h"
 
 typedef struct {
-	int id;
-	int tamanio;
+	int32_t id;
+	int32_t tamanio;
 }t_header;
 
 

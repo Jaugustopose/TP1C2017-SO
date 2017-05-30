@@ -45,11 +45,4 @@ struct configuracion {
 t_config* configKernel;
 struct configuracion config;
 
-//typedef struct {
-//
-//	int PID;
-//	int contadorPrograma;
-//	int exit_code;
-//}t_PCB;
-
 #endif

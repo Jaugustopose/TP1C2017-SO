@@ -113,13 +113,11 @@ int main (void){
 
 				t_header cabeza;
 				cabeza.id = 1;
-				cabeza.tamanio = length + 1;
+				cabeza.tamanio = length;
 
-				void* buffer = malloc(sizeof(t_header) + cabeza.tamanio);
-				memcpy(buffer,&cabeza.id,sizeof(int));
-				memcpy(buffer + sizeof(int), &cabeza.tamanio, sizeof(int));
-				memcpy(buffer + sizeof(int)*2, bufferArchivo, cabeza.tamanio);
-				send(cliente,buffer, (sizeof(int)*2) + (cabeza.tamanio),0);
+				//Serializar y enviar archivo
+				void* bufferSerializado = serializar(cabeza, bufferArchivo);
+				send(cliente,bufferSerializado, sizeof(t_header) + (cabeza.tamanio),0);
 
 
 			}else
@@ -131,9 +129,6 @@ int main (void){
 
 
 	while (1) {
-			/*char mensaje[1000];
-			fgets(mensaje, sizeof mensaje, stdin);
-			send(cliente, mensaje, strlen(mensaje), 0);*/
 
 			recibir_mensajes_en_socket(cliente);
 

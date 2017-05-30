@@ -12,12 +12,12 @@
 #include "estructurasCompartidas.h"
 
 
-void* serializar(t_header header, void* contenidoDelMensaje) {
+void* serializar(t_header cabeza, void* contenidoDelMensaje) {
 
-	void* buffer = malloc(sizeof(contenidoDelMensaje) + sizeof(header));
-	memcpy(buffer,&header, 4); //PRIMERO EL ID
-	memcpy(buffer,&header, 4); //SEGUNDO EL TAMAÑO
-	memcpy(buffer, contenidoDelMensaje, sizeof(contenidoDelMensaje)); // TERCERA LA DATA
+	void* buffer = malloc(sizeof(t_header) + cabeza.tamanio);
+	memcpy(buffer,&cabeza.id, sizeof(int32_t)); //PRIMERO EL ID
+	memcpy(buffer + sizeof(cabeza.id),&cabeza.tamanio, sizeof(int32_t)); //SEGUNDO EL TAMAÑO
+	memcpy(buffer + sizeof(t_header), contenidoDelMensaje, cabeza.tamanio); // TERCERA LA DATA
 
 	return buffer;
 }
