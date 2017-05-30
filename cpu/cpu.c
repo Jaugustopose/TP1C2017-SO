@@ -21,7 +21,7 @@ void cargarConfiguracion()
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat,getcwd(cwd,sizeof(cwd)));
-	string_append(&pat,"/cpu.cfg");
+	string_append(&pat,"/Debug/cpu.cfg");
 	t_config* configCpu = config_create(pat);
 	free(pat);
 	if (config_has_property(configCpu, "IP_MEMORIA"))
@@ -320,8 +320,18 @@ int main(void){
 	cargarConfiguracion();
 	inicializarPrimitivas();
 	//conectarConKernel();
-    conectarConMemoria();
+   // conectarConMemoria();
 	//solicitarTamanioPaginaAMemoria();
+
+	//PRUEBA GASTON: LUEGO BORRAR A LA MIERDA
+	t_PCB* pcbFalso = malloc(sizeof(t_PCB));
+	pcbFalso->PID = 3;
+	pcbFalso->cantidadPaginas = 4;
+	pcbFalso->contadorPrograma = 1;
+//	pcbFalso->indiceCodigo = list_create();
+
+	serializar_PCB(pcbFalso,1,9);
+
 
     esperarProgramas();
 
