@@ -67,6 +67,30 @@ void recibir_mensajes_en_socket(int socket) {
 	free(buf);
 }
 
+void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
+	int i;
+	puts("TABLA DE PÁGINAS INVERTIDA");
+	printf("%*s||%*s||%*s\n", 9, "Marco  ", 9, "PID   ", 12, "Nro Página");
+	for (i = 0; i < config.marcos; i++) {
+		printf("%*d||%*d||%*d\n", 9, i, 9, tablaPaginasInvertida[i].pid, 12, tablaPaginasInvertida[i].nroPagina);
+	}
+}
+
+int finalizarPrograma(int pid, tablaPagina_t* tablaPaginasInvertida) {
+	int i;
+	//-14 = pid no encontrado
+	int retorno = -14;
+	for (i = 0; i < config.marcos; i++) {
+		//Chequeamos, aparte de que coincida el pid, que no sea -1 (corresponde a estructuras administrativas)
+		if (tablaPaginasInvertida[i].pid == pid && tablaPaginasInvertida[i].pid != -1) {
+			tablaPaginasInvertida[i].pid = -10;
+			tablaPaginasInvertida[i].nroPagina = -1;
+			retorno = EXIT_SUCCESS;
+		}
+	}
+	return retorno;
+}
+
 int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPaginasInvertida) {
 	int i;
 	int nroPag = -1;
@@ -212,8 +236,52 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 	}
 	//TODO SEMAFORO HASTA ACÁ
 	printf("Paginas asignadas con éxito\n");
+
 	return EXIT_SUCCESS;
 
+}
+
+void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
+	printf("Escuchando nuevas solicitudes de consola en nuevo hilo\n");
+	while (1) {
+		printf("Ingrese una acción a realizar\n");
+		puts("1: Configurar retardo memoria");
+		puts("2: Realizar dump de Memoria cache");
+		puts("3: Realizar dump del contenido de la Memoria completa");
+		puts("4: Realizar dump del contenido de la Memoria para un proceso en particular");
+		char accion[3];
+		if (fgets(accion, sizeof(accion), stdin) == NULL) {
+			printf("ERROR EN fgets !\n");
+			return;
+		}
+		int codAccion = accion[0] - '0';
+		switch (codAccion) {
+			case retardo:
+				printf("Codificar retardo!\n");
+				break;
+			case dumpCache:
+				printf("Codificar dumpCache!\n");
+				break;
+			case dumpEstructurasDeMemoria:
+				realizarDumpEstructurasDeMemoria(tablaPaginasInvertida);
+				break;
+			case dumpMemoriaCompleta:
+				printf("Codificar dumpMemoriaCompleta!\n");
+				break;
+			case dumpMemoriaProceso:
+				printf("Codificar dumpMemoriaProceso!\n");
+				break;
+			case flushCache:
+				printf("Codificar flushCache!\n");
+				break;
+			case sizeMemoria:
+				printf("Codificar sizeMemoria!\n");
+				break;
+			case sizePid:
+				printf("Codificar sizePid!\n");
+				break;
+		}
+	}
 }
 
 int main(void){
@@ -268,11 +336,13 @@ int main(void){
 	direccionServidor = crearDireccionServidor(config.puerto);
 	bind_w(sockServ, &direccionServidor);
 	listen_w(sockServ);
-	printf("Escuchando en el puerto %d...\n", config.puerto);
+	printf("Escuchando nuevas solicitudes tcp en el puerto %d...\n", config.puerto);
+	pthread_t unHilo;
+	pthread_create(&unHilo, NULL, (void*) escucharConsolaMemoria, (void*) tablaPaginasInvertida);
 
 	// gestionar nuevas conexiones
 	addrlen = sizeof(direccionCliente);
-	for(;;){
+	for (;;) {
 		if ((sockClie = accept(sockServ, (struct sockaddr*) &direccionCliente, &addrlen)) == -1) {
 			perror("Error en el accept");
 		} else {
@@ -299,6 +369,7 @@ int main(void){
 					char* bytesAEscribir;
 					char* bytesSolicitados;
 					int resultAccion;
+					int pidAFinalizar;
 
 					switch (codAccion) {
 
@@ -336,7 +407,7 @@ int main(void){
 								pedidoAlmacenarBytes.pedidoBytes.nroPagina,
 								pedidoAlmacenarBytes.pedidoBytes.offset);
 						printf("Se procede a almacenar bytes: %s\n", pedidoAlmacenarBytes.buffer);
-						int resultAlmacenar = almacenarBytes(
+						resultAccion = almacenarBytes(
 								pedidoAlmacenarBytes.pedidoBytes.pid,
 								pedidoAlmacenarBytes.pedidoBytes.nroPagina,
 								pedidoAlmacenarBytes.pedidoBytes.offset,
@@ -344,7 +415,7 @@ int main(void){
 								pedidoAlmacenarBytes.buffer,
 								tablaPaginasInvertida);
 						printf("Solicitud de almacenar bytes terminó con resultado de acción: %d\n", resultAccion);
-						send(sockClie, &resultAlmacenar, sizeof(resultAlmacenar), 0);
+						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
 						free(bytesAEscribir);
 						break;
 
@@ -362,6 +433,15 @@ int main(void){
 						printf("Solicitar bytes devolvió los Bytes solicitados: %s\n", bytesSolicitados);
 						send(sockClie, bytesSolicitados, pedidoBytes.tamanio, 0);
 						free(bytesSolicitados);
+						break;
+
+					case finalizarProgramaAccion:
+						recv(sockClie, &pidAFinalizar, sizeof(pidAFinalizar), 0);
+						printf("Recibida solicitud para finalizar programa con pid = %d\n", pidAFinalizar);
+						printf("Se procede a finalizar el programa\n");
+						resultAccion = finalizarPrograma(pidAFinalizar, tablaPaginasInvertida);
+						printf("Solicitud de finalizar programa terminó con resultado de acción: %d\n", resultAccion);
+						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
 						break;
 
 					default:

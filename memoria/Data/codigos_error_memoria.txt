@@ -4,3 +4,4 @@ Código Error	Descripción
 -11				Imposibilidad de asignar páginas a proceso por fata de espacio
 -12				El pedido de bytes excede el tamaño de página
 -13				No reconozco el código de acción
+-14				pid no encontrado

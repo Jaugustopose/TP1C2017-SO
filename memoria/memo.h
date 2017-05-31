@@ -15,6 +15,7 @@
 #include <string.h>
 #include "commons/config.h"
 #include "cliente-servidor.h"
+#include <pthread.h>
 //#include "memo.cfg"
 
 typedef struct configMemo {
@@ -65,7 +66,18 @@ enum accionMemoria {
 	inicializarProgramaAccion = 1,
 	solicitarPaginasAccion = 2,
 	almacenarBytesAccion = 3,
-	solicitarBytesAccion = 4
+	solicitarBytesAccion = 4,
+	finalizarProgramaAccion = 5
+};
+enum accionConsolaMemoria {
+	retardo = 1,
+	dumpCache = 2,
+	dumpEstructurasDeMemoria = 3,
+	dumpMemoriaCompleta = 4,
+	dumpMemoriaProceso = 5,
+	flushCache = 6,
+	sizeMemoria = 7,
+	sizePid = 8
 };
 
 //Prototipos
