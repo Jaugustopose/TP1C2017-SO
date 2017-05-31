@@ -124,6 +124,19 @@ void enviarPedidoBytes(int cliente) {
 
 }
 
+void pedidoFinalizarPrograma(int cliente) {
+	int codigoAccion = 5;
+	int pidAFinalizar = 2;
+	char* buffer = serializarMemoria(codigoAccion, &pidAFinalizar, sizeof(pidAFinalizar));
+	printf("pedidoFinalizarPrograma - buffer serializado: %s\n", buffer);
+	send(cliente, buffer, sizeof(codigoAccion) + sizeof(pidAFinalizar), 0);
+	free(buffer);
+	//Reservo para recibir un int con el resultAccion
+	int resultAccion;
+	recv(cliente, &resultAccion, sizeof(int), 0);
+	printf("finalizarPrograma resultó con código de acción: %d\n", resultAccion);
+}
+
 int main(void) {
 	int cliente;
 	//Servidor al cual conectarse
@@ -163,6 +176,10 @@ int main(void) {
 	sleep(1);
 
 	enviarPedidoBytes(cliente);
+
+//	sleep(1);
+//
+//	pedidoFinalizarPrograma(cliente);
 
 	close(cliente);
 	return EXIT_SUCCESS;
