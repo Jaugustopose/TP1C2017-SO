@@ -67,7 +67,8 @@ enum accionMemoria {
 	solicitarPaginasAccion = 2,
 	almacenarBytesAccion = 3,
 	solicitarBytesAccion = 4,
-	finalizarProgramaAccion = 5
+	finalizarProgramaAccion = 5,
+	obtenerTamanioPaginas = 6
 };
 enum accionConsolaMemoria {
 	retardo = 1,

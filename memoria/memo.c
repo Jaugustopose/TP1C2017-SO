@@ -4,7 +4,7 @@ void cargarConfigFile() {
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	string_append(&pat, "/memo.cfg");
+	string_append(&pat, "/Debug/memo.cfg");
 	t_config* configMemo = config_create(pat);
 	if (config_has_property(configMemo, "PUERTO_KERNEL")) {
 		config.puerto_kernel = config_get_int_value(configMemo, "PUERTO_KERNEL");
@@ -442,6 +442,10 @@ int main(void){
 						resultAccion = finalizarPrograma(pidAFinalizar, tablaPaginasInvertida);
 						printf("Solicitud de finalizar programa terminó con resultado de acción: %d\n", resultAccion);
 						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
+						break;
+
+					case obtenerTamanioPaginas:
+						send(sockClie,&config.marco_size,sizeof(int32_t),0);
 						break;
 
 					default:

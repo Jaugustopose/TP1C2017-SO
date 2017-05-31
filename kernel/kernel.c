@@ -1,6 +1,11 @@
 
 #include "kernel.h"
 
+int conectar_con_server(int cliente, const struct sockaddr_in* direccionServidor) {
+	printf("Intentando conectar al servidor\n");
+	return connect(cliente, (struct sockaddr*) &*direccionServidor, sizeof(struct sockaddr));
+}
+
 
 void cargarConfiguracion() {
 	char* pat = string_new();
@@ -73,6 +78,17 @@ void recibir_archivo(void* buffer){
 
 }
 
+int obtener_tamanio_pagina(int memoria) {
+	int valorRecibido;
+	int idMensaje = 6;
+	//void* mensaje = malloc(sizeof(int32_t));
+	//memcpy(mensaje, &idMensaje, sizeof(int32_t));
+	send(memoria, &idMensaje, sizeof(int32_t), 0);
+	recv(memoria, &valorRecibido, sizeof(int32_t), 0);
+
+	return valorRecibido;
+}
+
 int main(void) {
 
 	//VARIABLES
@@ -91,12 +107,23 @@ int main(void) {
 	int addrlen; // El tamaño de la direccion del cliente
 	int identidadCliente;
 	int i, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
+	int tamanioPag;
 	FD_ZERO(&master); // Borro por si tienen basura adentro (capaz no hacen falta pero por las dudas)
 	FD_ZERO(&read_fds);
 	FD_ZERO(&bolsaConsolas);
 	FD_ZERO(&bolsaCpus);
 
 	cargarConfiguracion();
+
+	int memoria = socket(AF_INET, SOCK_STREAM, 0);
+
+	direccionServidor.sin_family = AF_INET;
+	direccionServidor.sin_addr.s_addr = inet_addr("127.0.0.1");
+	direccionServidor.sin_port = htons(9030);
+
+	conectar_con_server(memoria,&direccionServidor);
+	tamanioPag = obtener_tamanio_pagina(memoria);
+
 
 	//Crear socket. Dejar reutilizable. Crear direccion del servidor. Bind. Listen.
 	sockServ = crearSocket();
