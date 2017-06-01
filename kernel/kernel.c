@@ -1,11 +1,22 @@
 
 #include "kernel.h"
 
-int conectar_con_server(int cliente, const struct sockaddr_in* direccionServidor) {
-	printf("Intentando conectar al servidor\n");
-	return connect(cliente, (struct sockaddr*) &*direccionServidor, sizeof(struct sockaddr));
+void pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
+	int codigoAccion = 1;
+	pedidoSolicitudPaginas_t pedidoPaginas;
+	pedidoPaginas.pid = idProceso;
+	pedidoPaginas.cantidadPaginas = paginas;
+	printf("Sizeof pedidoPaginas: %d\n", sizeof(pedidoPaginas));
+	char* buffer = serializarMemoria(codigoAccion, &pedidoPaginas,
+			sizeof(pedidoPaginas));
+	printf("buffer serializado: %d\n", *buffer);
+	send(cliente, buffer, sizeof(codigoAccion) + sizeof(pedidoPaginas), 0);
+	free(buffer);
+	//Reservo para recibir un int con el resultAccion
+	int resultAccion;
+	recv(cliente, &resultAccion, sizeof(int), 0);
+	printf("inicializarPrograma resultó con código de acción: %d\n", resultAccion);
 }
-
 
 void cargarConfiguracion() {
 	char* pat = string_new();
@@ -81,12 +92,21 @@ void recibir_archivo(void* buffer){
 int obtener_tamanio_pagina(int memoria) {
 	int valorRecibido;
 	int idMensaje = 6;
-	//void* mensaje = malloc(sizeof(int32_t));
-	//memcpy(mensaje, &idMensaje, sizeof(int32_t));
 	send(memoria, &idMensaje, sizeof(int32_t), 0);
 	recv(memoria, &valorRecibido, sizeof(int32_t), 0);
 
 	return valorRecibido;
+}
+
+int paginas_que_ocupa(int unTamanio, int tamanioPagina){
+
+	int paginas;
+	paginas = (unTamanio / tamanioPagina);
+}
+
+void interactuar_con_usuario(){
+
+	//Interactuo con el usuario
 }
 
 int main(void) {
@@ -107,7 +127,13 @@ int main(void) {
 	int addrlen; // El tamaño de la direccion del cliente
 	int identidadCliente;
 	int i, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
+	int identificadorProceso = 0;
 	int tamanioPag;
+	t_list* listaDeProcesos = list_create();
+	t_queue* colaNew = queue_create();
+	t_queue* colaReady = queue_create();
+	t_queue* colaExec = queue_create();
+	t_queue* colaExit = queue_create();
 	FD_ZERO(&master); // Borro por si tienen basura adentro (capaz no hacen falta pero por las dudas)
 	FD_ZERO(&read_fds);
 	FD_ZERO(&bolsaConsolas);
@@ -138,6 +164,9 @@ int main(void) {
 	// Mantener actualizado cual es el maxSock
 	maxFd = sockServ;
 
+	pthread_t hiloInteraccionUsuario;
+	pthread_create(&hiloInteraccionUsuario, NULL, (void*) interactuar_con_usuario, NULL);
+
 	// bucle principal
 	for (;;) {
 		read_fds = master; // Me paso lo que tenga en el master al temporal.
@@ -164,19 +193,22 @@ int main(void) {
 
 						//Recibo identidad y coloco en la bolsa correspondiente
 
-						int* buf = malloc(sizeof(int));
-						recv(sockClie, (int*) buf, sizeof(int), 0);
-						identidadCliente = *buf;
+
+						recv(sockClie, &identidadCliente, sizeof(int), 0);
 						switch (identidadCliente) {
 
-						case (int) 1:
+						case soyConsola:
 							FD_SET(sockClie, &bolsaConsolas); //agrego una nueva consola a la bolsa de consolas
 							printf("Se ha conectado una nueva consola \n");
+							t_list_con_duenio* listaProcesosDeConsola = list_create();
+							listaProcesosDeConsola->duenio = sockClie;
+
 							break;
 
-						case (int) 2:
+						case soyCPU:
 							FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
 							break;
+							printf("Se ha conectado un nuevo CPU  \n");
 						}
 						if (sockClie > maxFd) { // actualizar el máximo
 							maxFd = sockClie;
@@ -186,14 +218,13 @@ int main(void) {
 				} else {
 					// gestionar datos de un cliente
 
-					int* supuestoTamanio;
-					int* supuestoID;
+					//int* supuestoTamanio;
+					//int* supuestoID;
 					int idMensaje;
-					int tamanio;
-					void* buff = malloc(4);
+					int tamanioScript;
 
 
-					if ((cantBytes = recv(i, buff, sizeof(int32_t), 0)) <= 0) {
+					if ((cantBytes = recv(i, &idMensaje, sizeof(int32_t), 0)) <= 0) {
 
 						// error o conexión cerrada por el cliente
 						if (cantBytes == 0) {
@@ -207,32 +238,45 @@ int main(void) {
 						FD_CLR(i, &master);
 						if (FD_ISSET(i, &bolsaConsolas)) {
 							FD_CLR(i, &bolsaConsolas);
+							printf("Se desconecto consola del socket %d", i);
+
 						} else {
 							FD_CLR(i, &bolsaCpus);
+							printf("Se desconecto cpu del socket %d", i);
 						}
 						close(i); // Si se perdio la conexion, la cierro.
 
 					} else {
 						////////////DESERIALIZAR MENSAJE///////////////
-						memcpy(&supuestoID,&buff,sizeof(int32_t));
-						idMensaje = *supuestoID;
 						printf("el valor de idMensaje es: %d\n", idMensaje);
 
 						switch(idMensaje) {
 
-						case 1:
-							recv(i,buff,sizeof(int32_t),0);
-							memcpy(&supuestoTamanio,&buff,sizeof(int32_t));
-							tamanio = *supuestoTamanio;
-							printf("el valor de tamanio es: %d\n", tamanio);
-							realloc(buff,tamanio * sizeof(char));
-							char* cadena = malloc(tamanio*sizeof(char));
-							recv(i,buff,tamanio*sizeof(char),0);
-							memcpy(cadena,buff,tamanio * sizeof(char));
-							printf("el valor de cadena es: %s\n", cadena);
+						case envioScript:
+							recv(i,&tamanioScript,sizeof(int32_t),0);
+							printf("el valor de tamanio es: %d\n", tamanioScript);
+							char* buff = malloc(tamanioScript);
+							//char* cadena = malloc(tamanio*sizeof(char));
+							recv(i,buff,tamanioScript,0);
+							//memcpy(cadena,buff,tamanio * sizeof(char));
+							printf("el valor de cadena es: %s\n", buff);
+
 						///////////FIN DE DESERIALIZADOR///////////////
 
-							recibir_archivo(cadena);
+							recibir_archivo(buff);
+							free(buff);
+							t_PCB pcb;
+							pcb.PID = identificadorProceso++;
+
+
+						//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
+
+						int paginasASolicitar = redondear(tamanioScript / tamanioPag);
+						pedido_Inicializar_Programa(memoria,paginasASolicitar,pcb.PID);
+						pcb.contadorPrograma = 0;
+						pcb.cantidadPaginas = paginasASolicitar;
+
+
 
 						}
 
@@ -248,7 +292,6 @@ int main(void) {
 									// Aca adentro va todo lo que quiero hacer si el cliente es una Consola
 
 									puts("Hola consolas");
-									t_PCB pcb; //Creo el PCB cuando la consola manda codigo
 									puts("Cree el PCB!\n");
 
 								} else {
@@ -261,7 +304,6 @@ int main(void) {
 								}
 							}
 						}
-						free(buff);
 					}
 				}
 			}

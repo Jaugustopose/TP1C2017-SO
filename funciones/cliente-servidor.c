@@ -45,3 +45,22 @@ struct sockaddr_in crearDireccionServidor(unsigned short PORT) {
 	memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
 	return direccionServ;
 }
+
+int conectar_con_server(int cliente, const struct sockaddr_in* direccionServidor) {
+	printf("Intentando conectar al servidor\n");
+	return connect(cliente, (struct sockaddr*) &*direccionServidor, sizeof(struct sockaddr));
+}
+
+/////////////////////////OPERACIONES VARIAS//////////////////////////////////////////
+
+int redondear(float numero) {
+	float parteDecimal = numero - (int) numero;
+
+	if (parteDecimal != 0) {
+		numero++;
+
+		return numero;
+
+	}
+}
+

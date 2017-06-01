@@ -27,9 +27,11 @@
 #include "serializador.h"
 #include "estructurasCompartidas.h"
 #include "cliente-servidor.h"
+#include <pthread.h>
 
-struct configuracion {
 
+//Estructuras y enum
+typedef struct configuracion {
 
 	int PUERTO_CONSOLA;
 	int PUERTO_FS;
@@ -40,9 +42,47 @@ struct configuracion {
 	char* IP_FS;
 	int GRADO_MULTIPROG;
 	// FALTAN AGREGAR VARIABLES SEGUN AVANCE EL TP (SEMAFOROS, QUANTUM, ETC)
+}config_t;
+
+typedef struct listaConDuenio {
+	t_link_element *head;
+	int elements_count;
+	int duenio;
+}t_list_con_duenio;
+
+typedef struct pedidoBytesMemoriaStruct {
+	int pid;
+	int	nroPagina;
+	int offset;
+	int tamanio;
+} pedidoBytesMemoria_t;
+
+typedef struct pedidoAlmacenarBytesMemoriaStruct {
+	pedidoBytesMemoria_t pedidoBytes;
+	char* buffer;
+} pedidoAlmacenarBytesMemoria_t;
+
+typedef struct pedidoSolicitudPaginasStruct {
+	int pid;
+	int cantidadPaginas;
+} pedidoSolicitudPaginas_t;
+
+enum tipoDeCliente {
+
+	soyConsola = 1,
+	soyCPU = 2
+};
+
+enum tipoMensaje {
+
+	envioScript = 1
 };
 
 t_config* configKernel;
-struct configuracion config;
+config_t config;
+
+//Prototipos
+
+
 
 #endif
