@@ -21,6 +21,14 @@ typedef struct configuracion {
 t_config* configFs;
 struct configuracion config;
 
+/*****************************PROTOTIPO*************/
+void validarArchivo(char path);
+void crearArchivo(char path);
+void borrarArchivo(char path);
+char* obtenerDatos(char path, int offset, int size);
+void guardarDatos(char path, int offset, int size, char* buffer);
+
+
 #endif /* FILESYSTEM_H_ */
 
 
