@@ -52,6 +52,34 @@ void cargarConfiguracion()
 	}
 }
 
+/***********************************OPERACIONES FS******************************/
+
+
+void validarArchivo(char path)
+{
+
+}
+
+void crearArchivo(char path)
+{
+
+}
+
+void borrarArchivo(char path)
+{
+
+}
+
+char* obtenerDatos(char path, int offset, int size)
+{
+	return "algo";
+}
+
+void guardarDatos(char path, int offset, int size, char* buffer)
+{
+
+}
+
 // Programa Principal
 int main(void) {
 	//printf("Dentro del main\n");
