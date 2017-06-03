@@ -4,7 +4,7 @@ void cargarConfigFile() {
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	string_append(&pat, "/Debug/memo.cfg");
+	string_append(&pat, "/memo.cfg");
 	t_config* configMemo = config_create(pat);
 	if (config_has_property(configMemo, "PUERTO_KERNEL")) {
 		config.puerto_kernel = config_get_int_value(configMemo, "PUERTO_KERNEL");
@@ -69,11 +69,32 @@ void recibir_mensajes_en_socket(int socket) {
 
 void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	int i;
+	t_list* listaProcesosActivos = list_create();
+
 	puts("TABLA DE PÁGINAS INVERTIDA");
 	printf("%*s||%*s||%*s\n", 9, "Marco  ", 9, "PID   ", 12, "Nro Página");
 	for (i = 0; i < config.marcos; i++) {
 		printf("%*d||%*d||%*d\n", 9, i, 9, tablaPaginasInvertida[i].pid, 12, tablaPaginasInvertida[i].nroPagina);
+		//Función privada dentro de este scope (para el closure del find)
+		int _soy_pid_buscado(void *p) {
+			return p == tablaPaginasInvertida[i].pid;
+		}
+		//Si no lo encontramos en la lista de activos lo agregamos
+		if(list_find(listaProcesosActivos, _soy_pid_buscado) == NULL) {
+			list_add(listaProcesosActivos, tablaPaginasInvertida[i].pid);
+		}
+
 	}
+	puts("LISTADO DE PROCESOS ACTIVOS");
+	for(i=0; i < list_size(listaProcesosActivos); i++) {
+		int pid = (int)list_get(listaProcesosActivos, i);
+		//No imprimimos los nros de pid correspondientes a estructuras administrativas (-1) ni libres (-10)
+		if(pid >= 0){
+			printf("PID: %d\n", pid);
+		}
+	}
+	puts("");
+	list_destroy(listaProcesosActivos);
 }
 
 int finalizarPrograma(int pid, tablaPagina_t* tablaPaginasInvertida) {
@@ -88,8 +109,21 @@ int finalizarPrograma(int pid, tablaPagina_t* tablaPaginasInvertida) {
 			retorno = EXIT_SUCCESS;
 		}
 	}
+	//Quitamos pid del listado de procesos activos
+//	if (retorno == EXIT_SUCCESS) {
+//		for (i=0; i < list_size(listaProcesosActivos); i++) {
+//			if (pid == list_get(listaProcesosActivos, i)) {
+//				list_remove(listaProcesosActivos, i);
+//				break;
+//			}
+//		}
+//	}
 	return retorno;
 }
+
+//void estaEnLista(*t_list lista, (void*) valor) {
+//	if (list_ge);
+//}
 
 int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPaginasInvertida) {
 	int i;
@@ -236,6 +270,8 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 	}
 	//TODO SEMAFORO HASTA ACÁ
 	printf("Paginas asignadas con éxito\n");
+	//Agregamos pid a listado de procesos activos
+//	list_add(listaProcesosActivos, &pid);
 
 	return EXIT_SUCCESS;
 
@@ -319,6 +355,7 @@ int main(void){
 	tamanioMemoria = config.marco_size * config.marcos;
 	printf("Inicializando la memoria de %d bytes\n", tamanioMemoria);
 	memoria = malloc(tamanioMemoria);
+	memset(memoria, '\0', tamanioMemoria);
 	memcpy(memoria, tablaPaginasInvertida, tamanioTablaPagina);
 	//Fin inicialización memoria
 	printf("Memoria inicializada\n");

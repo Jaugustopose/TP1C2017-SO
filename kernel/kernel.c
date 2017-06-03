@@ -24,36 +24,41 @@ void enviarSolicitudAlmacenarBytes(int cliente,t_proceso unProceso, char* buffer
 	int codigoAccion = 3;
 	char* buffer2;
 	int m;
-	for (m=0; m <= unProceso.PCB.cantidadPaginas; m++)
-	if (tamanioTotal > tamanioPag) {
+	int tamanioAAlmacenar;
+	//Armo buffer para enviar
+	void* bufferParaAlmacenarEnMemoria = malloc((sizeof(codigoAccion)+sizeof(unProceso.PCB.PID)+sizeof(int32_t)+sizeof(int32_t))*unProceso.PCB.cantidadPaginas + tamanioTotal);
 
-		tamanioTotal = tamanioTotal - tamanioPag;
+	for (m=0; m < unProceso.PCB.cantidadPaginas; m++) {
+		if (tamanioTotal > tamanioPag) {
 
+			tamanioAAlmacenar = tamanioPag;
+			tamanioTotal = tamanioTotal - tamanioPag;
+		}
+		else {
+			tamanioAAlmacenar = tamanioTotal;
+		}
+		pedidoAlmacenarBytesMemoria_t pedidoAlmacenar;
+		pedidoAlmacenar.pedidoBytes.pid = unProceso.PCB.PID;
+		pedidoAlmacenar.pedidoBytes.nroPagina = m;
+		pedidoAlmacenar.pedidoBytes.offset = 0;
+		pedidoAlmacenar.pedidoBytes.tamanio = tamanioAAlmacenar;
+		pedidoAlmacenar.buffer = buffer;
+		printf("pedidoAlmacenar.buffer: %s\n", pedidoAlmacenar.buffer);
+		char* buffer2 = serializarMemoria(codigoAccion, pedidoAlmacenar.buffer, pedidoAlmacenar.pedidoBytes.tamanio);
+		int tamanioBuffer2 = sizeof(pedidoAlmacenar.pedidoBytes) + sizeof(pedidoAlmacenar.pedidoBytes.tamanio) + sizeof(codigoAccion);
+		if (m != 0){
+			memcpy(bufferParaAlmacenarEnMemoria + ((sizeof(codigoAccion) + sizeof(pedidoAlmacenar.pedidoBytes)) * m) + tamanioPag, buffer2, tamanioBuffer2);
+		} else {
+			memcpy(bufferParaAlmacenarEnMemoria, buffer2, tamanioBuffer2);
+		}
+		free(buffer2);
+		//Ahora recibo la respuesta
+	//	int resultAccion;
+	//	recv(cliente, &resultAccion, sizeof(resultAccion), 0);
+	//	printf("almacenarBytes resultó con código de acción: %d\n", resultAccion);
 
+	//	free(buffer2);
 	}
-	pedidoAlmacenarBytesMemoria_t pedidoAlmacenar;
-	pedidoAlmacenar.pedidoBytes.pid = unProceso.PCB.PID;
-	pedidoAlmacenar.pedidoBytes.nroPagina =
-	pedidoAlmacenar.pedidoBytes.offset = 0;
-	pedidoAlmacenar.pedidoBytes.tamanio =
-	pedidoAlmacenar.buffer = buffer;
-	printf("pedidoAlmacenar.buffer: %s\n", pedidoAlmacenar.buffer);
-
-	//No paso sizeof(pedidoAlmacenar) porque el último campo es un puntero y me dará siempre 4 bytes. Entonces lo armo en dos partes,
-	// y en la segunda el tamaño es el que indica pedidoAlmacenar.pedidoBytes.tamanio.
-	// Luego, en el send, armo la suma que me da la cantidad de bytes correctos (para que no tome el puntero, sino el verdadero tamaño
-	buffer2 = serializarMemoria(codigoAccion, &pedidoAlmacenar.pedidoBytes, sizeof(pedidoAlmacenar.pedidoBytes));
-	memcpy(buffer2 + sizeof(codigoAccion) + sizeof(pedidoAlmacenar.pedidoBytes), pedidoAlmacenar.buffer, pedidoAlmacenar.pedidoBytes.tamanio);
-	printf("luego de serializar: %s\n", buffer2 + sizeof(codigoAccion) + sizeof(pedidoAlmacenar.pedidoBytes));
-
-	send(cliente, buffer2, sizeof(codigoAccion) + sizeof(pedidoAlmacenar.pedidoBytes) + pedidoAlmacenar.pedidoBytes.tamanio, 0);
-
-	//Ahora recibo la respuesta
-	int resultAccion;
-	recv(cliente, &resultAccion, sizeof(resultAccion), 0);
-	printf("almacenarBytes resultó con código de acción: %d\n", resultAccion);
-
-//	free(buffer2);
 }
 
 void cargarConfiguracion() {
@@ -291,30 +296,24 @@ int main(void) {
 
 							identificadorProceso++;
 
+							//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
 
-						//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
+							int paginasASolicitar = redondear(tamanioScript / tamanioPag);
+							int resultadoAccion = pedido_Inicializar_Programa(memoria,paginasASolicitar,proceso.PCB.PID);
 
-						int paginasASolicitar = redondear(tamanioScript / tamanioPag);
-						int resultadoAccion = pedido_Inicializar_Programa(memoria,paginasASolicitar,proceso.PCB.PID);
+							if(resultadoAccion == 0) { //Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
 
-						if(resultadoAccion = 0) { //Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
+								proceso.PCB.contadorPrograma = 0;
+								proceso.PCB.cantidadPaginas = paginasASolicitar;
 
-							proceso.PCB.contadorPrograma = 0;
-							proceso.PCB.cantidadPaginas = paginasASolicitar;
+								int k;
+								for(k=0; k <= proceso.PCB.cantidadPaginas;k++){
+									enviarSolicitudAlmacenarBytes(memoria,proceso,buff,tamanioScript);
+								}
 
-							int k;
-							for(k=0; k <= proceso.PCB.cantidadPaginas;k++){
-								enviarSolicitudAlmacenarBytes(memoria,proceso,buff,tamanioScript);
 							}
 
 						}
-
-
-
-
-						}
-
-
 
 						// Con los datos que me envió la consola, hago algo:
 

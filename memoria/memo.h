@@ -16,7 +16,8 @@
 #include "commons/config.h"
 #include "cliente-servidor.h"
 #include <pthread.h>
-//#include "memo.cfg"
+#include <commons/collections/list.h>
+#include <stdbool.h>
 
 typedef struct configMemo {
 	char* ip_kernel;
@@ -62,6 +63,8 @@ config_t config;
 char* memoria;
 int tamanioMemoria;
 int tamanioTablaPagina;
+//t_list* listaProcesosActivos;
+
 enum accionMemoria {
 	inicializarProgramaAccion = 1,
 	solicitarPaginasAccion = 2,
