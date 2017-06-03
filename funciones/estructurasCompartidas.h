@@ -51,6 +51,12 @@ typedef struct {
 	int exitCode;
 }t_PCB;
 
+/*typedef struct {
+	int ConsolaDuenio;
+	int CpuDuenio;
+	t_PCB PCB;
+}t_proceso;*/
+
 typedef struct{
 	int inicio;
 	int fin;

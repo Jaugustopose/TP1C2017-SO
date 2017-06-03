@@ -1,7 +1,7 @@
 
 #include "kernel.h"
 
-void pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
+int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
 	int codigoAccion = 1;
 	pedidoSolicitudPaginas_t pedidoPaginas;
 	pedidoPaginas.pid = idProceso;
@@ -16,6 +16,44 @@ void pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
 	int resultAccion;
 	recv(cliente, &resultAccion, sizeof(int), 0);
 	printf("inicializarPrograma resultó con código de acción: %d\n", resultAccion);
+
+	return resultAccion;
+}
+
+void enviarSolicitudAlmacenarBytes(int cliente,t_proceso unProceso, char* buffer,int tamanioTotal) {
+	int codigoAccion = 3;
+	char* buffer2;
+	int m;
+	for (m=0; m <= unProceso.PCB.cantidadPaginas; m++)
+	if (tamanioTotal > tamanioPag) {
+
+		tamanioTotal = tamanioTotal - tamanioPag;
+
+
+	}
+	pedidoAlmacenarBytesMemoria_t pedidoAlmacenar;
+	pedidoAlmacenar.pedidoBytes.pid = unProceso.PCB.PID;
+	pedidoAlmacenar.pedidoBytes.nroPagina =
+	pedidoAlmacenar.pedidoBytes.offset = 0;
+	pedidoAlmacenar.pedidoBytes.tamanio =
+	pedidoAlmacenar.buffer = buffer;
+	printf("pedidoAlmacenar.buffer: %s\n", pedidoAlmacenar.buffer);
+
+	//No paso sizeof(pedidoAlmacenar) porque el último campo es un puntero y me dará siempre 4 bytes. Entonces lo armo en dos partes,
+	// y en la segunda el tamaño es el que indica pedidoAlmacenar.pedidoBytes.tamanio.
+	// Luego, en el send, armo la suma que me da la cantidad de bytes correctos (para que no tome el puntero, sino el verdadero tamaño
+	buffer2 = serializarMemoria(codigoAccion, &pedidoAlmacenar.pedidoBytes, sizeof(pedidoAlmacenar.pedidoBytes));
+	memcpy(buffer2 + sizeof(codigoAccion) + sizeof(pedidoAlmacenar.pedidoBytes), pedidoAlmacenar.buffer, pedidoAlmacenar.pedidoBytes.tamanio);
+	printf("luego de serializar: %s\n", buffer2 + sizeof(codigoAccion) + sizeof(pedidoAlmacenar.pedidoBytes));
+
+	send(cliente, buffer2, sizeof(codigoAccion) + sizeof(pedidoAlmacenar.pedidoBytes) + pedidoAlmacenar.pedidoBytes.tamanio, 0);
+
+	//Ahora recibo la respuesta
+	int resultAccion;
+	recv(cliente, &resultAccion, sizeof(resultAccion), 0);
+	printf("almacenarBytes resultó con código de acción: %d\n", resultAccion);
+
+//	free(buffer2);
 }
 
 void cargarConfiguracion() {
@@ -109,37 +147,18 @@ void interactuar_con_usuario(){
 	//Interactuo con el usuario
 }
 
+void procesos_exit_code_a_cero(int fileDescriptor, t_list* listaConProcesos){
+
+	//Encontrar cada proceso con proceso.ConsolaDuenio = fileDescriptor
+	// Y cambiarle el exit code a -6 (finalizo por desconexion de consola)
+
+}
+
 int main(void) {
 
-	//VARIABLES
-
-	fd_set master; // Conjunto maestro de file descriptor (Donde me voy a ir guardando todos los socket nuevos)
-	fd_set read_fds; // Conjunto temporal de file descriptors para pasarle al select()
-	fd_set bolsaConsolas; // Bolsa de consolas
-	fd_set bolsaCpus; //Bolsa de bolsaCpus
-	struct sockaddr_in direccionServidor; // Información sobre mi dirección
-	struct sockaddr_in direccionCliente; // Información sobre la dirección del cliente
-	int sockServ; // Socket de nueva conexion aceptada
-	int sockClie; // Socket a la escucha
-	int maxFd; // Numero del ultimo socket creado (maximo file descriptor)
-	int yes = 1;
-	int cantBytes; // La cantidad de bytes. Lo voy a usar para saber cuantos bytes me mandaron.
-	int addrlen; // El tamaño de la direccion del cliente
-	int identidadCliente;
-	int i, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
-	int identificadorProceso = 0;
-	int tamanioPag;
-	t_list* listaDeProcesos = list_create();
-	t_queue* colaNew = queue_create();
-	t_queue* colaReady = queue_create();
-	t_queue* colaExec = queue_create();
-	t_queue* colaExit = queue_create();
-	FD_ZERO(&master); // Borro por si tienen basura adentro (capaz no hacen falta pero por las dudas)
-	FD_ZERO(&read_fds);
-	FD_ZERO(&bolsaConsolas);
-	FD_ZERO(&bolsaCpus);
-
 	cargarConfiguracion();
+	listaDeProcesos = list_create();
+
 
 	int memoria = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -200,8 +219,6 @@ int main(void) {
 						case soyConsola:
 							FD_SET(sockClie, &bolsaConsolas); //agrego una nueva consola a la bolsa de consolas
 							printf("Se ha conectado una nueva consola \n");
-							t_list_con_duenio* listaProcesosDeConsola = list_create();
-							listaProcesosDeConsola->duenio = sockClie;
 
 							break;
 
@@ -240,6 +257,8 @@ int main(void) {
 							FD_CLR(i, &bolsaConsolas);
 							printf("Se desconecto consola del socket %d", i);
 
+							procesos_exit_code_a_cero(i,listaDeProcesos); //TODO
+
 						} else {
 							FD_CLR(i, &bolsaCpus);
 							printf("Se desconecto cpu del socket %d", i);
@@ -264,17 +283,32 @@ int main(void) {
 						///////////FIN DE DESERIALIZADOR///////////////
 
 							recibir_archivo(buff);
-							free(buff);
-							t_PCB pcb;
-							pcb.PID = identificadorProceso++;
+							t_proceso proceso;
+							proceso.PCB.PID = identificadorProceso;
+							proceso.ConsolaDuenio = i;
+							proceso.CpuDuenio = -1;
+							list_add(listaDeProcesos,&proceso); //TODO: Agregar un proceso a esa bendita lista
+
+							identificadorProceso++;
 
 
 						//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
 
 						int paginasASolicitar = redondear(tamanioScript / tamanioPag);
-						pedido_Inicializar_Programa(memoria,paginasASolicitar,pcb.PID);
-						pcb.contadorPrograma = 0;
-						pcb.cantidadPaginas = paginasASolicitar;
+						int resultadoAccion = pedido_Inicializar_Programa(memoria,paginasASolicitar,proceso.PCB.PID);
+
+						if(resultadoAccion = 0) { //Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
+
+							proceso.PCB.contadorPrograma = 0;
+							proceso.PCB.cantidadPaginas = paginasASolicitar;
+
+							int k;
+							for(k=0; k <= proceso.PCB.cantidadPaginas;k++){
+								enviarSolicitudAlmacenarBytes(memoria,proceso,buff,tamanioScript);
+							}
+
+						}
+
 
 
 
@@ -289,14 +323,14 @@ int main(void) {
 
 								//Hago cosas en función de la bolsa en la que este.
 								if (FD_ISSET(j, &bolsaConsolas)) {
-									// Aca adentro va todo lo que quiero hacer si el cliente es una Consola
+									// Aca adentro va lo que quiero hacer si el cliente es una Consola
 
 									puts("Hola consolas");
 									puts("Cree el PCB!\n");
 
 								} else {
 									if (FD_ISSET(j, &bolsaCpus)) {
-										// Aca adentro va todo lo que quiero hacer si el cliente es un CPU
+										// Aca adentro va lo que quiero hacer si el cliente es un CPU
 										puts("Hola cpus");
 										puts("Decime que queres que haga cpu!\n");
 

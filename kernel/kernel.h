@@ -44,12 +44,6 @@ typedef struct configuracion {
 	// FALTAN AGREGAR VARIABLES SEGUN AVANCE EL TP (SEMAFOROS, QUANTUM, ETC)
 }config_t;
 
-typedef struct listaConDuenio {
-	t_link_element *head;
-	int elements_count;
-	int duenio;
-}t_list_con_duenio;
-
 typedef struct pedidoBytesMemoriaStruct {
 	int pid;
 	int	nroPagina;
@@ -67,6 +61,13 @@ typedef struct pedidoSolicitudPaginasStruct {
 	int cantidadPaginas;
 } pedidoSolicitudPaginas_t;
 
+typedef struct {
+	int ConsolaDuenio;
+	int CpuDuenio;
+	int estado;
+	t_PCB PCB;
+}t_proceso;
+
 enum tipoDeCliente {
 
 	soyConsola = 1,
@@ -80,6 +81,30 @@ enum tipoMensaje {
 
 t_config* configKernel;
 config_t config;
+
+//VARIABLES
+
+fd_set master; // Conjunto maestro de file descriptor (Donde me voy a ir guardando todos los socket nuevos)
+fd_set read_fds; // Conjunto temporal de file descriptors para pasarle al select()
+fd_set bolsaConsolas; // Bolsa de consolas
+fd_set bolsaCpus; //Bolsa de bolsaCpus
+struct sockaddr_in direccionServidor; // Información sobre mi dirección
+struct sockaddr_in direccionCliente; // Información sobre la dirección del cliente
+int sockServ; // Socket de nueva conexion aceptada
+int sockClie; // Socket a la escucha
+int maxFd; // Numero del ultimo socket creado (maximo file descriptor)
+int yes = 1;
+int cantBytes; // La cantidad de bytes. Lo voy a usar para saber cuantos bytes me mandaron.
+int addrlen; // El tamaño de la direccion del cliente
+int identidadCliente;
+int i, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
+int tamanioPag;
+int identificadorProceso = 0;
+t_list* listaDeProcesos;
+t_queue* colaNew;
+t_queue* colaReady;
+t_queue* colaExec;
+t_queue* colaExit;
 
 //Prototipos
 

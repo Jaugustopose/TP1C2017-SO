@@ -58,9 +58,7 @@ int redondear(float numero) {
 
 	if (parteDecimal != 0) {
 		numero++;
-
 		return numero;
-
 	}
 }
 
