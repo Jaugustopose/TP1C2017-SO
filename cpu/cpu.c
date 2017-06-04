@@ -116,9 +116,19 @@ void obtenerPCB()
 
 }
 
+void desalojarProceso()
+{
+	ejecutar = false;
+
+	//Envio PCB al kernel
+	int bytes = bytes_PCB(&pcbNuevo);
+
+	serializar_PCB(&pcbNuevo, kernel, accionFinProceso);
+}
+
 void finalizarProceso(bool normalmente){
 
-	char* accion = (char*)AccionFinProceso;
+	char* accion = (char*)accionFinProceso;
     send(kernel, accion, 1, 0);
 	free(accion);
 
@@ -137,7 +147,7 @@ void enviarSolicitudSentencia(int pid, int pagina, int offset, int size) {
 	pedido.offset = offset;
 	pedido.tamanio = size;
 
-	char* solicitud;
+	char* solicitud = string_new();
 
 	//VER LA SERIALIZACION
 	int tamanio = serializar_pedido(solicitud, &pedido);
@@ -190,9 +200,9 @@ void pedirPrimeraSentencia(t_sentencia* sentenciaRelativa, int pagina, int* long
 
  int tamanioPrimeraSentencia = minimo(*longitudRestante,	tamanioPaginas - sentenciaRelativa->inicio);
 
-char* accion = (char*)AccionPedirSentencia;
-send(memoria, accion, sizeof(accion), 0);
-free(accion);
+//char* accion = (char*)solicitarBytesAccion;
+//send(memoria, accion, sizeof(accion), 0);
+//free(accion);
 
 enviarSolicitudSentencia(pidInventado, pagina, sentenciaRelativa->inicio,tamanioPrimeraSentencia);
 (*longitudRestante) = (int)(longitudRestante - tamanioPrimeraSentencia);
@@ -202,7 +212,7 @@ recibirPedazoDeSentencia(tamanioPrimeraSentencia);
 
 void pedirPaginaCompleta(int nroPagina) {
 
-	char* accion = (char)AccionPedirSentencia;
+	char* accion = (char)solicitarBytesAccion;
 	send(memoria, accion, sizeof(accion), 0);
 	free(accion);
 
@@ -212,7 +222,7 @@ void pedirPaginaCompleta(int nroPagina) {
 
 void pedirUltimaSentencia(t_sentencia* sentenciaRelativa, int pagina, int longitudRestante) {
 
-	char* accion = (char*)AccionPedirSentencia;
+	char* accion = (char*)solicitarBytesAccion;
 	send(memoria, accion, sizeof(accion), 0);
 	free(accion);
 	enviarSolicitudSentencia(pidInventado, pagina, 0, longitudRestante);
@@ -270,7 +280,7 @@ void parsear(char* sentencia)
 
 	analizadorLinea(sentencia, &funciones, &funcionesKernel);
 
-	char* accion = (char*)AccionFinInstruccion;
+	char* accion = (char*)accionFinInstruccion;
 	send(kernel, accion, 1, 0);
 	free(accion);
 
@@ -296,14 +306,21 @@ void recibirOrdenes(char* accion)
 
 	switch((int)accion){
 
-		case AccionObtenerPCB: //Recibir nuevo PCB
+		case accionObtenerPCB: //Recibir nuevo PCB del Kernel
 			obtenerPCB();
 			break;
 
-		case AccionPedirSentencia: //Obtener y parsear sentencias
+		case accionContinuarProceso: //Obtener y parsear sentencias
+
 			if(ejecutar){
 				pedirSentencia();
 			}
+
+			break;
+		case accionFinProceso: //Envio PCB al Kernel
+
+			desalojarProceso();
+
 			break;
 	}
 
@@ -340,20 +357,27 @@ int main(void){
      //tamanioPaginas = obtener_tamanio_pagina(memoria);
      tamanioPaginas = 32;
 
-	enviarSolicitudSentencia(2,2,2,5);
-	recibirPedazoDeSentencia(tamanioPaginas);
 
 	//PRUEBA GASTON: LUEGO BORRAR A LA MIERDA
 	t_PCB* pcbFalso = malloc(sizeof(t_PCB));
-	pcbFalso->PID = 3;
-	pcbFalso->cantidadPaginas = 4;
-	pcbFalso->contadorPrograma = 1;
-  //pcbFalso->indiceCodigo = list_create();
+	pcbFalso->PID = 2;
+	pcbFalso->cantidadPaginas = 1;
+	pcbFalso->contadorPrograma = 0;
+	pcbFalso->indiceCodigo = list_create();
+	t_sentencia* sentencia = malloc(sizeof(t_sentencia));
+	sentencia->inicio = 2;
+	sentencia->fin = 5;
+	list_add(pcbFalso->indiceCodigo,sentencia);
+	free(sentencia);
+	pcbNuevo = pcbFalso;
 
-	//serializar_PCB(pcbFalso,1,9);
+	/*sentenciaPedida = string_new();
+	enviarSolicitudSentencia(2,2,2,5);
+	recibirPedazoDeSentencia(tamanioPaginas);*/
 
+	pedirSentencia();
 
-   // esperarProgramas();
+  // esperarProgramas();
     destruirLogs();
 
 	return EXIT_SUCCESS;

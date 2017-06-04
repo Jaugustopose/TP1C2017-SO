@@ -19,13 +19,6 @@ typedef enum {
 }t_identidad;
 
 
-typedef enum {
-	AccionObtenerPCB, //0
-	AccionPedirSentencia, //1
-	AccionFinInstruccion, //2
-	AccionFinProceso //2
-}t_accion;
-
 typedef struct {
 	int nroPagina;
 	int offset;

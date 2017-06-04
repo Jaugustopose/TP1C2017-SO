@@ -25,8 +25,8 @@ endif
 all: libfunciones.so
 
 dependents:
-	-cd /home/utnso/tp-2017-1c-No-Se-Recursa/parser-ansisop/Debug && $(MAKE) all
-	-cd /home/utnso/tp-2017-1c-No-Se-Recursa/commons/Debug && $(MAKE) all
+	-cd /home/utnso/tp-2017-1c-No-Se-Recursa/parser-ansisop/Debug && $(MAKE) clean all
+	-cd /home/utnso/tp-2017-1c-No-Se-Recursa/commons/Debug && $(MAKE) clean all
 
 # Tool invocations
 libfunciones.so: $(OBJS) $(USER_OBJS) /home/utnso/tp-2017-1c-No-Se-Recursa/parser-ansisop/Debug/libparser-ansisop.so /home/utnso/tp-2017-1c-No-Se-Recursa/commons/Debug/libcommons.so

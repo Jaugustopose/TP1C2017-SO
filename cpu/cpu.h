@@ -23,6 +23,24 @@
 #include <parser/metadata_program.h>
 #include <parser/parser.h>
 
+//OJO: El numero corresponde al numero del proceso con el que se comunica
+//Cambiar un numero SOLO ACA implica romper la comunicacion
+enum accionCPU {
+	solicitarPaginasAccion = 2,
+	solicitarBytesAccion = 4,
+	accionContinuarProceso = 5,
+	obtenerTamanioPaginas = 6,
+	accionObtenerPCB = 7,
+	accionFinInstruccion = 8,
+	accionFinProceso = 9,
+	accionImprimirTextoKernel = 10, //primitiva
+	accionImprimirVariableKernel = 11, //primitiva
+	accionAsignarValorCompartidaKernel = 12, //primitiva
+	accionPedirValorCompartidaKernel = 13, //primitiva
+	accionQuantumInterrumpido = 14 //signal
+
+};
+
 //GLOBALES
 struct sockaddr_in dirKernel;
 int kernel;

@@ -61,12 +61,6 @@ typedef struct pedidoSolicitudPaginasStruct {
 	int cantidadPaginas;
 } pedidoSolicitudPaginas_t;
 
-typedef struct {
-	int ConsolaDuenio;
-	int CpuDuenio;
-	int estado;
-	t_PCB PCB;
-}t_proceso;
 
 enum tipoDeCliente {
 
@@ -74,9 +68,20 @@ enum tipoDeCliente {
 	soyCPU = 2
 };
 
+//OJO: El numero corresponde al numero del proceso con el que se comunica
+//Cambiar un numero SOLO ACA implica romper la comunicacion
 enum tipoMensaje {
 
-	envioScript = 1
+	envioScript = 1,
+	accionContinuarProceso = 5, //CPU
+	accionObtenerPCB = 7, //CPU
+	accionFinInstruccion = 8, //CPU
+	accionFinProceso = 9, //CPU
+	accionImprimirTextoKernel = 10, //primitiva - CPU
+	accionImprimirVariableKernel = 11, //primitiva - CPU
+	accionAsignarValorCompartidaKernel = 12, //primitiva -CPU
+	accionPedirValorCompartidaKernel = 13, //primitiva -CPU
+	accionQuantumInterrumpido = 14 //signal -CPU
 };
 
 t_config* configKernel;
