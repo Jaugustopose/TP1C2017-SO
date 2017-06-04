@@ -51,11 +51,12 @@ typedef struct {
 	int exitCode;
 }t_PCB;
 
-/*typedef struct {
+typedef struct {
 	int ConsolaDuenio;
 	int CpuDuenio;
+	int estado;
 	t_PCB PCB;
-}t_proceso;*/
+}t_proceso;
 
 typedef struct{
 	int inicio;

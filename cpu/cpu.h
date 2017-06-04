@@ -16,9 +16,12 @@
 #include <commons/collections/dictionary.h>
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
-#include "primitivas.h"
+#include "logger.h"
 #include "serializador.h"
 #include "estructurasCompartidas.h"
+#include "primitivas.h"
+#include <parser/metadata_program.h>
+#include <parser/parser.h>
 
 //GLOBALES
 struct sockaddr_in dirKernel;
@@ -28,7 +31,10 @@ int memoria;
 bool ejecutar;
 int tamanioPaginas;
 char* sentenciaPedida;
+int pidInventado;
 
+t_log *logger;
+t_log *debugLogger;
 
 struct configuracion{
 	char* IP_MEMORIA;
@@ -42,6 +48,13 @@ struct configuracion config;
 
 t_PCB* pcbNuevo;
 t_stack* stack;
+
+typedef struct pedidoBytesMemoriaStruct {
+	int pid;
+	int	nroPagina;
+	int offset;
+	int tamanio;
+} pedidoBytesMemoria_t;
 
 
 #endif

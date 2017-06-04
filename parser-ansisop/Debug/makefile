@@ -8,6 +8,7 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
+-include parser/subdir.mk
 -include subdir.mk
 -include objects.mk
 
@@ -22,28 +23,22 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: libfunciones.so
-
-dependents:
-	-cd /home/utnso/tp-2017-1c-No-Se-Recursa/parser-ansisop/Debug && $(MAKE) all
-	-cd /home/utnso/tp-2017-1c-No-Se-Recursa/commons/Debug && $(MAKE) all
+all: libparser-ansisop.so
 
 # Tool invocations
-libfunciones.so: $(OBJS) $(USER_OBJS) /home/utnso/tp-2017-1c-No-Se-Recursa/parser-ansisop/Debug/libparser-ansisop.so /home/utnso/tp-2017-1c-No-Se-Recursa/commons/Debug/libcommons.so
+libparser-ansisop.so: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc -L"/home/utnso/tp-2017-1c-No-Se-Recursa/commons/Debug" -L"/home/utnso/tp-2017-1c-No-Se-Recursa/parser-ansisop/Debug" -shared -o "libfunciones.so" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -shared -o "libparser-ansisop.so" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(OBJS)$(C_DEPS)$(LIBRARIES) libfunciones.so
+	-$(RM) $(OBJS)$(C_DEPS)$(LIBRARIES) libparser-ansisop.so
 	-@echo ' '
 
 .PHONY: all clean dependents
 .SECONDARY:
-/home/utnso/tp-2017-1c-No-Se-Recursa/parser-ansisop/Debug/libparser-ansisop.so:
-/home/utnso/tp-2017-1c-No-Se-Recursa/commons/Debug/libcommons.so:
 
 -include ../makefile.targets

@@ -95,9 +95,13 @@ void conectarConMemoria() {
 
 }
 
-void solicitarTamanioPaginaAMemoria()
-{
-	//Hacer lo mismo que memoria haga con kernel
+int obtener_tamanio_pagina(int memoria) {
+	int valorRecibido;
+	int idMensaje = 6;
+	send(memoria, &idMensaje, sizeof(int32_t), 0);
+	recv(memoria, &valorRecibido, sizeof(int32_t), 0);
+
+	return valorRecibido;
 }
 
 void deserializarPCB(t_PCB* pcbNuevo, t_PCB* pcbSerializado)
@@ -125,20 +129,21 @@ void finalizarProceso(bool normalmente){
 
 /**********FUNCIONES PARA MANEJO DE SENTENCIAS*********************************************************************/
 
-void enviarSolicitudSentencia(int pagina, int offset, int size) {
+void enviarSolicitudSentencia(int pid, int pagina, int offset, int size) {
 
-	t_pedido pedido;
-	pedido.offset = offset;
+	pedidoBytesMemoria_t pedido;
+	pedido.pid = pid;
 	pedido.nroPagina = pagina;
-	pedido.size = size;
+	pedido.offset = offset;
+	pedido.tamanio = size;
 
-	char* solicitud = string_new();
+	char* solicitud;
 
 	//VER LA SERIALIZACION
 	int tamanio = serializar_pedido(solicitud, &pedido);
-	send(memoria, solicitud, tamanio, 0);
+	send(memoria, solicitud, tamanio , 0);
 
-	free(solicitud);
+	//free(solicitud);
 }
 
 t_sentencia* obtenerSentenciaRelativa(int* paginaInicioSentencia) {
@@ -168,7 +173,7 @@ int esPaginaCompleta(int longitudRestante) {
 void recibirPedazoDeSentencia(int size){
 
 	char* buffer = malloc(size);
-	recv(memoria, buffer, size, MSG_WAITALL);
+	recv(memoria, buffer, size, 0);
 	sacarSaltoDeLinea(buffer, size);
 	char* sentencia = malloc(size+1);
 	sentencia[size]='\0';
@@ -189,7 +194,7 @@ char* accion = (char*)AccionPedirSentencia;
 send(memoria, accion, sizeof(accion), 0);
 free(accion);
 
-enviarSolicitudSentencia(pagina, sentenciaRelativa->inicio,tamanioPrimeraSentencia);
+enviarSolicitudSentencia(pidInventado, pagina, sentenciaRelativa->inicio,tamanioPrimeraSentencia);
 (*longitudRestante) = (int)(longitudRestante - tamanioPrimeraSentencia);
 
 recibirPedazoDeSentencia(tamanioPrimeraSentencia);
@@ -201,7 +206,7 @@ void pedirPaginaCompleta(int nroPagina) {
 	send(memoria, accion, sizeof(accion), 0);
 	free(accion);
 
-	enviarSolicitudSentencia(nroPagina, 0, tamanioPaginas);
+	enviarSolicitudSentencia(pidInventado, nroPagina, 0, tamanioPaginas);
 	recibirPedazoDeSentencia(tamanioPaginas);
 }
 
@@ -210,7 +215,7 @@ void pedirUltimaSentencia(t_sentencia* sentenciaRelativa, int pagina, int longit
 	char* accion = (char*)AccionPedirSentencia;
 	send(memoria, accion, sizeof(accion), 0);
 	free(accion);
-	enviarSolicitudSentencia(pagina, 0, longitudRestante);
+	enviarSolicitudSentencia(pidInventado, pagina, 0, longitudRestante);
 	recibirPedazoDeSentencia(longitudRestante);
 
 }
@@ -262,6 +267,7 @@ void parsear(char* sentencia)
 	if(sentenciaNoFinaliza(sentencia)){
 
 	//Le paso sentencia, set de primitivas de CPU y set de primitivas de kernel
+
 	analizadorLinea(sentencia, &funciones, &funcionesKernel);
 
 	char* accion = (char*)AccionFinInstruccion;
@@ -317,24 +323,38 @@ void esperarProgramas()
 
 int main(void){
 
+	crearLog(string_from_format("cpu_%d", getpid()),"CPU",0);
+	log_info(infoLog, "Iniciando proceso CPU, PID: %d.", getpid());
+
+	logger = log_create("cpu.log", "CPU", false, LOG_LEVEL_INFO);
+	debugLogger = log_create("cpu.log", "CPU", false, LOG_LEVEL_DEBUG);
+
+	log_info(logger, "Inicio CPU");
+	log_debug(debugLogger, "Inicio CPU");
+
+	 pidInventado = 4;
 	cargarConfiguracion();
 	inicializarPrimitivas();
 	//conectarConKernel();
-   // conectarConMemoria();
-	//solicitarTamanioPaginaAMemoria();
+     conectarConMemoria();
+     //tamanioPaginas = obtener_tamanio_pagina(memoria);
+     tamanioPaginas = 32;
+
+	enviarSolicitudSentencia(2,2,2,5);
+	recibirPedazoDeSentencia(tamanioPaginas);
 
 	//PRUEBA GASTON: LUEGO BORRAR A LA MIERDA
 	t_PCB* pcbFalso = malloc(sizeof(t_PCB));
 	pcbFalso->PID = 3;
 	pcbFalso->cantidadPaginas = 4;
 	pcbFalso->contadorPrograma = 1;
-//	pcbFalso->indiceCodigo = list_create();
+  //pcbFalso->indiceCodigo = list_create();
 
-	serializar_PCB(pcbFalso,1,9);
+	//serializar_PCB(pcbFalso,1,9);
 
 
-    esperarProgramas();
-
+   // esperarProgramas();
+    destruirLogs();
 
 	return EXIT_SUCCESS;
 }

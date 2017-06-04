@@ -32,8 +32,10 @@ void* serializarMemoria(int codigoAccion, void* contenidoDelMensaje, int tamanio
 }
 
 int serializar_pedido(char* destino, t_pedido* origen) {
-	memcpy(destino, origen, sizeof(t_pedido));
-	return sizeof(t_pedido);
+	int* codigoAccion = 4;
+	memcpy(destino, &codigoAccion, sizeof(int));
+	memcpy(destino + sizeof(codigoAccion), origen, sizeof(t_pedido));
+	return sizeof(t_pedido) + sizeof(codigoAccion);
 }
 
 int serializar_sentencia(char* destino, t_sentencia* origen) {
