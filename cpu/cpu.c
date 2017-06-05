@@ -6,6 +6,40 @@
 
 t_identidad* identidadCpu = SOYCPU;
 
+bool hayOverflow(){
+	return overflow!=1;
+}
+
+void overflowException(int mensajeMemoria){
+
+	//TODO: Desarrollar el manejo del overflow. Hay que finalizar proceso y demas.
+}
+void goToMagia(){};
+
+void actualizarPC(t_PCB* pcb, t_puntero_instruccion pc) {
+
+	pcb->contadorPrograma = (int)pc;
+}
+
+void finalizarProcesoVariableInvalida(){
+
+	char* accionKernel = (char*)accionFinProceso;
+	send(kernel, accionKernel, sizeof(accionKernel), 0);
+	free(accionKernel);
+
+	char* accionMemoria = (char*)accionFinProceso;
+	send(memoria, accionMemoria, sizeof(accionMemoria), 0);
+	free(accionMemoria);
+
+
+	//Falta: Destruir PCB
+
+	ejecutar = false;
+	salteaCircuitoConGoTo = true;
+	pcbNuevo = NULL;
+
+}
+
 int minimo(int a, int b) {
 	return a < b ? a : b;
 }
@@ -21,7 +55,7 @@ void cargarConfiguracion()
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat,getcwd(cwd,sizeof(cwd)));
-	string_append(&pat,"/Debug/cpu.cfg");
+	string_append(&pat,"/cpu.cfg");
 	t_config* configCpu = config_create(pat);
 	free(pat);
 	if (config_has_property(configCpu, "IP_MEMORIA"))
@@ -113,6 +147,8 @@ void obtenerPCB()
 {
 	pcbNuevo = malloc(sizeof(t_PCB));
 	deserializar_PCB(&pcbNuevo, kernel);
+	stack = pcbNuevo->stackPointer;
+	cantidadPagCodigo = pcbNuevo->cantidadPaginas;
 
 }
 
@@ -159,17 +195,18 @@ void enviarSolicitudSentencia(int pid, int pagina, int offset, int size) {
 t_sentencia* obtenerSentenciaRelativa(int* paginaInicioSentencia) {
 
 	t_sentencia* sentenciaAbsoluta = list_get(pcbNuevo->indiceCodigo, pcbNuevo->contadorPrograma);
-	t_sentencia* sentenciaRelativa = malloc(sizeof(t_sentencia));
+	t_sentencia* sentenciaRel = malloc(sizeof(t_sentencia*));
 
 	    int inicioAbsoluto = sentenciaAbsoluta->inicio;
 		int paginaInicio = (int) (inicioAbsoluto / tamanioPaginas);
 		int inicioRelativo = inicioAbsoluto % tamanioPaginas;
-		sentenciaRelativa->inicio = inicioRelativo;
-		sentenciaRelativa->fin = inicioRelativo + longitudSentencia(sentenciaAbsoluta);
+		sentenciaRel->inicio = inicioRelativo;
+		sentenciaRel->fin = inicioRelativo + longitudSentencia(sentenciaAbsoluta);
 
 		(*paginaInicioSentencia) = paginaInicio;
 
-	return sentenciaRelativa;
+    free(sentenciaAbsoluta);
+	return sentenciaRel;
 }
 
 int longitudSentencia(t_sentencia* sentencia) {
@@ -182,16 +219,16 @@ int esPaginaCompleta(int longitudRestante) {
 
 void recibirPedazoDeSentencia(int size){
 
-	char* buffer = malloc(size);
-	recv(memoria, buffer, size, 0);
-	sacarSaltoDeLinea(buffer, size);
+	char* alo = malloc(size);
+	recv(memoria, alo, size, 0);
+	sacarSaltoDeLinea(alo, size);
 	char* sentencia = malloc(size+1);
 	sentencia[size]='\0';
-	memcpy(sentencia,buffer,size);
+	memcpy(sentencia,alo,size);
 
 	string_append(&sentenciaPedida, sentencia);
 
-	free(buffer);
+	free(alo);
 	free(sentencia);
 
 }
@@ -204,7 +241,7 @@ void pedirPrimeraSentencia(t_sentencia* sentenciaRelativa, int pagina, int* long
 //send(memoria, accion, sizeof(accion), 0);
 //free(accion);
 
-enviarSolicitudSentencia(pidInventado, pagina, sentenciaRelativa->inicio,tamanioPrimeraSentencia);
+enviarSolicitudSentencia(pcbNuevo->PID, pagina, sentenciaRelativa->inicio,tamanioPrimeraSentencia);
 (*longitudRestante) = (int)(longitudRestante - tamanioPrimeraSentencia);
 
 recibirPedazoDeSentencia(tamanioPrimeraSentencia);
@@ -216,7 +253,7 @@ void pedirPaginaCompleta(int nroPagina) {
 	send(memoria, accion, sizeof(accion), 0);
 	free(accion);
 
-	enviarSolicitudSentencia(pidInventado, nroPagina, 0, tamanioPaginas);
+	enviarSolicitudSentencia(pcbNuevo->PID, nroPagina, 0, tamanioPaginas);
 	recibirPedazoDeSentencia(tamanioPaginas);
 }
 
@@ -225,7 +262,7 @@ void pedirUltimaSentencia(t_sentencia* sentenciaRelativa, int pagina, int longit
 	char* accion = (char*)solicitarBytesAccion;
 	send(memoria, accion, sizeof(accion), 0);
 	free(accion);
-	enviarSolicitudSentencia(pidInventado, pagina, 0, longitudRestante);
+	enviarSolicitudSentencia(pcbNuevo->PID, pagina, 0, longitudRestante);
 	recibirPedazoDeSentencia(longitudRestante);
 
 }
@@ -340,16 +377,15 @@ void esperarProgramas()
 
 int main(void){
 
-	crearLog(string_from_format("cpu_%d", getpid()),"CPU",0);
-	log_info(infoLog, "Iniciando proceso CPU, PID: %d.", getpid());
+//	crearLog(string_from_format("cpu_%d", getpid()),"CPU",0);
+//	log_info(infoLog, "Iniciando proceso CPU, PID: %d.", getpid());
+//
+//	logger = log_create("cpu.log", "CPU", false, LOG_LEVEL_INFO);
+//	debugLogger = log_create("cpu.log", "CPU", false, LOG_LEVEL_DEBUG);
+//
+//	log_info(logger, "Inicio CPU");
+//	log_debug(debugLogger, "Inicio CPU");
 
-	logger = log_create("cpu.log", "CPU", false, LOG_LEVEL_INFO);
-	debugLogger = log_create("cpu.log", "CPU", false, LOG_LEVEL_DEBUG);
-
-	log_info(logger, "Inicio CPU");
-	log_debug(debugLogger, "Inicio CPU");
-
-	 pidInventado = 4;
 	cargarConfiguracion();
 	inicializarPrimitivas();
 	//conectarConKernel();
@@ -365,20 +401,23 @@ int main(void){
 	pcbFalso->contadorPrograma = 0;
 	pcbFalso->indiceCodigo = list_create();
 	t_sentencia* sentencia = malloc(sizeof(t_sentencia));
-	sentencia->inicio = 2;
-	sentencia->fin = 5;
+	sentencia->inicio = 0;
+	sentencia->fin = 14;
 	list_add(pcbFalso->indiceCodigo,sentencia);
-	free(sentencia);
+	pcbFalso->stackPointer = stack_crear();
+	t_elemento_stack* elemento = stack_elemento_crear();
+	stack_push(pcbFalso->stackPointer, elemento);
+
 	pcbNuevo = pcbFalso;
 
-	/*sentenciaPedida = string_new();
-	enviarSolicitudSentencia(2,2,2,5);
-	recibirPedazoDeSentencia(tamanioPaginas);*/
+//	sentenciaPedida = string_new();
+//	enviarSolicitudSentencia(2,2,2,5);
+//	recibirPedazoDeSentencia(tamanioPaginas);
 
-	pedirSentencia();
+ 	pedirSentencia();
 
   // esperarProgramas();
-    destruirLogs();
+   // destruirLogs();
 
 	return EXIT_SUCCESS;
 }

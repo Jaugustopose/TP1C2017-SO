@@ -4,8 +4,8 @@
 	<comment></comment>
 	<projects>
 		<project>commons</project>
-		<project>funciones</project>
 		<project>parser-ansisop</project>
+		<project>funciones</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

@@ -41,6 +41,7 @@ typedef struct {
 	int contadorPrograma;
 	t_list* indiceCodigo;
 	t_stack* stackPointer;
+	t_dictionary* indiceEtiquetas;
 	int exitCode;
 }t_PCB;
 

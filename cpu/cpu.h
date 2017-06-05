@@ -33,11 +33,13 @@ enum accionCPU {
 	accionObtenerPCB = 7,
 	accionFinInstruccion = 8,
 	accionFinProceso = 9,
-	accionImprimirTextoKernel = 10, //primitiva
-	accionImprimirVariableKernel = 11, //primitiva
-	accionAsignarValorCompartidaKernel = 12, //primitiva
-	accionPedirValorCompartidaKernel = 13, //primitiva
-	accionQuantumInterrumpido = 14 //signal
+	accionImprimirTextoKernel = 10, //primitiva kernel
+	accionImprimirVariableKernel = 11, //primitiva kernel
+	accionAsignarValorCompartidaKernel = 12, //primitiva kernel
+	accionPedirValorCompartidaKernel = 13, //primitiva kernel
+	accionQuantumInterrumpido = 14, //signal
+	accionPedirValorVariable = 15, //primitiva memoria
+	accionAsignarValorVariable = 16 //primitiva memoria
 
 };
 
@@ -47,9 +49,12 @@ int kernel;
 struct sockaddr_in dirMemoria;
 int memoria;
 bool ejecutar;
+bool salteaCircuitoConGoTo;
+int overflow;
 int tamanioPaginas;
 char* sentenciaPedida;
 int pidInventado;
+
 
 t_log *logger;
 t_log *debugLogger;
@@ -66,6 +71,7 @@ struct configuracion config;
 
 t_PCB* pcbNuevo;
 t_stack* stack;
+int cantidadPagCodigo;
 
 typedef struct pedidoBytesMemoriaStruct {
 	int pid;

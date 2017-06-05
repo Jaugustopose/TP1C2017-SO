@@ -55,7 +55,7 @@ int stack_tamanio_memoria(t_stack* stack) {
 }
 
 int stack_tamanio(t_stack* stack){
-	return list_size((t_list*)stack);
+	return list_size(stack);
 }
 
 t_pedido* stack_proximo_pedido(t_stack* stack, int tamanioPagina) {

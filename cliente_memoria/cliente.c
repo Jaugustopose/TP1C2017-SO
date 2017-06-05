@@ -79,10 +79,10 @@ void enviarSolicitudAlmacenarBytes(int cliente) {
 	int codigoAccion = 3;
 	pedidoAlmacenarBytesMemoria_t pedidoAlmacenar;
 	pedidoAlmacenar.pedidoBytes.pid = 2;
-	pedidoAlmacenar.pedidoBytes.nroPagina = 2;
+	pedidoAlmacenar.pedidoBytes.nroPagina = 0;
 	pedidoAlmacenar.pedidoBytes.offset = 0;
-	pedidoAlmacenar.pedidoBytes.tamanio = 5;
-	pedidoAlmacenar.buffer = "hola";
+	pedidoAlmacenar.pedidoBytes.tamanio = 14;
+	pedidoAlmacenar.buffer = "variables a, b";
 	printf("pedidoAlmacenar.buffer: %s\n", pedidoAlmacenar.buffer);
 
 	//No paso sizeof(pedidoAlmacenar) porque el último campo es un puntero y me dará siempre 4 bytes. Entonces lo armo en dos partes,
@@ -109,9 +109,9 @@ void enviarPedidoBytes(int cliente) {
 	int codigoAccion = 4;
 	pedidoBytesMemoria_t pedidoBytes;
 	pedidoBytes.pid = 2;
-	pedidoBytes.nroPagina = 2;
+	pedidoBytes.nroPagina = 0;
 	pedidoBytes.offset = 0;
-	pedidoBytes.tamanio = 5;
+	pedidoBytes.tamanio = 14;
 	buffer3 = serializarMemoria(codigoAccion, &pedidoBytes, sizeof(pedidoBytes));
 
 	send(cliente, buffer3, sizeof(codigoAccion) + sizeof(pedidoBytes), 0);
