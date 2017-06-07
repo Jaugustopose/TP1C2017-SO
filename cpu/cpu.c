@@ -14,6 +14,7 @@ void overflowException(int mensajeMemoria){
 
 	//TODO: Desarrollar el manejo del overflow. Hay que finalizar proceso y demas.
 }
+
 void goToMagia(){};
 
 void actualizarPC(t_PCB* pcb, t_puntero_instruccion pc) {
@@ -186,16 +187,16 @@ void enviarSolicitudSentencia(int pid, int pagina, int offset, int size) {
 	char* solicitud = string_new();
 
 	//VER LA SERIALIZACION
-	int tamanio = serializar_pedido(solicitud, &pedido);
+	int tamanio = serializar_pedido_bytes(solicitud, pedido);
 	send(memoria, solicitud, tamanio , 0);
 
-	//free(solicitud);
+
 }
 
 t_sentencia* obtenerSentenciaRelativa(int* paginaInicioSentencia) {
 
 	t_sentencia* sentenciaAbsoluta = list_get(pcbNuevo->indiceCodigo, pcbNuevo->contadorPrograma);
-	t_sentencia* sentenciaRel = malloc(sizeof(t_sentencia*));
+	t_sentencia* sentenciaRel = malloc(sizeof(t_sentencia));
 
 	    int inicioAbsoluto = sentenciaAbsoluta->inicio;
 		int paginaInicio = (int) (inicioAbsoluto / tamanioPaginas);
@@ -210,7 +211,7 @@ t_sentencia* obtenerSentenciaRelativa(int* paginaInicioSentencia) {
 }
 
 int longitudSentencia(t_sentencia* sentencia) {
-	return sentencia->fin - sentencia->inicio;
+	return (int)(sentencia->fin - sentencia->inicio);
 }
 
 int esPaginaCompleta(int longitudRestante) {

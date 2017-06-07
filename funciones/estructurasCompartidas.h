@@ -57,4 +57,11 @@ typedef struct{
 	int fin;
 }t_sentencia;
 
+typedef struct pedidoBytesMemoriaStruct {
+	int pid;
+	int	nroPagina;
+	int offset;
+	int tamanio;
+} pedidoBytesMemoria_t;
+
 #endif /* ESTRUCTURASCOMPARTIDAS_H_ */

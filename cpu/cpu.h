@@ -73,12 +73,7 @@ t_PCB* pcbNuevo;
 t_stack* stack;
 int cantidadPagCodigo;
 
-typedef struct pedidoBytesMemoriaStruct {
-	int pid;
-	int	nroPagina;
-	int offset;
-	int tamanio;
-} pedidoBytesMemoria_t;
+
 
 
 #endif

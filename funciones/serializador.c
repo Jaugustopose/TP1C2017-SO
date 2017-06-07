@@ -30,12 +30,20 @@ void* serializarMemoria(int codigoAccion, void* contenidoDelMensaje, int tamanio
 
 	return buffer;
 }
+int serializar_accion()
+{
 
+}
 int serializar_pedido(char* destino, t_pedido* origen) {
-	int* codigoAccion = 4;
-	memcpy(destino, &codigoAccion, sizeof(int));
-	memcpy(destino + sizeof(codigoAccion), origen, sizeof(t_pedido));
-	return sizeof(t_pedido) + sizeof(codigoAccion);
+
+	memcpy(destino, &origen, sizeof(t_pedido));
+	return (int)sizeof(t_pedido);
+}
+
+int serializar_pedido_bytes(char* destino, pedidoBytesMemoria_t origen) {
+
+	memcpy(&destino, &origen, sizeof(pedidoBytesMemoria_t));
+	return (int)sizeof(pedidoBytesMemoria_t);
 }
 
 int serializar_sentencia(char* destino, t_sentencia* origen) {
@@ -88,6 +96,41 @@ int serializar_stack(char* destino, t_stack* origen) {
 	return desplazamiento;
 }
 
+int serializar_diccionario(char* diccionarioSerializado, t_dictionary* diccionario, int pesoData){
+	int indiceTabla;
+	int tamanioReal = 0;
+	int offset = 1;
+
+	diccionarioSerializado[0] = diccionario->table_max_size;
+
+	for (indiceTabla = 0; indiceTabla < diccionarioSerializado[0]; indiceTabla++) {
+
+		t_hash_element *elem = diccionario->elements[indiceTabla];
+
+		while (elem != NULL) {
+
+			tamanioReal++;
+
+			diccionarioSerializado[offset++] = strlen(elem->key);
+
+			memcpy(diccionarioSerializado + offset, elem->key, strlen(elem->key));
+			offset = offset + strlen(elem->key);
+
+			memcpy(diccionarioSerializado + offset, elem->data, pesoData);
+			offset = offset + pesoData;
+
+			//Siguiente elemento
+			elem = elem->next;
+		}
+	}
+
+	//El verdadero tamanio
+	diccionarioSerializado[0] = tamanioReal;
+
+	return offset;
+}
+
+
 int bytes_list(t_list* origen, int pesoElemento){
 	return 1+list_size(origen)*pesoElemento;
 }
@@ -108,15 +151,16 @@ int bytes_stack(t_stack* origen) {
 	return bytes;
 }
 
-//LO COMENTADO VA, PERO LO COMENTO HASTA TERMINARLO PARA QUE FUNQUE
+
 int bytes_PCB(t_PCB* pcb) {
 	return sizeof(int) * 3;
 			//+ bytes_stack(pcb->stackPointer);
 			//+ bytes_list(pcb->indiceCodigo, sizeof(t_sentencia));
 			//+ bytes_dictionary(pcb->indice_etiquetas, sizeof(int));
 }
-//LO COMENTADO VA, PERO LO COMENTO HASTA TERMINARLO PARA QUE FUNQUE
+
 void* serializar_PCB(t_PCB* pcb, int sock, int codigoAccion) {
+
 	int tamanioEnBytes = bytes_PCB(pcb);
 	char* pcbSerializado = malloc(tamanioEnBytes);
 	int desplazamiento = 0;
@@ -127,9 +171,11 @@ void* serializar_PCB(t_PCB* pcb, int sock, int codigoAccion) {
 
 	desplazamiento = desplazamiento + serializar_int(pcbSerializado + desplazamiento, &(pcb->cantidadPaginas));
 
-	//desplazamiento = desplazamiento + serializar_lista(pcbSerializado + desplazamiento, pcb->indiceCodigo, sizeof(t_sentencia));
+	desplazamiento = desplazamiento + serializar_lista(pcbSerializado + desplazamiento, pcb->indiceCodigo, sizeof(t_sentencia));
 
-	//desplazamiento = desplazamiento + serializar_stack(pcbSerializado + desplazamiento, pcb->stackPointer);
+	desplazamiento = desplazamiento + serializar_diccionario(pcbSerializado + desplazamiento, pcb->indiceEtiquetas, sizeof(int));
+
+	desplazamiento = desplazamiento + serializar_stack(pcbSerializado + desplazamiento, pcb->stackPointer);
 
 
 	void* buffer = malloc(desplazamiento + sizeof(codigoAccion));
