@@ -138,32 +138,31 @@ int deserializar_diccionario(t_dictionary* destino, char* origen, int pesoData){
 }
 
 
+void* deserializar_PCB(t_PCB* pcbUlt, int sock, char* pcbSerializado){
+//	int tamanio;
 
-
-void* deserializar_PCB(t_PCB* pcbNuevo, int sock) {
-	int tamanio;
-
-	recv(sock, &tamanio, 4, 0); //Recibo el tamaño de lo que me estan enviando.
-	void* pcbSerializado = malloc(tamanio);
-	recv(sock, pcbSerializado, tamanio,0); //Recibo lo que viene atras.
+	//recv(sock, &tamanio, 4, 0); //Recibo el tamaño de lo que me estan enviando.
+	//void* pcbSerializado = malloc(tamanio);
+	//char* pcbSerializado = malloc(sizeof(buffer));
+	//recv(sock, pcbSerializado, tamanio,0); //Recibo lo que viene atras.
 
 	int desplazamiento = 0;
 
-	pcbNuevo->indiceCodigo = list_create();
-	pcbNuevo->indiceEtiquetas = dictionary_create();
-	pcbNuevo->stackPointer = stack_crear();
+	pcbUlt->indiceCodigo = list_create();
+	pcbUlt->indiceEtiquetas = dictionary_create();
+	pcbUlt->stackPointer = stack_crear();
 
-	desplazamiento = desplazamiento + serializar_int(&(pcbNuevo->PID), pcbSerializado + desplazamiento);
+	desplazamiento = desplazamiento + deserializar_int(&(pcbUlt->PID), pcbSerializado + desplazamiento);
 
-	desplazamiento = desplazamiento + serializar_int(&(pcbNuevo->contadorPrograma), pcbSerializado + desplazamiento);
+	desplazamiento = desplazamiento + deserializar_int(&(pcbUlt->contadorPrograma), pcbSerializado + desplazamiento);
 
-	desplazamiento = desplazamiento + serializar_int(&(pcbNuevo->cantidadPaginas), pcbSerializado + desplazamiento);
+	desplazamiento = desplazamiento + deserializar_int(&(pcbUlt->cantidadPaginas), pcbSerializado + desplazamiento);
 
-	desplazamiento = desplazamiento + deserializar_lista(pcbNuevo->indiceCodigo, pcbSerializado + desplazamiento, sizeof(t_sentencia));
+	desplazamiento = desplazamiento + deserializar_lista(pcbUlt->indiceCodigo, pcbSerializado + desplazamiento, sizeof(t_sentencia));
 
-	desplazamiento = desplazamiento + deserializar_diccionario(pcbNuevo->indiceEtiquetas, pcbSerializado + desplazamiento, sizeof(int));
+	desplazamiento = desplazamiento + deserializar_diccionario(pcbUlt->indiceEtiquetas, pcbSerializado + desplazamiento, sizeof(int));
 
-	desplazamiento = desplazamiento + deserializar_stack(pcbNuevo->stackPointer, pcbSerializado + desplazamiento);
+	desplazamiento = desplazamiento + deserializar_stack(pcbUlt->stackPointer, pcbSerializado + desplazamiento);
 
 
 	return 0;

@@ -56,6 +56,6 @@ void* deserializar(int sock);
 	return buffer;
 }*/
 void* deserializar_archivo(int sock);
-void* deserializar_PCB(t_PCB* pcbNuevo, int sock);
+void* deserializar_PCB(t_PCB* pcbUlt, int sock, char* buffer);
 
 #endif /* DESERIALIZADOR_H_ */

@@ -202,9 +202,9 @@ void* serializar_PCB(t_PCB* pcb, int sock, int codigoAccion) {
 	memcpy(buffer, &codigoAccion, sizeof(codigoAccion)); //PRIMERO EL CODIGO
 	memcpy(buffer + sizeof(codigoAccion), pcbSerializado, sizeof(codigoAccion) + desplazamiento ); // SEGUNDO LA DATA
 
-	send(sock, &pcbSerializado, sizeof(codigoAccion) + desplazamiento, 0);
+	//send(sock, &pcbSerializado, sizeof(codigoAccion) + desplazamiento, 0);
 
-	return 0;
+	return pcbSerializado;
 }
 
 

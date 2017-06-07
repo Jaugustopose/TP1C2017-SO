@@ -147,7 +147,7 @@ void deserializarPCB(t_PCB* pcbNuevo, t_PCB* pcbSerializado)
 void obtenerPCB()
 {
 	pcbNuevo = malloc(sizeof(t_PCB));
-	deserializar_PCB(&pcbNuevo, kernel);
+	//deserializar_PCB(&pcbNuevo, kernel);
 	stack = pcbNuevo->stackPointer;
 	cantidadPagCodigo = pcbNuevo->cantidadPaginas;
 
@@ -390,7 +390,7 @@ int main(void){
 	cargarConfiguracion();
 	inicializarPrimitivas();
 	//conectarConKernel();
-     conectarConMemoria();
+    // conectarConMemoria();
      //tamanioPaginas = obtener_tamanio_pagina(memoria);
      tamanioPaginas = 32;
 
@@ -412,13 +412,13 @@ int main(void){
 	stack_push(pcbFalso->stackPointer, elemento);
 
 	char* PROGRAMA =
+			 "#!/usr/bin/ansisop\n"
 			"begin\n"
 			"variables a, b\n"
 			"a = 3\n"
 			"b = 5\n"
 			"a = b + 12\n"
-			"end\n"
-			"\n";
+			"end\n";
 
 	char* PROGRAMA2 = "#!/usr/bin/ansisop\n"
 			"begin\n"
@@ -430,7 +430,7 @@ int main(void){
 				"goto etiqueta\n"
 		     	"end\n";
 
-	t_metadata_program* metadata = metadata_desde_literal(PROGRAMA2);
+	t_metadata_program* metadata = metadata_desde_literal(PROGRAMA);
 	t_sentencia* sentencia;
 
 	int i;
@@ -465,8 +465,13 @@ int main(void){
 
 
 	pcbNuevo = pcbFalso;
+	t_PCB* pcbUltimo = malloc(sizeof(t_PCB));
 
-	serializar_PCB(pcbNuevo,kernel, accionFinProceso);
+	char* pcbSerial;
+	pcbSerial = serializar_PCB(pcbNuevo,kernel, accionFinProceso);
+	deserializar_PCB(pcbUltimo, kernel, pcbSerial);
+	t_PCB* pcbResultado = pcbUltimo;
+
 
 //	sentenciaPedida = string_new();
 //	enviarSolicitudSentencia(2,2,2,5);

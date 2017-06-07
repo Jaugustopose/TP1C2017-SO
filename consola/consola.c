@@ -30,6 +30,34 @@ int conectarSocket(int socket, struct sockaddr_in* direccionServidor){
 
 }
 
+void convertirArchivoACodigo()
+{
+	programa = fopen("/home/utnso/Escritorio/facil.ansisop","rb");
+	size_t largo = 0;
+	int tamanio = 0;
+	char* linea = NULL;
+	char* contenido = string_new();
+	ssize_t lectura = getline(&linea, &largo, programa);
+
+	   //Mientras haya algo que leer, entonces lee
+		while (lectura != -1) {
+
+			string_append(&contenido, linea);
+			tamanio = tamanio + strcspn(linea, "\n") + 1;
+			free(linea);
+
+			largo = 0; //no se si es necesario... pero nunca sobra xD
+			lectura = getline(&linea, &largo, programa);
+		}
+
+		free(linea);
+
+		string_append(&contenido, "\0");
+		tamanio = tamanio + 1;
+
+}
+
+
 void cargar_y_enviar_archivo(int sock)
 {
 	char* bufferArchivo = 0;
@@ -76,63 +104,65 @@ int main (void){
 
     cargarConfiguracion();
 
-    int cliente = crearSocket();
-	if(cliente == -1){  // Se valida de que se pudo crear el socket sin inconvenientes, retornando de "crearSocket un valor >=0.En caso de devolver -1 se visualizará el error.
-		perror("No se pudo crear el socket correctamente");
-	}
-
-	struct sockaddr_in direccionServidor; //Creo y configuro el servidor
-	direccionServidor.sin_family = AF_INET;
-	direccionServidor.sin_addr.s_addr = inet_addr(config.IP_KERNEL);
-	direccionServidor.sin_port = htons(config.PUERTO_KERNEL);
-
-	if(conectarSocket(cliente, &direccionServidor) != 0){ // no se está conectando al servidor
-		perror("No se realizó la conexión");
-		return EXIT_FAILURE;
-	}
-
-	send(cliente,&identidad, sizeof(int),0);
-
-	char* bufferArchivo = 0;
-		long length;
-		FILE* archivo = fopen("/home/utnso/Escritorio/facil.ansisop","rb");
-
-		if(archivo){
-			fseek(archivo,0,SEEK_END);
-			length = ftell(archivo);
-			fseek(archivo,0,SEEK_SET);
-			bufferArchivo = (char*)malloc((length +1)*sizeof(char));
-			if(bufferArchivo)
-			{
-				fread(bufferArchivo,1,length,archivo);
-				printf("He recibido %d bytes de contenido: %.*s\n",length, length + 1, bufferArchivo);
-
-				//Creo el header antes de enviar mensaje
-
-				t_header cabeza;
-				cabeza.id = 1;
-				cabeza.tamanio = length;
-
-				//Serializar y enviar archivo
-				void* bufferSerializado = serializar(cabeza, bufferArchivo);
-				send(cliente,bufferSerializado, sizeof(t_header) + (cabeza.tamanio),0);
-
-
-			}else
-			{
-				fclose(archivo);
-			}
-		}
-
-
-
-	while (1) {
-
-			recibir_mensajes_en_socket(cliente);
-
-
-		}
-
+    convertirArchivoACodigo();
+//
+//    int cliente = crearSocket();
+//	if(cliente == -1){  // Se valida de que se pudo crear el socket sin inconvenientes, retornando de "crearSocket un valor >=0.En caso de devolver -1 se visualizará el error.
+//		perror("No se pudo crear el socket correctamente");
+//	}
+//
+//	struct sockaddr_in direccionServidor; //Creo y configuro el servidor
+//	direccionServidor.sin_family = AF_INET;
+//	direccionServidor.sin_addr.s_addr = inet_addr(config.IP_KERNEL);
+//	direccionServidor.sin_port = htons(config.PUERTO_KERNEL);
+//
+//	if(conectarSocket(cliente, &direccionServidor) != 0){ // no se está conectando al servidor
+//		perror("No se realizó la conexión");
+//		return EXIT_FAILURE;
+//	}
+//
+//	send(cliente,&identidad, sizeof(int),0);
+//
+//	char* bufferArchivo = 0;
+//		long length;
+//		FILE* archivo = fopen("/home/utnso/Escritorio/facil.ansisop","rb");
+//
+//		if(archivo){
+//			fseek(archivo,0,SEEK_END);
+//			length = ftell(archivo);
+//			fseek(archivo,0,SEEK_SET);
+//			bufferArchivo = (char*)malloc((length +1)*sizeof(char));
+//			if(bufferArchivo)
+//			{
+//				fread(bufferArchivo,1,length,archivo);
+//				printf("He recibido %d bytes de contenido: %.*s\n",length, length + 1, bufferArchivo);
+//
+//				//Creo el header antes de enviar mensaje
+//
+//				t_header cabeza;
+//				cabeza.id = 1;
+//				cabeza.tamanio = length;
+//
+//				//Serializar y enviar archivo
+//				void* bufferSerializado = serializar(cabeza, bufferArchivo);
+//				send(cliente,bufferSerializado, sizeof(t_header) + (cabeza.tamanio),0);
+//
+//
+//			}else
+//			{
+//				fclose(archivo);
+//			}
+//		}
+//
+//
+//
+//	while (1) {
+//
+//			recibir_mensajes_en_socket(cliente);
+//
+//
+//		}
+//
 
 
 	return 0;
