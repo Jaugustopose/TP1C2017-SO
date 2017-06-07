@@ -56,7 +56,7 @@ void cargarConfiguracion()
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat,getcwd(cwd,sizeof(cwd)));
-	string_append(&pat,"/cpu.cfg");
+	string_append(&pat,"/Debug/cpu.cfg");
 	t_config* configCpu = config_create(pat);
 	free(pat);
 	if (config_has_property(configCpu, "IP_MEMORIA"))
@@ -401,21 +401,78 @@ int main(void){
 	pcbFalso->cantidadPaginas = 1;
 	pcbFalso->contadorPrograma = 0;
 	pcbFalso->indiceCodigo = list_create();
-	t_sentencia* sentencia = malloc(sizeof(t_sentencia));
-	sentencia->inicio = 0;
-	sentencia->fin = 14;
-	list_add(pcbFalso->indiceCodigo,sentencia);
+	pcbFalso->indiceEtiquetas = dictionary_create();
+//	t_sentencia* sentencia = malloc(sizeof(t_sentencia));
+//	sentencia->inicio = 0;
+//	sentencia->fin = 14;
+//	list_add(pcbFalso->indiceCodigo,sentencia);
+
 	pcbFalso->stackPointer = stack_crear();
 	t_elemento_stack* elemento = stack_elemento_crear();
 	stack_push(pcbFalso->stackPointer, elemento);
 
+	char* PROGRAMA =
+			"begin\n"
+			"variables a, b\n"
+			"a = 3\n"
+			"b = 5\n"
+			"a = b + 12\n"
+			"end\n"
+			"\n";
+
+	char* PROGRAMA2 = "#!/usr/bin/ansisop\n"
+			"begin\n"
+				":etiqueta\n"
+				"wait c\n"
+				"print !colas\n"
+				"signal b\n"
+				"#Ciclar indefinidamente\n"
+				"goto etiqueta\n"
+		     	"end\n";
+
+	t_metadata_program* metadata = metadata_desde_literal(PROGRAMA2);
+	t_sentencia* sentencia;
+
+	int i;
+	for (i = 0; i < metadata->instrucciones_size; i++) {
+
+			sentencia = malloc(sizeof(t_sentencia));
+			sentencia->inicio = metadata->instrucciones_serializado[i].start;
+			sentencia->fin = sentencia->inicio + metadata->instrucciones_serializado[i].offset;
+			list_add(pcbFalso->indiceCodigo, sentencia);
+		}
+
+	int longitud = 0;
+
+		for (i = 0; i < metadata->etiquetas_size; i++) {
+
+			if (metadata->etiquetas[i] == '\0') {
+
+				char* etiqueta = malloc(longitud + 1);
+				memcpy(etiqueta, metadata->etiquetas + i - longitud, longitud + 1);
+
+				int* salto = malloc(sizeof(int));
+				memcpy(salto, metadata->etiquetas + i + 1, sizeof(int));
+
+				dictionary_put(pcbFalso->indiceEtiquetas, etiqueta, salto);
+
+				i = i + sizeof(int);
+				longitud = 0;
+			} else
+				longitud++;
+		}
+		free(metadata);
+
+
 	pcbNuevo = pcbFalso;
+
+	serializar_PCB(pcbNuevo,kernel, accionFinProceso);
 
 //	sentenciaPedida = string_new();
 //	enviarSolicitudSentencia(2,2,2,5);
 //	recibirPedazoDeSentencia(tamanioPaginas);
 
- 	pedirSentencia();
+ //	pedirSentencia();
 
   // esperarProgramas();
    // destruirLogs();

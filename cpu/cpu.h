@@ -20,8 +20,10 @@
 #include "serializador.h"
 #include "estructurasCompartidas.h"
 #include "primitivas.h"
-#include <parser/metadata_program.h>
 #include <parser/parser.h>
+#include <parser/metadata_program.h>
+#include <math.h>
+
 
 //OJO: El numero corresponde al numero del proceso con el que se comunica
 //Cambiar un numero SOLO ACA implica romper la comunicacion

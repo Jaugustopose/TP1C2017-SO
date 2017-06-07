@@ -8,12 +8,12 @@
 #ifndef CLIENTE_H_
 #define CLIENTE_H_
 
-typedef struct pedidoBytesMemoriaStruct {
-	int pid;
-	int	nroPagina;
-	int offset;
-	int tamanio;
-} pedidoBytesMemoria_t;
+//typedef struct pedidoBytesMemoriaStruct {
+//	int pid;
+//	int	nroPagina;
+//	int offset;
+//	int tamanio;
+//} pedidoBytesMemoria_t;
 
 typedef struct pedidoAlmacenarBytesMemoriaStruct {
 	pedidoBytesMemoria_t pedidoBytes;

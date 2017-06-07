@@ -30,10 +30,7 @@ void* serializarMemoria(int codigoAccion, void* contenidoDelMensaje, int tamanio
 
 	return buffer;
 }
-int serializar_accion()
-{
 
-}
 int serializar_pedido(char* destino, t_pedido* origen) {
 
 	memcpy(destino, &origen, sizeof(t_pedido));
@@ -76,7 +73,7 @@ int serializar_stack_elem(char* destino, t_elemento_stack* origen) {
 
 	desplazamiento += serializar_int(destino + desplazamiento, &(origen->pos));
 	desplazamiento += serializar_lista(destino + desplazamiento, origen->argumentos,	sizeof(t_pedido));
-//	desplazamiento += serializar_dictionary(destino + desplazamiento, origen->identificadores, sizeof(t_pedido));
+ 	desplazamiento += serializar_diccionario(destino + desplazamiento, origen->identificadores, sizeof(t_pedido));
 	desplazamiento += serializar_t_puntero(destino + desplazamiento, &(origen->posRetorno));
 	desplazamiento += serializar_pedido(destino + desplazamiento, &(origen->valRetorno));
 
@@ -132,12 +129,33 @@ int serializar_diccionario(char* diccionarioSerializado, t_dictionary* diccionar
 
 
 int bytes_list(t_list* origen, int pesoElemento){
-	return 1+list_size(origen)*pesoElemento;
+
+	return (int)(1 + (list_size(origen)*pesoElemento));
+}
+
+int bytes_diccionario(t_dictionary* dic, int pesoData){
+
+	int indiceTabla = 1;
+	int bytes = 1;
+
+	for (indiceTabla = 0; indiceTabla < dic->table_max_size; indiceTabla++) {
+
+		t_hash_element *element = dic->elements[indiceTabla];
+
+		while (element != NULL) {
+			bytes++; // La cantidad de caracteres de la key del elemento
+			bytes = bytes + strlen(element->key);
+			bytes = bytes + pesoData;
+
+			element = element->next;
+		}
+	}
+	return bytes;
 }
 
 int bytes_elemento_stack(t_elemento_stack* origen) {
 	return sizeof(int) + bytes_list(origen->argumentos, sizeof(t_pedido))
-			//+ bytes_dictionary(origen->identificadores, sizeof(t_pedido))
+			+ bytes_diccionario(origen->identificadores, sizeof(t_pedido))
 			+ sizeof(t_puntero) + sizeof(t_pedido);
 }
 
@@ -146,17 +164,19 @@ int bytes_stack(t_stack* origen) {
 	int bytes = 1;
 
 	for (i = 0; i < stack_tamanio(origen); i++) {
-		bytes += bytes_elemento_stack(list_get(origen, i));
+
+		bytes = bytes + bytes_elemento_stack(list_get(origen, i));
 	}
 	return bytes;
 }
 
 
 int bytes_PCB(t_PCB* pcb) {
-	return sizeof(int) * 3;
-			//+ bytes_stack(pcb->stackPointer);
-			//+ bytes_list(pcb->indiceCodigo, sizeof(t_sentencia));
-			//+ bytes_dictionary(pcb->indice_etiquetas, sizeof(int));
+	return (int)((sizeof(int) * 3)
+			+ bytes_stack(pcb->stackPointer)
+			+ bytes_list(pcb->indiceCodigo, sizeof(t_sentencia))
+			+ bytes_diccionario(pcb->indiceEtiquetas, sizeof(int))
+			);
 }
 
 void* serializar_PCB(t_PCB* pcb, int sock, int codigoAccion) {
