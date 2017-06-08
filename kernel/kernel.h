@@ -28,6 +28,7 @@
 #include "estructurasCompartidas.h"
 #include "cliente-servidor.h"
 #include <pthread.h>
+#include "gestionDeProcesos.h"
 
 
 //Estructuras y enum

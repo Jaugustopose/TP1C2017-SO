@@ -1,10 +1,10 @@
 #include "gestionDeProcesos.h"
 
 
-void transformarCodigoToMetadata(t_PCB* pcb, char* cod)
+void transformarCodigoToMetadata(t_PCB pcb, char* cod)
 {
 	t_metadata_program* metadata = metadata_desde_literal(cod);
-	t_sentencia* sentencia;
+	t_sentencia sentencia;
 
 	    //Llena indice de codigo
 		int i;
@@ -13,7 +13,7 @@ void transformarCodigoToMetadata(t_PCB* pcb, char* cod)
 				sentencia = malloc(sizeof(t_sentencia));
 				sentencia->inicio = metadata->instrucciones_serializado[i].start;
 				sentencia->fin = sentencia->inicio + metadata->instrucciones_serializado[i].offset;
-				list_add(pcb->indiceCodigo, sentencia);
+				list_add(pcb.indiceCodigo, sentencia);
 			}
 
 		//Llena indice de etiquetas
@@ -29,8 +29,7 @@ void transformarCodigoToMetadata(t_PCB* pcb, char* cod)
 					int* salto = malloc(sizeof(int));
 					memcpy(salto, metadata->etiquetas + i + 1, sizeof(int));
 
-					dictionary_put(pcb->indiceEtiquetas, etiqueta, salto);
-
+					dictionary_put(pcb.indiceEtiquetas, etiqueta, salto);
 					i = i + sizeof(int);
 					longitud = 0;
 
@@ -45,11 +44,11 @@ void transformarCodigoToMetadata(t_PCB* pcb, char* cod)
 		free(metadata);
 }
 
-t_PCB* crearPCB()
+t_PCB crearPCB()
 {
-	t_PCB* pcb = malloc(sizeof(t_PCB));
+	t_PCB pcb = malloc(sizeof(t_PCB));
 
-	pcb->PID=0;
+	pcb.PID=0;
 	pcb->contadorPrograma = 0;
 	pcb->cantidadPaginas = 0;
 
@@ -60,15 +59,15 @@ t_PCB* crearPCB()
 	return pcb;
 }
 
-t_proceso* crearProceso(int pid, int consolaDuenio, int cpuDuenio, char* codigo)
+t_proceso crearProceso(int pid, int consolaDuenio, char* codigo)
 {
-	t_proceso* proceso = malloc(sizeof(t_proceso));
+	t_proceso proceso = malloc(sizeof(t_proceso));
 	proceso->PCB = crearPCB();
 
 	//datos falsos por ahora
 	proceso->PCB->PID = pid;
 	proceso->ConsolaDuenio = consolaDuenio;
-	proceso->CpuDuenio = cpuDuenio;
+	proceso->CpuDuenio = -1;
 
 	transformarCodigoToMetadata(proceso->PCB, codigo);
 
