@@ -68,4 +68,12 @@ t_pedido* stack_proximo_pedido(t_stack* stack, int tamanioPagina) {
 	return pedido;
 }
 
+void destruir_PCB(t_PCB* pcb){
+	//Lo usa CPU y Kernel
+	list_destroy(pcb->indiceCodigo);
+	stack_destruir(pcb->stackPointer);
+	dictionary_destroy(pcb->indiceEtiquetas);
+
+	free(pcb);
+}
 

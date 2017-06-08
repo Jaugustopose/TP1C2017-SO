@@ -6,6 +6,10 @@
 
 t_identidad* identidadCpu = SOYCPU;
 
+bool finalizarEjecucion(){
+	return finalizarEjec && !ejecutar;
+}
+
 bool hayOverflow(){
 	return overflow!=1;
 }
@@ -13,6 +17,7 @@ bool hayOverflow(){
 void overflowException(int mensajeMemoria){
 
 	//TODO: Desarrollar el manejo del overflow. Hay que finalizar proceso y demas.
+	//Puede recibir: 0 (stackoverflow), 1(marcos insuficientes), otra cosa.
 }
 
 void goToMagia(){};
@@ -146,6 +151,10 @@ void deserializarPCB(t_PCB* pcbNuevo, t_PCB* pcbSerializado)
 
 void obtenerPCB()
 {
+	if(pcbNuevo != NULL){
+			destruir_PCB(pcbNuevo);
+		}
+
 	pcbNuevo = malloc(sizeof(t_PCB));
 	//deserializar_PCB(&pcbNuevo, kernel);
 	stack = pcbNuevo->stackPointer;
@@ -174,6 +183,24 @@ void finalizarProceso(bool normalmente){
 	pcbNuevo = NULL;
 }
 
+void inicializarContexto()
+{
+	//TODO:Crear logs
+	//	crearLog(string_from_format("cpu_%d", getpid()),"CPU",0);
+	//	log_info(infoLog, "Iniciando proceso CPU, PID: %d.", getpid());
+	//
+	//	logger = log_create("cpu.log", "CPU", false, LOG_LEVEL_INFO);
+	//	debugLogger = log_create("cpu.log", "CPU", false, LOG_LEVEL_DEBUG);
+	//
+	//	log_info(logger, "Inicio CPU");
+	//	log_debug(debugLogger, "Inicio CPU");
+
+	ejecutar = true;
+	finalizarEjec = false;
+	lanzarOverflowExep = false;
+	pcbNuevo = NULL;
+
+}
 /**********FUNCIONES PARA MANEJO DE SENTENCIAS*********************************************************************/
 
 void enviarSolicitudSentencia(int pid, int pagina, int offset, int size) {
@@ -339,12 +366,15 @@ void pedirSentencia()
 
 }
 
-void recibirOrdenes(char* accion)
+void recibirOrdenes(char* accionRecibida)
 {
 
-	switch((int)accion){
+	switch((int)accionRecibida){
 
 		case accionObtenerPCB: //Recibir nuevo PCB del Kernel
+			salteaCircuitoConGoTo = false;
+			overflow = false;
+			lanzarOverflowExep = false;
 			obtenerPCB();
 			break;
 
@@ -360,126 +390,47 @@ void recibirOrdenes(char* accion)
 			desalojarProceso();
 
 			break;
+		case accionException: //Overflow - Le paso un cero que indica overflow
+
+		   overflowException(0);
+
+			break;
+		case accionError: //Overflow - Le paso un cero que indica overflow
+
+			break;
+
+		default:
+			exit(EXIT_FAILURE);
+		    break;
 	}
 
 }
 
 void esperarProgramas()
 {
-	char* accion;
+	char* accionRecibida;
 	ejecutar = true;
 
-		while (1) {
-			recv(kernel, accion, 1, MSG_WAITALL);
-			recibirOrdenes(accion);
-			free(accion);
+		while (!finalizarEjecucion()) {
+
+			recv(kernel, accionRecibida, 1, MSG_WAITALL);
+			recibirOrdenes(accionRecibida);
+			free(accionRecibida);
 		}
 }
 
 int main(void){
 
-//	crearLog(string_from_format("cpu_%d", getpid()),"CPU",0);
-//	log_info(infoLog, "Iniciando proceso CPU, PID: %d.", getpid());
-//
-//	logger = log_create("cpu.log", "CPU", false, LOG_LEVEL_INFO);
-//	debugLogger = log_create("cpu.log", "CPU", false, LOG_LEVEL_DEBUG);
-//
-//	log_info(logger, "Inicio CPU");
-//	log_debug(debugLogger, "Inicio CPU");
 
 	cargarConfiguracion();
 	inicializarPrimitivas();
-	//conectarConKernel();
-    // conectarConMemoria();
-     //tamanioPaginas = obtener_tamanio_pagina(memoria);
-     tamanioPaginas = 32;
+	inicializarContexto();
+	conectarConKernel();
+    conectarConMemoria();
+    //tamanioPaginas = obtener_tamanio_pagina(memoria);
 
 
-	//PRUEBA GASTON: LUEGO BORRAR A LA MIERDA
-	t_PCB* pcbFalso = malloc(sizeof(t_PCB));
-	pcbFalso->PID = 2;
-	pcbFalso->cantidadPaginas = 1;
-	pcbFalso->contadorPrograma = 0;
-	pcbFalso->indiceCodigo = list_create();
-	pcbFalso->indiceEtiquetas = dictionary_create();
-//	t_sentencia* sentencia = malloc(sizeof(t_sentencia));
-//	sentencia->inicio = 0;
-//	sentencia->fin = 14;
-//	list_add(pcbFalso->indiceCodigo,sentencia);
-
-	pcbFalso->stackPointer = stack_crear();
-	t_elemento_stack* elemento = stack_elemento_crear();
-	stack_push(pcbFalso->stackPointer, elemento);
-
-	char* PROGRAMA =
-			 "#!/usr/bin/ansisop\n"
-			"begin\n"
-			"variables a, b\n"
-			"a = 3\n"
-			"b = 5\n"
-			"a = b + 12\n"
-			"end\n";
-
-	char* PROGRAMA2 = "#!/usr/bin/ansisop\n"
-			"begin\n"
-				":etiqueta\n"
-				"wait c\n"
-				"print !colas\n"
-				"signal b\n"
-				"#Ciclar indefinidamente\n"
-				"goto etiqueta\n"
-		     	"end\n";
-
-	t_metadata_program* metadata = metadata_desde_literal(PROGRAMA);
-	t_sentencia* sentencia;
-
-	int i;
-	for (i = 0; i < metadata->instrucciones_size; i++) {
-
-			sentencia = malloc(sizeof(t_sentencia));
-			sentencia->inicio = metadata->instrucciones_serializado[i].start;
-			sentencia->fin = sentencia->inicio + metadata->instrucciones_serializado[i].offset;
-			list_add(pcbFalso->indiceCodigo, sentencia);
-		}
-
-	int longitud = 0;
-
-		for (i = 0; i < metadata->etiquetas_size; i++) {
-
-			if (metadata->etiquetas[i] == '\0') {
-
-				char* etiqueta = malloc(longitud + 1);
-				memcpy(etiqueta, metadata->etiquetas + i - longitud, longitud + 1);
-
-				int* salto = malloc(sizeof(int));
-				memcpy(salto, metadata->etiquetas + i + 1, sizeof(int));
-
-				dictionary_put(pcbFalso->indiceEtiquetas, etiqueta, salto);
-
-				i = i + sizeof(int);
-				longitud = 0;
-			} else
-				longitud++;
-		}
-		free(metadata);
-
-
-	pcbNuevo = pcbFalso;
-	t_PCB* pcbUltimo = malloc(sizeof(t_PCB));
-
-	char* pcbSerial;
-	pcbSerial = serializar_PCB(pcbNuevo,kernel, accionFinProceso);
-	deserializar_PCB(pcbUltimo, kernel, pcbSerial);
-	t_PCB* pcbResultado = pcbUltimo;
-
-
-//	sentenciaPedida = string_new();
-//	enviarSolicitudSentencia(2,2,2,5);
-//	recibirPedazoDeSentencia(tamanioPaginas);
-
- //	pedirSentencia();
-
-  // esperarProgramas();
+    esperarProgramas();
    // destruirLogs();
 
 	return EXIT_SUCCESS;

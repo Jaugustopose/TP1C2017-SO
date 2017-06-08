@@ -41,7 +41,9 @@ enum accionCPU {
 	accionPedirValorCompartidaKernel = 13, //primitiva kernel
 	accionQuantumInterrumpido = 14, //signal
 	accionPedirValorVariable = 15, //primitiva memoria
-	accionAsignarValorVariable = 16 //primitiva memoria
+	accionAsignarValorVariable = 16, //primitiva memoria
+	accionException = 17, //para overflow
+	accionError = 18
 
 };
 
@@ -51,8 +53,10 @@ int kernel;
 struct sockaddr_in dirMemoria;
 int memoria;
 bool ejecutar;
+bool finalizarEjec;
 bool salteaCircuitoConGoTo;
-int overflow;
+bool overflow;
+bool lanzarOverflowExep;
 int tamanioPaginas;
 char* sentenciaPedida;
 int pidInventado;
