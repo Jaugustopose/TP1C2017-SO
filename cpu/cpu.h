@@ -55,11 +55,12 @@ int memoria;
 bool ejecutar;
 bool finalizarEjec;
 bool salteaCircuitoConGoTo;
-bool overflow;
+int overflow;
 bool lanzarOverflowExep;
 int tamanioPaginas;
 char* sentenciaPedida;
-int pidInventado;
+//Espera este tiempo el CPU cuando termina de ejecutar una sentencia
+int quantumSleep;
 
 
 t_log *logger;

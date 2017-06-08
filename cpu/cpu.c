@@ -6,6 +6,49 @@
 
 t_identidad* identidadCpu = SOYCPU;
 
+int char4ToInt(char* chars){
+	int a;
+	deserializar_int(&a,chars);
+	return a;
+}
+
+char* intToChar4(int num){
+
+	char* serial = malloc(sizeof(int));
+	serializar_int(serial,&num);
+	return serial;
+}
+
+char* lecturaLargoMensajeASerializar(int sock){
+
+	char* serialLargo = malloc(sizeof(int));
+	recv(sock, serialLargo, sizeof(int), 0);
+	int largo = char4ToInt(serialLargo);
+	char* mensaje = malloc(largo);
+	recv(sock, mensaje, largo, 0);
+	free(serialLargo);
+
+	return mensaje;
+}
+
+void enviarLargoMensajeASerializar(int sock, int largo, char* mensaje){
+
+	char* serialLargo = intToChar4(largo);
+	send(sock,serialLargo, sizeof(int), 0);
+	send(sock, mensaje, largo, 0);
+
+	free(serialLargo);
+}
+
+void recibirQuantumSleep(){
+
+	char* quantum = malloc(sizeof(int));
+	recv(kernel, quantum, sizeof(int), 0);
+	quantumSleep = char4ToInt(quantum);
+
+	free(quantum);
+}
+
 bool finalizarEjecucion(){
 	return finalizarEjec && !ejecutar;
 }
@@ -18,6 +61,14 @@ void overflowException(int mensajeMemoria){
 
 	//TODO: Desarrollar el manejo del overflow. Hay que finalizar proceso y demas.
 	//Puede recibir: 0 (stackoverflow), 1(marcos insuficientes), otra cosa.
+
+	if(lanzarOverflowExep){
+
+			finalizarProceso(false);
+
+			lanzarOverflowExep=false;
+			salteaCircuitoConGoTo=true;
+		}
 }
 
 void goToMagia(){};
@@ -155,10 +206,18 @@ void obtenerPCB()
 			destruir_PCB(pcbNuevo);
 		}
 
+	//Comunicacion con kernel
+	char* bufferPCB = lecturaLargoMensajeASerializar(kernel);
+
+	//Deserializacion del PCB
 	pcbNuevo = malloc(sizeof(t_PCB));
-	//deserializar_PCB(&pcbNuevo, kernel);
+	deserializar_PCB(&pcbNuevo, bufferPCB);
+
+	//Guardo variables como globales a CPU
 	stack = pcbNuevo->stackPointer;
 	cantidadPagCodigo = pcbNuevo->cantidadPaginas;
+
+	free(bufferPCB);
 
 }
 
@@ -167,18 +226,36 @@ void desalojarProceso()
 	ejecutar = false;
 
 	//Envio PCB al kernel
-	int bytes = bytes_PCB(&pcbNuevo);
-
+	int bytes = bytes_PCB(pcbNuevo);
+	char* bufferSerialPCB = malloc(bytes);
 	serializar_PCB(&pcbNuevo, kernel, accionFinProceso);
+	enviarLargoMensajeASerializar(kernel, bytes, bufferSerialPCB);
+
+	free(bufferSerialPCB);
 }
 
 void finalizarProceso(bool normalmente){
 
-	char* accion = (char*)accionFinProceso;
-    send(kernel, accion, 1, 0);
-	free(accion);
+	if(normalmente){
+			//Loguear mensaje
 
-	//TODO:destruir pcb
+	}
+	if((overflow != 2 && overflow != 0) || normalmente){
+
+		//Avisar a Memoria que termino el proceso
+		char* accionEnviarMemo = (char*)accionFinProceso;
+	    send(memoria, accionEnviarMemo, sizeof(int), 0);
+		free(accionEnviarMemo);
+
+	}
+
+
+	//Avisar a Kernel que termino el proceso
+	char* accionEnviar = (char*)accionFinProceso;
+    send(kernel, accionEnviar, sizeof(int), 0);
+	free(accionEnviar);
+
+	destruir_PCB(pcbNuevo);
 	ejecutar = false;
 	pcbNuevo = NULL;
 }
@@ -247,39 +324,41 @@ int esPaginaCompleta(int longitudRestante) {
 
 void recibirPedazoDeSentencia(int size){
 
-	char* alo = malloc(size);
-	recv(memoria, alo, size, 0);
-	sacarSaltoDeLinea(alo, size);
+	char* sentenciaRecibida = malloc(size);
+	recv(memoria, sentenciaRecibida, size, 0);
+	sacarSaltoDeLinea(sentenciaRecibida, size);
 	char* sentencia = malloc(size+1);
 	sentencia[size]='\0';
-	memcpy(sentencia,alo,size);
+	memcpy(sentencia,sentenciaRecibida,size);
 
 	string_append(&sentenciaPedida, sentencia);
 
-	free(alo);
+	free(sentenciaRecibida);
 	free(sentencia);
 
 }
 
 void pedirPrimeraSentencia(t_sentencia* sentenciaRelativa, int pagina, int* longitudRestante) {
 
- int tamanioPrimeraSentencia = minimo(*longitudRestante,	tamanioPaginas - sentenciaRelativa->inicio);
+if (!hayOverflow()) {
+	 int tamanioPrimeraSentencia = minimo(*longitudRestante, tamanioPaginas - sentenciaRelativa->inicio);
 
-//char* accion = (char*)solicitarBytesAccion;
-//send(memoria, accion, sizeof(accion), 0);
-//free(accion);
+//	 char* accion = (int)solicitarBytesAccion;
+//	 send(memoria, accion, sizeof(accion), 0);
+//	 free(accion);
 
-enviarSolicitudSentencia(pcbNuevo->PID, pagina, sentenciaRelativa->inicio,tamanioPrimeraSentencia);
-(*longitudRestante) = (int)(longitudRestante - tamanioPrimeraSentencia);
+	enviarSolicitudSentencia(pcbNuevo->PID, pagina, sentenciaRelativa->inicio,tamanioPrimeraSentencia);
+	(*longitudRestante) -= tamanioPrimeraSentencia;
 
-recibirPedazoDeSentencia(tamanioPrimeraSentencia);
+	recibirPedazoDeSentencia(tamanioPrimeraSentencia);
+ }
 }
 
 void pedirPaginaCompleta(int nroPagina) {
 
-	char* accion = (char)solicitarBytesAccion;
-	send(memoria, accion, sizeof(accion), 0);
-	free(accion);
+//	char* accion = (int)solicitarBytesAccion;
+//	send(memoria, accion, sizeof(accion), 0);
+//	free(accion);
 
 	enviarSolicitudSentencia(pcbNuevo->PID, nroPagina, 0, tamanioPaginas);
 	recibirPedazoDeSentencia(tamanioPaginas);
@@ -287,9 +366,9 @@ void pedirPaginaCompleta(int nroPagina) {
 
 void pedirUltimaSentencia(t_sentencia* sentenciaRelativa, int pagina, int longitudRestante) {
 
-	char* accion = (char*)solicitarBytesAccion;
-	send(memoria, accion, sizeof(accion), 0);
-	free(accion);
+//	char* accion = (char*)solicitarBytesAccion;
+//	send(memoria, accion, sizeof(accion), 0);
+//	free(accion);
 	enviarSolicitudSentencia(pcbNuevo->PID, pagina, 0, longitudRestante);
 	recibirPedazoDeSentencia(longitudRestante);
 
@@ -299,9 +378,6 @@ void obtenerSentencia(int* tamanio)
 {
 	/*Una sentencia puede estar repartida en una o mas paginas*/
 
-	int pid = pcbNuevo->PID;
-	int inicioSentencia; //primer byte de la sentencia
-	int longitudTotalSentencia; //desplazamiento desde el primer byte de la sentencia
 	int paginaAPedir;
 
 	t_sentencia* sentenciaRelativa = obtenerSentenciaRelativa(&paginaAPedir);
@@ -330,7 +406,9 @@ void obtenerSentencia(int* tamanio)
 }
 
 int sentenciaNoFinaliza(char* sentencia){
-	return strcmp(sentencia,"end")!=0 && strcmp(sentencia,"\tend")!=0 && strcmp(sentencia,"\t\tend")!=0;
+	return strcmp(sentencia,"end")!=0
+		&& strcmp(sentencia,"\tend")!=0
+		&& strcmp(sentencia,"\t\tend")!=0;
 }
 
 /***********FUNCIONES DEL CIRCUITO DE PARSEO DE SENTENCIAS*****************************************/
@@ -342,12 +420,13 @@ void parsear(char* sentencia)
 	if(sentenciaNoFinaliza(sentencia)){
 
 	//Le paso sentencia, set de primitivas de CPU y set de primitivas de kernel
-
 	analizadorLinea(sentencia, &funciones, &funcionesKernel);
 
-	char* accion = (char*)accionFinInstruccion;
-	send(kernel, accion, 1, 0);
-	free(accion);
+	if(salteaCircuitoConGoTo){return;}
+
+	char* accionEnviar = (char*)accionFinInstruccion;
+	send(kernel, accionEnviar, 1, 0);
+	free(accionEnviar);
 
 	}else{
 		  finalizarProceso(true);
@@ -356,13 +435,22 @@ void parsear(char* sentencia)
 
 void pedirSentencia()
 {
-	int tamanio;
+	//Recibe del nucleo el quantum
+	recibirQuantumSleep();
 
-	sentenciaPedida = string_new();
-	obtenerSentencia(&tamanio);
-	parsear(sentenciaPedida);
+	if(!finalizarEjecucion()){
 
-	free(sentenciaPedida);
+			int tamanio;
+			//Espera este tiempo antes de empezar con la proxima sentencia
+			usleep(quantumSleep*1000);
+			sentenciaPedida = string_new();
+			obtenerSentencia(&tamanio);
+
+			if(!hayOverflow()){
+				parsear(sentenciaPedida);
+				free(sentenciaPedida);
+			}
+		}
 
 }
 
@@ -380,10 +468,10 @@ void recibirOrdenes(char* accionRecibida)
 
 		case accionContinuarProceso: //Obtener y parsear sentencias
 
-			if(ejecutar){
+			if(!finalizarEjecucion()){
 				pedirSentencia();
 			}
-
+			salteaCircuitoConGoTo = false;
 			break;
 		case accionFinProceso: //Envio PCB al Kernel
 

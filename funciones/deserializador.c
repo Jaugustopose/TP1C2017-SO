@@ -138,7 +138,7 @@ int deserializar_diccionario(t_dictionary* destino, char* origen, int pesoData){
 }
 
 
-void* deserializar_PCB(t_PCB* pcbUlt, int sock, char* pcbSerializado){
+void* deserializar_PCB(t_PCB* pcbUlt, char* pcbSerializado){
 //	int tamanio;
 
 	//recv(sock, &tamanio, 4, 0); //Recibo el tamaño de lo que me estan enviando.
