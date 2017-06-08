@@ -1,4 +1,3 @@
-
 #include "kernel.h"
 
 int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
@@ -7,7 +6,7 @@ int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
 	pedidoPaginas.pid = idProceso;
 	pedidoPaginas.cantidadPaginas = paginas;
 	printf("Sizeof pedidoPaginas: %d\n", sizeof(pedidoPaginas));
-	char* buffer = serializarMemoria(codigoAccion, &pedidoPaginas,
+	void* buffer = serializarMemoria(codigoAccion, &pedidoPaginas,
 			sizeof(pedidoPaginas));
 	printf("buffer serializado: %d\n", *buffer);
 	send(cliente, buffer, sizeof(codigoAccion) + sizeof(pedidoPaginas), 0);
@@ -15,26 +14,29 @@ int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
 	//Reservo para recibir un int con el resultAccion
 	int resultAccion;
 	recv(cliente, &resultAccion, sizeof(int), 0);
-	printf("inicializarPrograma resultó con código de acción: %d\n", resultAccion);
+	printf("inicializarPrograma resultó con código de acción: %d\n",
+			resultAccion);
 
 	return resultAccion;
 }
 
-void enviarSolicitudAlmacenarBytes(int cliente,t_proceso unProceso, char* buffer,int tamanioTotal) {
+void enviarSolicitudAlmacenarBytes(int cliente, t_proceso unProceso, char* buffer, int tamanioTotal) {
 	int codigoAccion = 3;
 	char* buffer2;
 	int m;
 	int tamanioAAlmacenar;
 	//Armo buffer para enviar
-	void* bufferParaAlmacenarEnMemoria = malloc((sizeof(codigoAccion)+sizeof(unProceso.PCB.PID)+sizeof(int32_t)+sizeof(int32_t))*unProceso.PCB.cantidadPaginas + tamanioTotal);
+	void* bufferParaAlmacenarEnMemoria = malloc(
+			(sizeof(codigoAccion) + sizeof(unProceso.PCB.PID) + sizeof(int32_t)
+					+ sizeof(int32_t)) * unProceso.PCB.cantidadPaginas
+					+ tamanioTotal);
 
-	for (m=0; m < unProceso.PCB.cantidadPaginas; m++) {
+	for (m = 0; m < unProceso.PCB.cantidadPaginas; m++) {
 		if (tamanioTotal > tamanioPag) {
 
 			tamanioAAlmacenar = tamanioPag;
 			tamanioTotal = tamanioTotal - tamanioPag;
-		}
-		else {
+		} else {
 			tamanioAAlmacenar = tamanioTotal;
 		}
 		pedidoAlmacenarBytesMemoria_t pedidoAlmacenar;
@@ -43,21 +45,31 @@ void enviarSolicitudAlmacenarBytes(int cliente,t_proceso unProceso, char* buffer
 		pedidoAlmacenar.pedidoBytes.offset = 0;
 		pedidoAlmacenar.pedidoBytes.tamanio = tamanioAAlmacenar;
 		pedidoAlmacenar.buffer = buffer;
-		printf("pedidoAlmacenar.buffer: %s\n", pedidoAlmacenar.buffer);
-		char* buffer2 = serializarMemoria(codigoAccion, pedidoAlmacenar.buffer, pedidoAlmacenar.pedidoBytes.tamanio);
-		int tamanioBuffer2 = sizeof(pedidoAlmacenar.pedidoBytes) + sizeof(pedidoAlmacenar.pedidoBytes.tamanio) + sizeof(codigoAccion);
-		if (m != 0){
-			memcpy(bufferParaAlmacenarEnMemoria + ((sizeof(codigoAccion) + sizeof(pedidoAlmacenar.pedidoBytes)) * m) + tamanioPag, buffer2, tamanioBuffer2);
+		void* buffer2 = serializarMemoria(codigoAccion, pedidoAlmacenar.buffer,
+				pedidoAlmacenar.pedidoBytes.tamanio);
+		int tamanioBuffer2 = sizeof(pedidoAlmacenar.pedidoBytes)
+							 + sizeof(pedidoAlmacenar.pedidoBytes.tamanio)
+							 + sizeof(codigoAccion);
+		if (m != 0) {
+			memcpy(
+					bufferParaAlmacenarEnMemoria
+					+ ((sizeof(codigoAccion) + sizeof(pedidoAlmacenar.pedidoBytes)) * m) + tamanioPag,
+					buffer2, tamanioBuffer2);
 		} else {
 			memcpy(bufferParaAlmacenarEnMemoria, buffer2, tamanioBuffer2);
 		}
 		free(buffer2);
-		//Ahora recibo la respuesta
-	//	int resultAccion;
-	//	recv(cliente, &resultAccion, sizeof(resultAccion), 0);
-	//	printf("almacenarBytes resultó con código de acción: %d\n", resultAccion);
+		send(cliente, bufferParaAlmacenarEnMemoria,
+			 sizeof(codigoAccion) + sizeof(pedidoAlmacenar.pedidoBytes)
+			 + pedidoAlmacenar.pedidoBytes.tamanio, 0);
 
-	//	free(buffer2);
+		//Ahora recibo la respuesta
+		int resultAccion;
+		recv(cliente, &resultAccion, sizeof(resultAccion), 0);
+		printf("almacenarBytes resultó con código de acción: %d\n",
+				resultAccion);
+
+			free(buffer2);
 	}
 }
 
@@ -106,7 +118,8 @@ void cargarConfiguracion() {
 		printf("GRADO_MULTIPROG: %d\n\n\n", config.GRADO_MULTIPROG);
 	}
 
-	printf("--------------Configuración cargada exitosamente--------------\n\n");
+	printf(
+			"--------------Configuración cargada exitosamente--------------\n\n");
 	printf("Seleccione la opción que desee realizar:\n"
 			"1) Listado de procesos del sistema\n"
 			"2) Finalizar un proceso\n"
@@ -122,16 +135,6 @@ void comprobarSockets(int maxSock, fd_set* read_fds) {
 	}
 }
 
-void recibir_archivo(void* buffer){
-
-	FILE* archivo =	fopen("archivo recibido.txt","w");
-	if (archivo){
-		fputs(buffer,archivo);
-		fclose(archivo);
-	}
-
-}
-
 int obtener_tamanio_pagina(int memoria) {
 	int valorRecibido;
 	int idMensaje = 6;
@@ -141,39 +144,123 @@ int obtener_tamanio_pagina(int memoria) {
 	return valorRecibido;
 }
 
-int paginas_que_ocupa(int unTamanio, int tamanioPagina){
+int paginas_que_ocupa(int unTamanio, int tamanioPagina) {
 
 	int paginas;
 	paginas = (unTamanio / tamanioPagina);
 }
 
-void interactuar_con_usuario(){
+void interactuar_con_usuario() {
 
 	//Interactuo con el usuario
 }
 
-void procesos_exit_code_a_cero(int fileDescriptor, t_list* listaConProcesos){
+void procesos_exit_code_a_cero(int fileDescriptor, t_list* listaConProcesos) {
 
 	//Encontrar cada proceso con proceso.ConsolaDuenio = fileDescriptor
 	// Y cambiarle el exit code a -6 (finalizo por desconexion de consola)
 
 }
 
-int main(void) {
+void Colocar_en_respectivo_fdset() {
+	//Recibo identidad y coloco en la bolsa correspondiente
+	recv(sockClie, &identidadCliente, sizeof(int), 0);
+	switch (identidadCliente) {
 
+	case soyConsola:
+		FD_SET(sockClie, &bolsaConsolas); //agrego una nueva consola a la bolsa de consolas
+		printf("Se ha conectado una nueva consola \n");
+
+		break;
+
+	case soyCPU:
+		FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
+		break;
+		printf("Se ha conectado un nuevo CPU  \n");
+	}
+	if (sockClie > maxFd) {
+		// actualizar el máximo
+		maxFd = sockClie;
+	}
+}
+
+void conexion_de_cliente_finalizada() {
+	// error o conexión cerrada por el cliente
+	if (cantBytes == 0) {
+		// conexión cerrada
+		printf("Server: socket %d termino la conexion\n", i);
+	} else {
+		perror("recv");
+	}
+	// Eliminar del conjunto maestro y su respectiva bolsa
+	FD_CLR(i, &master);
+	if (FD_ISSET(i, &bolsaConsolas)) {
+		FD_CLR(i, &bolsaConsolas);
+		printf("Se desconecto consola del socket %d", i);
+
+		procesos_exit_code_a_cero(i, listaDeProcesos); //TODO
+
+	} else {
+		FD_CLR(i, &bolsaCpus);
+		printf("Se desconecto cpu del socket %d", i);
+
+		liberar_procesos_de_consola(i, listaDeProcesos); //TODO
+	}
+	close(i); // Si se perdio la conexion, la cierro.
+}
+
+void Accion_envio_script(int tamanioScript, int memoria) {
+	recv(i, &tamanioScript, sizeof(int32_t), 0);
+	printf("el valor de tamanio es: %d\n", tamanioScript);
+	char* buff = malloc(tamanioScript);
+	//char* cadena = malloc(tamanio*sizeof(char));
+	recv(i, buff, tamanioScript, 0);
+	//memcpy(cadena,buff,tamanio * sizeof(char));
+	printf("el valor de cadena es: %s\n", buff);
+	///////////FIN DE DESERIALIZADOR///////////////
+	t_proceso proceso = crearProceso(identificadorProceso, i, (char*) buff);
+	list_add(listaDeProcesos, &proceso); //TODO: Agregar un proceso a esa bendita lista
+	identificadorProceso++;
+	//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
+	int paginasASolicitar = redondear(tamanioScript / tamanioPag);
+	int resultadoAccion = pedido_Inicializar_Programa(memoria,
+			paginasASolicitar, proceso.PCB.PID);
+	if (resultadoAccion == 0) {
+		//Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
+		proceso.PCB.cantidadPaginas = paginasASolicitar;
+		enviarSolicitudAlmacenarBytes(memoria, proceso, buff, tamanioScript);
+	}
+}
+
+void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
+
+	switch (idMensaje) {
+
+	//TODO: TODOS LOS CASE
+
+	}
+}
+
+void atender_accion_consola(int idMensaje, int tamanioScript, int memoria) {
+
+	switch (idMensaje) {
+	
+	case envioScript:
+		Accion_envio_script(tamanioScript, memoria);
+
+	}
+}
+
+int main(void) {
+	//Cargar configuracion
 	cargarConfiguracion();
 	listaDeProcesos = list_create();
 
-
+	//Conectar con memoria
 	int memoria = socket(AF_INET, SOCK_STREAM, 0);
-
-	direccionServidor.sin_family = AF_INET;
-	direccionServidor.sin_addr.s_addr = inet_addr("127.0.0.1");
-	direccionServidor.sin_port = htons(9030);
-
-	conectar_con_server(memoria,&direccionServidor);
+	crearDireccionServidor(9030);
+	conectar_con_server(memoria, &direccionServidor);
 	tamanioPag = obtener_tamanio_pagina(memoria);
-
 
 	//Crear socket. Dejar reutilizable. Crear direccion del servidor. Bind. Listen.
 	sockServ = crearSocket();
@@ -182,23 +269,25 @@ int main(void) {
 	bind_w(sockServ, &direccionServidor);
 	listen_w(sockServ);
 
-	// añadir listener al conjunto maestro
+	//Añadir listener al conjunto maestro
 	FD_SET(sockServ, &master);
 
-	// Mantener actualizado cual es el maxSock
+	//Mantener actualizado cual es el maxSock
 	maxFd = sockServ;
 
+	//Crear hilo para interaccion por terminal
 	pthread_t hiloInteraccionUsuario;
-	pthread_create(&hiloInteraccionUsuario, NULL, (void*) interactuar_con_usuario, NULL);
+	pthread_create(&hiloInteraccionUsuario, NULL,
+			(void*) interactuar_con_usuario, NULL);
 
-	// bucle principal
+	//Bucle principal
 	for (;;) {
-		read_fds = master; // Me paso lo que tenga en el master al temporal.
-		if (select(maxFd + 1, &read_fds, NULL, NULL, NULL) == -1) { //Compruebo los sockets al mismo tiempo. Los NULL son para los writefds, exceptfds y el timeval.
+		read_fds = master;
+		if (select(maxFd + 1, &read_fds, NULL, NULL, NULL) == -1) { //Compruebo si algun cliente quiere interactuar.
 			perror("select");
 			exit(1);
 		};
-		// explorar conexiones existentes en busca de datos que leer
+
 		for (i = 0; i <= maxFd; i++) {
 			if (FD_ISSET(i, &read_fds)) { // Me fijo si tengo datos listos para leer
 				if (i == sockServ) { //si entro en este "if", significa que tengo datos.
@@ -214,128 +303,28 @@ int main(void) {
 								inet_ntoa(direccionCliente.sin_addr), sockClie);
 
 						FD_SET(sockClie, &master); // añadir al conjunto maestro
-
-						//Recibo identidad y coloco en la bolsa correspondiente
-
-
-						recv(sockClie, &identidadCliente, sizeof(int), 0);
-						switch (identidadCliente) {
-
-						case soyConsola:
-							FD_SET(sockClie, &bolsaConsolas); //agrego una nueva consola a la bolsa de consolas
-							printf("Se ha conectado una nueva consola \n");
-
-							break;
-
-						case soyCPU:
-							FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
-							break;
-							printf("Se ha conectado un nuevo CPU  \n");
-						}
-						if (sockClie > maxFd) { // actualizar el máximo
-							maxFd = sockClie;
-						}
-
+						Colocar_en_respectivo_fdset();
 					}
 				} else {
 					// gestionar datos de un cliente
 
-					//int* supuestoTamanio;
-					//int* supuestoID;
 					int idMensaje;
 					int tamanioScript;
 
+					if ((cantBytes = recv(i, &idMensaje, sizeof(int32_t), 0))
+							<= 0) {
 
-					if ((cantBytes = recv(i, &idMensaje, sizeof(int32_t), 0)) <= 0) {
-
-						// error o conexión cerrada por el cliente
-						if (cantBytes == 0) {
-							// conexión cerrada
-							printf("Server: socket %d termino la conexion\n", i);
-						} else {
-							perror("recv");
-						}
-
-						// Eliminar del conjunto maestro y su respectiva bolsa
-						FD_CLR(i, &master);
-						if (FD_ISSET(i, &bolsaConsolas)) {
-							FD_CLR(i, &bolsaConsolas);
-							printf("Se desconecto consola del socket %d", i);
-
-							procesos_exit_code_a_cero(i,listaDeProcesos); //TODO
-
-						} else {
-							FD_CLR(i, &bolsaCpus);
-							printf("Se desconecto cpu del socket %d", i);
-						}
-						close(i); // Si se perdio la conexion, la cierro.
+						conexion_de_cliente_finalizada();
 
 					} else {
-						////////////DESERIALIZAR MENSAJE///////////////
-						printf("el valor de idMensaje es: %d\n", idMensaje);
 
-						switch(idMensaje) {
+						if (FD_SET(i,&bolsaConsolas)){ // EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UNA CONSOLA.
 
-						case envioScript:
-							recv(i,&tamanioScript,sizeof(int32_t),0);
-							printf("el valor de tamanio es: %d\n", tamanioScript);
-							char* buff = malloc(tamanioScript);
-							//char* cadena = malloc(tamanio*sizeof(char));
-							recv(i,buff,tamanioScript,0);
-							//memcpy(cadena,buff,tamanio * sizeof(char));
-							printf("el valor de cadena es: %s\n", buff);
-
-						///////////FIN DE DESERIALIZADOR///////////////
-
-							recibir_archivo(buff);
-							t_proceso proceso;
-							proceso.PCB.PID = identificadorProceso;
-							proceso.ConsolaDuenio = i;
-							proceso.CpuDuenio = -1;
-							list_add(listaDeProcesos,&proceso); //TODO: Agregar un proceso a esa bendita lista
-
-							identificadorProceso++;
-
-							//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
-
-							int paginasASolicitar = redondear(tamanioScript / tamanioPag);
-							int resultadoAccion = pedido_Inicializar_Programa(memoria,paginasASolicitar,proceso.PCB.PID);
-
-							if(resultadoAccion == 0) { //Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
-
-								proceso.PCB.contadorPrograma = 0;
-								proceso.PCB.cantidadPaginas = paginasASolicitar;
-
-								int k;
-								for(k=0; k <= proceso.PCB.cantidadPaginas;k++){
-									enviarSolicitudAlmacenarBytes(memoria,proceso,buff,tamanioScript);
-								}
-
-							}
-
+							atender_accion_consola(idMensaje, tamanioScript, memoria);
 						}
+						if (FD_SET(i,&bolsaCpus)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UN CPU
 
-						// Con los datos que me envió la consola, hago algo:
-
-						for (j = 0; j <= maxFd; j++) { // Para todos los que estan conectados
-							if (FD_ISSET(j, &master)) { // Me fijo si esta en el master
-
-								//Hago cosas en función de la bolsa en la que este.
-								if (FD_ISSET(j, &bolsaConsolas)) {
-									// Aca adentro va lo que quiero hacer si el cliente es una Consola
-
-									puts("Hola consolas");
-									puts("Cree el PCB!\n");
-
-								} else {
-									if (FD_ISSET(j, &bolsaCpus)) {
-										// Aca adentro va lo que quiero hacer si el cliente es un CPU
-										puts("Hola cpus");
-										puts("Decime que queres que haga cpu!\n");
-
-									}
-								}
-							}
+							atender_accion_cpu(idMensaje,tamanioScript,memoria); //Argumentos que le paso muy probablemente cambien
 						}
 					}
 				}
@@ -344,6 +333,24 @@ int main(void) {
 	}
 	return 0;
 }
+
+
+
+
+
+
+
+
+// RECORDATORIO PARA ENVIAR ALGO A TODOS LOS CLIENTES SEA QUIEN SEA (POR LAS DUDAS)
+
+
+//						// Con los datos que me envió la consola, hago algo:
+//
+//						for (j = 0; j <= maxFd; j++) { // Para todos los que estan conectados
+//							if (FD_ISSET(j, &master)) { // Me fijo si esta en el master
+//
+//							}
+//						}
 
 
 
