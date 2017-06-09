@@ -19,6 +19,14 @@ struct configuracion{
 	char* PUERTO_KERNEL;
 };
 
+enum accionConsolaMemoria {
+	iniciarPrograma = 1,
+	finalizarPrograma = 2,
+	desconectarConsola = 3,
+	limpiarMensajes = 4,
+};
+
+int identidad = 1;
 t_config* configConsola;
 struct configuracion config;
 char* path;

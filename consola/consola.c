@@ -3,6 +3,7 @@
 #include "serializador.h"
 
 
+
 void recibir_mensajes_en_socket(int socket) {
  	char* buf = malloc(1000);
 	while (1) {
@@ -29,7 +30,7 @@ void cargarConfiguracion(){
 	char* pat = string_new();
 		char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 		string_append(&pat,getcwd(cwd,sizeof(cwd)));
-		string_append(&pat,"/Debug/consola.cfg");
+		string_append(&pat,"/consola.cfg");
 		printf("El directorio sobre el que se esta trabajando es %s\n", pat);
 		t_config* configConsola = config_create(pat);
 		free(pat);
@@ -119,19 +120,14 @@ void cargar_y_enviar_archivo(int sock)
 
 }
 
-int main (void){
-
-	int identidad = 1;
-
-    cargarConfiguracion();
-
-
-
+void crearPrograma()
+{
 
     int cliente = crearSocket();
-	if(cliente == -1){  // Se valida de que se pudo crear el socket sin inconvenientes, retornando de "crearSocket un valor >=0.En caso de devolver -1 se visualizará el error.
-		perror("No se pudo crear el socket correctamente");
-	}
+
+	pthread_t idHilo = pthread_self();
+	printf("Soy hilo: %d\n", idHilo);
+
 
 	struct sockaddr_in direccionServidor; //Creo y configuro el servidor
 	direccionServidor.sin_family = AF_INET;
@@ -139,30 +135,65 @@ int main (void){
 	direccionServidor.sin_port = htons(config.PUERTO_KERNEL);
 
 	if(conectarSocket(cliente, &direccionServidor) != 0){ // no se está conectando al servidor
-		perror("No se realizó la conexión");
-		return EXIT_FAILURE;
+			perror("No se realizó la conexión");
 	}
 
 	send(cliente,&identidad, sizeof(int),0);
+}
 
-	 char* bufferArchivo = convertirArchivoACodigo();
-	 int tamanioTot = strlen(bufferArchivo);
+void limpiaMensajes()
+{
+	system("clear");
+}
+int main(void){
 
-	//Creo el header antes de enviar mensaje
+	system("clear");
 
-	t_header cabeza;
-	cabeza.id = 1;
-    cabeza.tamanio = tamanioTot;
 
-	//Serializar y enviar archivo
-	void* bufferSerializado = serializar(cabeza, bufferArchivo);
-	send(cliente,bufferSerializado, sizeof(t_header) + (cabeza.tamanio),0);
 
-	while (1) {
-			recibir_mensajes_en_socket(cliente);
-		}
+    cargarConfiguracion();
 
-	return 0;
+    while(1){
+	printf("Ingrese una acción a realizar\n");
+		puts("1: Iniciar Programa");
+		puts("2: Finalizar Programa");
+		puts("3: Desconectar Consola");
+		puts("4: Limpiar Mensajes");
+
+		char accion[3];
+		if (fgets(accion, sizeof(accion), stdin) == NULL) {
+					printf("ERROR EN fgets !\n");
+					return 1;
+			}
+		int codAccion = accion[0] - '0';
+
+
+		switch (codAccion) {
+					case iniciarPrograma:
+						//crea un hilo (programa)
+						printf("Iniciando!...\n");
+						pthread_t unHilo;
+						pthread_create(&unHilo, NULL, (void*) crearPrograma);
+					break;
+
+					case finalizarPrograma:
+						//recibe un PID y mata ese hilo(programa) particular
+						printf("Codificar finalizar!\n");
+					break;
+
+					case desconectarConsola:
+						//Matar todos los threads del kernel abortivamente
+						printf("Codificar desconectar!\n");
+					break;
+
+					case limpiarMensajes:
+						limpiaMensajes();
+					break;
+
+			}
+
+}
+	return EXIT_SUCCESS;
 }
 
 
