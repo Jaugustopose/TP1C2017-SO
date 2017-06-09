@@ -40,12 +40,14 @@ enum accionCPU {
 	accionAsignarValorCompartidaKernel = 12, //primitiva kernel
 	accionPedirValorCompartidaKernel = 13, //primitiva kernel
 	accionQuantumInterrumpido = 14, //signal
-	accionPedirValorVariable = 15, //primitiva memoria
-	accionAsignarValorVariable = 16, //primitiva memoria
+	almacenarBytesAccion = 16, // memoria (asignar, primitiva)
 	accionException = 17, //para overflow
 	accionError = 18
 
 };
+
+t_log *logger;
+t_log *debugLogger;
 
 //GLOBALES
 struct sockaddr_in dirKernel;
@@ -62,9 +64,6 @@ char* sentenciaPedida;
 //Espera este tiempo el CPU cuando termina de ejecutar una sentencia
 int quantumSleep;
 
-
-t_log *logger;
-t_log *debugLogger;
 
 struct configuracion{
 	char* IP_MEMORIA;

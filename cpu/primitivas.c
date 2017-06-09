@@ -46,7 +46,17 @@ void validarOverflow(t_puntero direccion) {
 	int size = sizeof(int);
 	int pid = pcbNuevo->PID;
 
-	enviarSolicitudSentencia(pid,pagina,offset,size);
+	enviarSolicitudBytes(pid,pagina,offset,size);
+}
+
+
+void enviarDireccionAMemoria(t_puntero direccion) {
+	int pagina = (int)(direccion/tamanioPaginas) + cantidadPagCodigo; //Agrego el desplazamiento por las paginas ya ocupadas por el codigo
+	int offset = direccion % tamanioPaginas;
+	int size = sizeof(int);
+	int pid = pcbNuevo->PID;
+
+	enviarSolicitudBytes(pid, pagina, offset, size);
 }
 
 /******************************* PRIMIIVAS ******************************/
@@ -109,10 +119,11 @@ t_valor_variable desreferenciar_variable(t_puntero direccion_variable)
 	if(salteaCircuitoConGoTo){goto fin;}
 
 		t_valor_variable valor;
-		char* accion = (char*)accionPedirValorVariable;
+		char* accion = (char*)almacenarBytesAccion;
 		send(memoria, accion, sizeof(accion), 0);
 
-		validarOverflow(direccion_variable);
+		//validarOverflow(direccion_variable);
+		enviarDireccionAMemoria(direccion_variable);
 
 		if(!hayOverflow()){
 
@@ -142,10 +153,13 @@ void asignar(t_puntero direccion_variable, t_valor_variable valor)
 {
 	if(salteaCircuitoConGoTo){goto fin;}
 
-	char* accion = (char*)accionAsignarValorVariable;
+	char* accion = (char*)almacenarBytesAccion;
 	send(memoria, accion, sizeof(accion), 0);
 
-	validarOverflow(direccion_variable);
+	//validarOverflow(direccion_variable);
+	enviarDireccionAMemoria(direccion_variable);
+
+	//VER OVERFLOW
 
 	if(!hayOverflow()){
 

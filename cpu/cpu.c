@@ -280,7 +280,7 @@ void inicializarContexto()
 }
 /**********FUNCIONES PARA MANEJO DE SENTENCIAS*********************************************************************/
 
-void enviarSolicitudSentencia(int pid, int pagina, int offset, int size) {
+void enviarSolicitudBytes(int pid, int pagina, int offset, int size) {
 
 	pedidoBytesMemoria_t pedido;
 	pedido.pid = pid;
@@ -293,8 +293,6 @@ void enviarSolicitudSentencia(int pid, int pagina, int offset, int size) {
 	//VER LA SERIALIZACION
 	int tamanio = serializar_pedido_bytes(solicitud, pedido);
 	send(memoria, solicitud, tamanio , 0);
-
-
 }
 
 t_sentencia* obtenerSentenciaRelativa(int* paginaInicioSentencia) {
@@ -347,7 +345,7 @@ if (!hayOverflow()) {
 //	 send(memoria, accion, sizeof(accion), 0);
 //	 free(accion);
 
-	enviarSolicitudSentencia(pcbNuevo->PID, pagina, sentenciaRelativa->inicio,tamanioPrimeraSentencia);
+	 enviarSolicitudBytes(pcbNuevo->PID, pagina, sentenciaRelativa->inicio,tamanioPrimeraSentencia);
 	(*longitudRestante) -= tamanioPrimeraSentencia;
 
 	recibirPedazoDeSentencia(tamanioPrimeraSentencia);
@@ -360,7 +358,7 @@ void pedirPaginaCompleta(int nroPagina) {
 //	send(memoria, accion, sizeof(accion), 0);
 //	free(accion);
 
-	enviarSolicitudSentencia(pcbNuevo->PID, nroPagina, 0, tamanioPaginas);
+	enviarSolicitudBytes(pcbNuevo->PID, nroPagina, 0, tamanioPaginas);
 	recibirPedazoDeSentencia(tamanioPaginas);
 }
 
@@ -369,7 +367,7 @@ void pedirUltimaSentencia(t_sentencia* sentenciaRelativa, int pagina, int longit
 //	char* accion = (char*)solicitarBytesAccion;
 //	send(memoria, accion, sizeof(accion), 0);
 //	free(accion);
-	enviarSolicitudSentencia(pcbNuevo->PID, pagina, 0, longitudRestante);
+	enviarSolicitudBytes(pcbNuevo->PID, pagina, 0, longitudRestante);
 	recibirPedazoDeSentencia(longitudRestante);
 
 }
