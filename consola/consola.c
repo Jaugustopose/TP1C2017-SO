@@ -192,6 +192,7 @@ void atenderAcciones(char* accionRecibida){
 			break;
 
 		case accionConsolaFinalizarNormalmente:
+
 			break;
 
 		case accionConsolaFinalizarErrorInstruccion:

@@ -17,7 +17,6 @@
 #include <stdio.h>
 
 
-
 struct configuracion{
 	int IP_KERNEL;
 	char* PUERTO_KERNEL;
