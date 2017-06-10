@@ -3,7 +3,6 @@
 #include "serializador.h"
 
 
-
 void recibir_mensajes_en_socket(int socket) {
  	char* buf = malloc(1000);
 	while (1) {
@@ -53,10 +52,8 @@ int conectarSocket(int socket, struct sockaddr_in* direccionServidor){
 
 char* convertirArchivoACodigo()
 {
-
 	char* contenido = string_new();
 
-	programa = fopen("/home/utnso/Escritorio/facil.ansisop","rb");
 	size_t largo = 0;
 	char* linea = NULL;
 	ssize_t lectura = getline(&linea, &largo, programa);
@@ -81,42 +78,42 @@ char* convertirArchivoACodigo()
 
 }
 
-void cargar_y_enviar_archivo(int sock)
-{
-	char* bufferArchivo = 0;
-	long length;
-	FILE* archivo = fopen("/home/utnso/Escritorio/facil.ansisop","rb");
+struct sockaddr_in crearDireccionParaCliente(unsigned short PORT, char* IP) {
+	struct sockaddr_in direccionServidor;
+	direccionServidor.sin_family = AF_INET;
+	direccionServidor.sin_addr.s_addr = inet_addr(IP);
+	direccionServidor.sin_port = htons(PORT);
+	return direccionServidor;
+}
 
-	if(archivo){
-		fseek(archivo,0,SEEK_END);
-		length = ftell(archivo);
-		fseek(archivo,0,SEEK_SET);
-		bufferArchivo = (char*)malloc((length +1)*sizeof(char));
-		if(bufferArchivo)
-		{
-			fread(bufferArchivo,1,length,archivo);
-			printf("He recibido %d bytes de contenido: %.*s\n",length, length + 1, bufferArchivo);
+int socket_ws() {
+	int sock;
 
-			//Creo el header antes de enviar mensaje
-
-			t_header cabeza;
-			cabeza.id = 1;
-			cabeza.tamanio = length;
-
-			//Serializo el buffer con el mensaje
-			void* bufferSerializado = malloc(cabeza.tamanio + sizeof(t_header));
-			memcpy(bufferSerializado, &cabeza.id, sizeof(int)); //PRIMERO EL ID
-			memcpy(bufferSerializado + sizeof(cabeza.id), &cabeza.tamanio, sizeof(int)); //SEGUNDO EL TAMAÑO
-			memcpy(bufferSerializado + sizeof(t_header), bufferArchivo, cabeza.tamanio); // TERCERA LA DATA
-
-			send(sock,bufferSerializado,length,0); // Envio archivo serializado
-		}else
-		{
-			fclose(archivo);
-		}
-
+	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1){
+		puts("Error al crear socket");
+		exit(1);
 	}
+	return sock;
+}
 
+void connect_w(int cliente, struct sockaddr_in* direccionServidor) {
+	if (connect(cliente, (void*) direccionServidor, sizeof(*direccionServidor))
+			!= 0) {
+		perror("No se pudo conectar");
+		exit(1);
+	}
+}
+
+void conectarConKernel() {
+
+	//Handshake
+	dirKernel = crearDireccionParaCliente(config.PUERTO_KERNEL, config.IP_KERNEL);
+
+	kernel = socket_ws();
+	connect_w(kernel, &dirKernel);
+	printf("Conectado a Kernel");
+
+	send(kernel,&identidad, sizeof(int),0);
 
 }
 
@@ -128,7 +125,6 @@ void crearPrograma()
 	pthread_t idHilo = pthread_self();
 	printf("Soy hilo: %d\n", idHilo);
 
-
 	struct sockaddr_in direccionServidor; //Creo y configuro el servidor
 	direccionServidor.sin_family = AF_INET;
 	direccionServidor.sin_addr.s_addr = inet_addr(config.IP_KERNEL);
@@ -139,26 +135,75 @@ void crearPrograma()
 	}
 
 	send(cliente,&identidad, sizeof(int),0);
+
+	int pidRecibido;
+	recv(cliente, &pidRecibido, sizeof(int32_t), MSG_WAITALL);
+
+	list_add(&listaPIDs, pidRecibido);
+
+	printf("PID: %d\n", pidRecibido);
 }
 
 void limpiaMensajes()
 {
 	system("clear");
 }
+
+void imprimeMenuUsuario()
+{
+	   printf("Ingrese una acción a realizar\n");
+			puts("1: Iniciar Programa");
+			puts("2: Finalizar Programa");
+			puts("3: Desconectar Consola");
+			puts("4: Limpiar Mensajes");
+}
+
+void pidePathAlUsuario()
+{
+  printf("Ingresar archivo ansisop: ");
+  scanf("%c", path);
+
+  programa = fopen("/home/utnso/Escritorio/facil.ansisop","rb");
+  if(programa == NULL){
+	  perror("No se encontro el archivo.");
+    }
+  else
+    {
+	  convertirArchivoACodigo();
+    }
+
+}
+
+void crearHiloPrograma()
+{
+	pthread_t unHilo;
+	pthread_create(&unHilo, NULL, (void*)crearPrograma);
+}
+void imprimirPIDs(int pid){
+
+	char* new = string_from_format("PID:%d ", pid);
+	string_append(&programasExec, new);
+	free(new);
+}
+
+void imprimirProgramasEnEjecucion(){
+	programasExec = string_new();
+	list_iterate(&listaPIDs,(void*)imprimirPIDs);
+	printf("PIDs Impresos: %s", programasExec);
+	free(programasExec);
+}
+
 int main(void){
 
-	system("clear");
-
-
+	limpiaMensajes();
 
     cargarConfiguracion();
 
+    //conectarConKernel();
+
     while(1){
-	printf("Ingrese una acción a realizar\n");
-		puts("1: Iniciar Programa");
-		puts("2: Finalizar Programa");
-		puts("3: Desconectar Consola");
-		puts("4: Limpiar Mensajes");
+
+    	imprimeMenuUsuario();
 
 		char accion[3];
 		if (fgets(accion, sizeof(accion), stdin) == NULL) {
@@ -171,14 +216,16 @@ int main(void){
 		switch (codAccion) {
 					case iniciarPrograma:
 						//crea un hilo (programa)
+						pidePathAlUsuario();
 						printf("Iniciando!...\n");
-						pthread_t unHilo;
-						pthread_create(&unHilo, NULL, (void*) crearPrograma);
+						crearHiloPrograma();
+						limpiaMensajes();
+						imprimeMenuUsuario();
 					break;
 
 					case finalizarPrograma:
 						//recibe un PID y mata ese hilo(programa) particular
-						printf("Codificar finalizar!\n");
+						imprimirProgramasEnEjecucion();
 					break;
 
 					case desconectarConsola:
