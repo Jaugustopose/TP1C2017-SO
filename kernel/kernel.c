@@ -1,5 +1,82 @@
 #include "kernel.h"
 
+/********************************** INICIALIZACIONES *****************************************************/
+
+void cargarConfiguracion() {
+	char* pat = string_new();
+	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
+	string_append(&pat, getcwd(cwd, sizeof(cwd)));
+	string_append(&pat, "/Debug/kernel.cfg");
+    configKernel = config_create(pat);
+	free(pat);
+
+	if (config_has_property(configKernel, "IP_MEMORIA")) {
+		config.IP_MEMORIA = config_get_string_value(configKernel, "IP_MEMORIA");
+		printf("IP_MEMORIA: %s\n", config.IP_MEMORIA);
+	}
+	if (config_has_property(configKernel, "IP_FS")) {
+		config.IP_FS = config_get_string_value(configKernel, "IP_FS");
+		printf("IP_FS: %s\n", config.IP_FS);
+	}
+	if (config_has_property(configKernel, "PUERTO_KERNEL")) {
+		config.PUERTO_KERNEL = config_get_int_value(configKernel,
+				"PUERTO_KERNEL");
+		printf("PUERTO_KERNEL: %d\n", config.PUERTO_KERNEL);
+	}
+	if (config_has_property(configKernel, "PUERTO_MEMORIA")) {
+		config.PUERTO_MEMORIA = config_get_int_value(configKernel,
+				"PUERTO_MEMORIA");
+		printf("PUERTO_MEMORIA: %d\n", config.PUERTO_MEMORIA);
+	}
+	if (config_has_property(configKernel, "PUERTO_CPU")) {
+		config.PUERTO_CPU = config_get_int_value(configKernel, "PUERTO_CPU");
+		printf("PUERTO_CPU: %d\n", config.PUERTO_CPU);
+	}
+	if (config_has_property(configKernel, "PUERTO_FS")) {
+		config.PUERTO_FS = config_get_int_value(configKernel, "PUERTO_FS");
+		printf("PUERTO_FS: %d\n", config.PUERTO_FS);
+	}
+	if (config_has_property(configKernel, "PUERTO_CONSOLA")) {
+		config.PUERTO_CONSOLA = config_get_int_value(configKernel,"PUERTO_CONSOLA");
+		printf("PUERTO_CONSOLA: %d\n", config.PUERTO_CONSOLA);
+	}
+	if (config_has_property(configKernel, "GRADO_MULTIPROG")) {
+		config.GRADO_MULTIPROG = config_get_int_value(configKernel,"GRADO_MULTIPROG");
+		printf("GRADO_MULTIPROG: %d\n\n\n", config.GRADO_MULTIPROG);
+	}
+	if (config_has_property(configKernel, "SEM_IDS")) {
+		config.SEM_IDS = config_get_array_value(configKernel,"SEM_IDS");
+		printf("SEM_IDS: %d\n\n\n", config.SEM_IDS);
+	}
+	if (config_has_property(configKernel, "SEM_INIT")) {
+		config.SEM_INIT = config_get_array_value(configKernel,"SEM_INIT");
+		printf("SEM_INIT: %d\n\n\n", config.SEM_INIT);
+	}
+	if (config_has_property(configKernel, "SHARED_VARS")) {
+		config.SHARED_VARS = config_get_array_value(configKernel,"SHARED_VARS");
+		printf("SEM_INIT: %d\n\n\n", config.SHARED_VARS);
+	}
+
+
+	printf(
+			"--------------Configuración cargada exitosamente--------------\n\n");
+	printf("Seleccione la opción que desee realizar:\n"
+			"1) Listado de procesos del sistema\n"
+			"2) Finalizar un proceso\n"
+			"3) Consultar estado de un proceso\n"
+			"4) Detener planificación\n");
+
+}
+
+void inicializarContexto()
+{
+	listaDeProcesos = list_create();
+	tablaSemaforos = dictionary_create();
+	tablaCompartidas = dictionary_create();
+	crearSemaforos();
+	crearCompartidas();
+}
+
 int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
 	int codigoAccion = 1;
 	pedidoSolicitudPaginas_t pedidoPaginas;
@@ -71,61 +148,6 @@ void enviarSolicitudAlmacenarBytes(int cliente, t_proceso unProceso, char* buffe
 
 			free(buffer2);
 	}
-}
-
-void cargarConfiguracion() {
-	char* pat = string_new();
-	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
-	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	string_append(&pat, "/Debug/kernel.cfg");
-	t_config* configKernel = config_create(pat);
-	free(pat);
-
-	if (config_has_property(configKernel, "IP_MEMORIA")) {
-		config.IP_MEMORIA = config_get_string_value(configKernel, "IP_MEMORIA");
-		printf("IP_MEMORIA: %s\n", config.IP_MEMORIA);
-	}
-	if (config_has_property(configKernel, "IP_FS")) {
-		config.IP_FS = config_get_string_value(configKernel, "IP_FS");
-		printf("IP_FS: %s\n", config.IP_FS);
-	}
-	if (config_has_property(configKernel, "PUERTO_KERNEL")) {
-		config.PUERTO_KERNEL = config_get_int_value(configKernel,
-				"PUERTO_KERNEL");
-		printf("PUERTO_KERNEL: %d\n", config.PUERTO_KERNEL);
-	}
-	if (config_has_property(configKernel, "PUERTO_MEMORIA")) {
-		config.PUERTO_MEMORIA = config_get_int_value(configKernel,
-				"PUERTO_MEMORIA");
-		printf("PUERTO_MEMORIA: %d\n", config.PUERTO_MEMORIA);
-	}
-	if (config_has_property(configKernel, "PUERTO_CPU")) {
-		config.PUERTO_CPU = config_get_int_value(configKernel, "PUERTO_CPU");
-		printf("PUERTO_CPU: %d\n", config.PUERTO_CPU);
-	}
-	if (config_has_property(configKernel, "PUERTO_FS")) {
-		config.PUERTO_FS = config_get_int_value(configKernel, "PUERTO_FS");
-		printf("PUERTO_FS: %d\n", config.PUERTO_FS);
-	}
-	if (config_has_property(configKernel, "PUERTO_CONSOLA")) {
-		config.PUERTO_CONSOLA = config_get_int_value(configKernel,
-				"PUERTO_CONSOLA");
-		printf("PUERTO_CONSOLA: %d\n", config.PUERTO_CONSOLA);
-	}
-	if (config_has_property(configKernel, "GRADO_MULTIPROG")) {
-		config.GRADO_MULTIPROG = config_get_int_value(configKernel,
-				"GRADO_MULTIPROG");
-		printf("GRADO_MULTIPROG: %d\n\n\n", config.GRADO_MULTIPROG);
-	}
-
-	printf(
-			"--------------Configuración cargada exitosamente--------------\n\n");
-	printf("Seleccione la opción que desee realizar:\n"
-			"1) Listado de procesos del sistema\n"
-			"2) Finalizar un proceso\n"
-			"3) Consultar estado de un proceso\n"
-			"4) Detener planificación\n");
-
 }
 
 void comprobarSockets(int maxSock, fd_set* read_fds) {
@@ -251,10 +273,57 @@ void atender_accion_consola(int idMensaje, int tamanioScript, int memoria) {
 	}
 }
 
+/***************************SEMAFOROS Y COMPARTIDAS****************************************************/
+void crearSemaforos() {
+	int i = 0;
+
+	while (config.SEM_IDS[i] != '\0') {
+
+		t_semaforo* semaforo = malloc(sizeof(t_semaforo));
+		semaforo->valorSemaforo = atoi(config.SEM_INIT[i]);
+		semaforo->colaSemaforo = queue_create();
+		dictionary_put(tablaSemaforos, config.SEM_IDS[i], semaforo);
+
+		i++;
+	}
+}
+
+void crearCompartidas() {
+	int i = 0;
+
+	while (config.SHARED_VARS[i] != '\0') {
+
+		int* compartida = malloc(sizeof(int));
+		*compartida = 0;
+		dictionary_put(tablaCompartidas, config.SHARED_VARS[i], compartida);
+		i++;
+	}
+}
+
+void destruirCompartida(int* compartida) {
+	free(compartida);
+}
+
+void destruirCompartidas() {
+	dictionary_destroy_and_destroy_elements(tablaCompartidas, (void*)destruirSemaforo);
+}
+
+void destruirSemaforo(t_semaforo* semaforo) {
+	queue_destroy(semaforo->colaSemaforo);
+	free(semaforo);
+}
+
+void destruirSemaforos() {
+	dictionary_destroy_and_destroy_elements(tablaSemaforos, (void*)destruirSemaforo);
+}
+
+/************************************** MAIN ****************************************************************/
+
 int main(void) {
 	//Cargar configuracion
 	cargarConfiguracion();
-	listaDeProcesos = list_create();
+
+	inicializarContexto();
 
 	//Conectar con memoria
 	int memoria = socket(AF_INET, SOCK_STREAM, 0);
@@ -333,12 +402,6 @@ int main(void) {
 	}
 	return 0;
 }
-
-
-
-
-
-
 
 
 // RECORDATORIO PARA ENVIAR ALGO A TODOS LOS CLIENTES SEA QUIEN SEA (POR LAS DUDAS)

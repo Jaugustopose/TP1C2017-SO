@@ -42,6 +42,9 @@ typedef struct configuracion {
 	char* IP_MEMORIA;
 	char* IP_FS;
 	int GRADO_MULTIPROG;
+	char** SEM_IDS;
+	char** SEM_INIT;
+	char** SHARED_VARS;
 	// FALTAN AGREGAR VARIABLES SEGUN AVANCE EL TP (SEMAFOROS, QUANTUM, ETC)
 }config_t;
 
@@ -62,6 +65,10 @@ typedef struct pedidoSolicitudPaginasStruct {
 	int cantidadPaginas;
 } pedidoSolicitudPaginas_t;
 
+typedef struct t_semaforo {
+	int valorSemaforo;
+	t_queue* colaSemaforo;
+} t_semaforo;
 
 enum tipoDeCliente {
 
@@ -106,11 +113,16 @@ int identidadCliente;
 int i, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
 int tamanioPag;
 int identificadorProceso = 0;
+
 t_list* listaDeProcesos;
 t_queue* colaNew;
 t_queue* colaReady;
 t_queue* colaExec;
 t_queue* colaExit;
+t_dictionary* tablaCompartidas;
+t_dictionary* tablaSemaforos;
+
+
 
 //Prototipos
 
