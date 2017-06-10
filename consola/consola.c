@@ -111,8 +111,6 @@ void conectarConKernel() {
 
 	kernel = socket_ws();
 	connect_w(kernel, &dirKernel);
-	printf("Conectado a Kernel");
-
 	send(kernel,&identidad, sizeof(int),0);
 
 }
@@ -125,16 +123,18 @@ void crearPrograma()
 	pthread_t idHilo = pthread_self();
 	printf("Soy hilo: %d\n", idHilo);
 
-	struct sockaddr_in direccionServidor; //Creo y configuro el servidor
-	direccionServidor.sin_family = AF_INET;
-	direccionServidor.sin_addr.s_addr = inet_addr(config.IP_KERNEL);
-	direccionServidor.sin_port = htons(config.PUERTO_KERNEL);
+//	struct sockaddr_in direccionServidor; //Creo y configuro el servidor
+//	direccionServidor.sin_family = AF_INET;
+//	direccionServidor.sin_addr.s_addr = inet_addr(config.IP_KERNEL);
+//	direccionServidor.sin_port = htons(config.PUERTO_KERNEL);
+//
+//	if(conectarSocket(cliente, &direccionServidor) != 0){ // no se está conectando al servidor
+//			perror("No se realizó la conexión");
+//	}
+//
+//	send(cliente,&identidad, sizeof(int),0);
 
-	if(conectarSocket(cliente, &direccionServidor) != 0){ // no se está conectando al servidor
-			perror("No se realizó la conexión");
-	}
-
-	send(cliente,&identidad, sizeof(int),0);
+	conectarConKernel();
 
 	int pidRecibido;
 	recv(cliente, &pidRecibido, sizeof(int32_t), MSG_WAITALL);
@@ -179,6 +179,34 @@ void crearHiloPrograma()
 	pthread_t unHilo;
 	pthread_create(&unHilo, NULL, (void*)crearPrograma);
 }
+
+void atenderAcciones(char* accionRecibida){
+
+	switch ((int)accionRecibida) {
+
+		case accionError:
+			break;
+
+		case accionImprimirTextoConsola:
+
+			break;
+
+		case accionConsolaFinalizarNormalmente:
+			break;
+
+		case accionConsolaFinalizarErrorInstruccion:
+			exit(EXIT_SUCCESS);
+			break;
+
+		default:
+
+			exit(EXIT_FAILURE);
+			break;
+
+	}
+}
+
+/****Esta funcion es para probar nada mas**/
 void imprimirPIDs(int pid){
 
 	char* new = string_from_format("PID:%d ", pid);
@@ -193,53 +221,67 @@ void imprimirProgramasEnEjecucion(){
 	free(programasExec);
 }
 
+void escucharUsuario()
+{
+	 while(1){
+
+	    	imprimeMenuUsuario();
+
+			char accion[3];
+			if (fgets(accion, sizeof(accion), stdin) == NULL) {
+						printf("ERROR EN fgets !\n");
+				}
+			int codAccion = accion[0] - '0';
+
+
+			switch (codAccion) {
+						case iniciarPrograma:
+							//crea un hilo (programa)
+							pidePathAlUsuario();
+							printf("Iniciando!...\n");
+							crearHiloPrograma();
+							limpiaMensajes();
+							imprimeMenuUsuario();
+						break;
+
+						case finalizarPrograma:
+							//recibe un PID y mata ese hilo(programa) particular
+							imprimirProgramasEnEjecucion();
+						break;
+
+						case desconectarConsola:
+							//Matar todos los threads del kernel abortivamente
+							printf("Codificar desconectar!\n");
+						break;
+
+						case limpiarMensajes:
+							limpiaMensajes();
+						break;
+
+				}
+	 }
+}
+
+void escucharPedidosKernel()
+{
+	while (1) {
+			char* accionRecibida = malloc(sizeof(int));
+			recv(kernel, accionRecibida, sizeof(char), 0);
+			atenderAcciones(accionRecibida);
+			free(accionRecibida);
+		}
+}
+
 int main(void){
 
 	limpiaMensajes();
 
     cargarConfiguracion();
 
-    //conectarConKernel();
+    escucharUsuario();
 
-    while(1){
+    escucharPedidosKernel();
 
-    	imprimeMenuUsuario();
-
-		char accion[3];
-		if (fgets(accion, sizeof(accion), stdin) == NULL) {
-					printf("ERROR EN fgets !\n");
-					return 1;
-			}
-		int codAccion = accion[0] - '0';
-
-
-		switch (codAccion) {
-					case iniciarPrograma:
-						//crea un hilo (programa)
-						pidePathAlUsuario();
-						printf("Iniciando!...\n");
-						crearHiloPrograma();
-						limpiaMensajes();
-						imprimeMenuUsuario();
-					break;
-
-					case finalizarPrograma:
-						//recibe un PID y mata ese hilo(programa) particular
-						imprimirProgramasEnEjecucion();
-					break;
-
-					case desconectarConsola:
-						//Matar todos los threads del kernel abortivamente
-						printf("Codificar desconectar!\n");
-					break;
-
-					case limpiarMensajes:
-						limpiaMensajes();
-					break;
-
-			}
-
-}
 	return EXIT_SUCCESS;
 }
 

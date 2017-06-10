@@ -23,7 +23,15 @@ struct configuracion{
 	char* PUERTO_KERNEL;
 };
 
-enum accionConsolaMemoria {
+enum accionConsola {
+	accionConsolaFinalizarNormalmente = 5,
+	accionConsolaFinalizarErrorInstruccion = 6,
+	accionImprimirTextoConsola = 10,
+	accionError = 18
+
+};
+
+enum opcionesUsuario {
 	iniciarPrograma = 1,
 	finalizarPrograma = 2,
 	desconectarConsola = 3,
