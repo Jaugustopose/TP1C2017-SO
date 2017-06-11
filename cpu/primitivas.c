@@ -194,21 +194,110 @@ void irAlLabel(t_nombre_etiqueta label)
 }
 
 
-void finalizar(void)
+void finalizar()
 {
 
 }
 
+t_valor_variable obtener_valor_compartida(t_nombre_compartida variable)
+{
 
+}
+
+t_valor_variable asignar_valor_compartida(t_nombre_compartida variable, t_valor_variable valor)
+{
+
+}
+void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
+{
+
+}
+void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
+{
+
+}
+
+void retornar(t_valor_variable retorno)
+{
+
+}
+
+void wait(t_nombre_semaforo identificador_semaforo)
+{
+
+}
+void signal(t_nombre_semaforo identificador_semaforo)
+{
+
+}
+
+t_puntero reservar(t_valor_variable espacio)
+{
+
+}
+
+void liberar(t_puntero puntero)
+{
+
+}
+
+t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
+{
+
+}
+
+void borrar(t_descriptor_archivo direccion)
+{
+
+}
+
+void cerrar(t_descriptor_archivo descriptor_archivo)
+{
+
+}
+
+void mover_cursor(t_descriptor_archivo descriptor_archivo, t_valor_variable posicion)
+{
+
+}
+
+void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio)
+{
+
+}
+
+void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valor_variable tamanio)
+{
+
+}
 
 //Esta asigna todas las implementaciones nuestras al enumerador de funciones del parser de SO
 void inicializarPrimitivas() {
+
 	funciones.AnSISOP_definirVariable = &definir_variable;
 	funciones.AnSISOP_obtenerPosicionVariable = &obtener_posicion_de;
-	funciones.AnSISOP_finalizar = &desreferenciar_variable;
+	funciones.AnSISOP_dereferenciar = &desreferenciar_variable;
 	funciones.AnSISOP_asignar = &asignar;
+	funciones.AnSISOP_obtenerValorCompartida = &obtener_valor_compartida;
+	funciones.AnSISOP_asignarValorCompartida = &asignar_valor_compartida;
 	funciones.AnSISOP_irAlLabel = &irAlLabel;
-	funciones.AnSISOP_dereferenciar = &finalizar;
+	funciones.AnSISOP_llamarSinRetorno = &llamar_sin_retorno;
+	funciones.AnSISOP_llamarConRetorno = &llamar_con_retorno;
+	funciones.AnSISOP_finalizar = &finalizar;
+	funciones.AnSISOP_retornar = &retornar;
+	funcionesKernel.AnSISOP_abrir = &abrir;
+	funcionesKernel.AnSISOP_borrar = &borrar;
+	funcionesKernel.AnSISOP_cerrar = &cerrar;
+	funcionesKernel.AnSISOP_escribir = &escribir;
+	funcionesKernel.AnSISOP_leer = &leer;
+	funcionesKernel.AnSISOP_liberar = &liberar;
+	funcionesKernel.AnSISOP_moverCursor = &mover_cursor;
+	funcionesKernel.AnSISOP_reservar = &reservar;
+	funcionesKernel.AnSISOP_signal = &signal;
+	funcionesKernel.AnSISOP_wait = &wait;
+
+
+
 }
 
 
