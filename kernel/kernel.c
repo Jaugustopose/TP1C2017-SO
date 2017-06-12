@@ -258,7 +258,13 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 
 	switch (idMensaje) {
 
-	//TODO: TODOS LOS CASE
+	case accionAsignarValorCompartidaKernel:
+
+	break;
+
+	case accionPedirValorCompartidaKernel:
+
+	break;
 
 	}
 }

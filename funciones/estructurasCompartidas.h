@@ -9,6 +9,36 @@
 #include <parser/parser.h>
 #include <parser/metadata_program.h>
 
+enum tipoMensaje {
+	inicializarProgramaAccion = 1,
+	solicitarPaginasAccion = 2,
+	almacenarBytesAccion = 3,
+	solicitarBytesAccion = 4,
+	finalizarProgramaAccion = 5,
+	obtenerTamanioPaginas = 6,
+	envioScript = 7,
+	accionContinuarProceso = 8,
+	accionObtenerPCB = 9,
+	accionFinInstruccion = 10,
+	accionFinProceso = 11,
+	accionImprimirTextoKernel = 12,
+	accionImprimirVariableKernel = 13,
+	accionAsignarValorCompartidaKernel = 14,
+	accionPedirValorCompartidaKernel = 15,
+	accionQuantumInterrumpido = 16,
+	accionException = 17,
+	accionError = 18,
+	accionConsolaFinalizarNormalmente = 19,
+	accionConsolaFinalizarErrorInstruccion = 20,
+	accionImprimirTextoConsola = 21
+};
+
+enum tipoDeCliente {
+
+	soyConsola = 1,
+	soyCPU = 2
+};
+
 typedef enum {
 
 	SOYCONSOLA, //0
@@ -63,5 +93,16 @@ typedef struct pedidoBytesMemoriaStruct {
 	int offset;
 	int tamanio;
 } pedidoBytesMemoria_t;
+
+typedef struct pedidoAlmacenarBytesMemoriaStruct {
+	pedidoBytesMemoria_t pedidoBytes;
+	char* buffer;
+} pedidoAlmacenarBytesMemoria_t;
+
+typedef struct pedidoSolicitudPaginasStruct {
+	int pid;
+	int cantidadPaginas;
+} pedidoSolicitudPaginas_t;
+
 
 #endif /* ESTRUCTURASCOMPARTIDAS_H_ */

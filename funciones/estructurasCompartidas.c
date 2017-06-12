@@ -63,7 +63,7 @@ t_pedido* stack_proximo_pedido(t_stack* stack, int tamanioPagina) {
 	t_pedido* pedido = malloc(sizeof(t_pedido));
 	int tamanioActualDeStack = stack_tamanio_memoria(stack);
 	pedido->nroPagina = tamanioActualDeStack / tamanioPagina;
-	pedido->offset = tamanioActualDeStack - pedido->nroPagina * tamanioPagina;
+	pedido->offset = tamanioActualDeStack - (pedido->nroPagina * tamanioPagina);
 	pedido->size = sizeof(int);
 	return pedido;
 }

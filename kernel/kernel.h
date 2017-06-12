@@ -48,49 +48,10 @@ typedef struct configuracion {
 	// FALTAN AGREGAR VARIABLES SEGUN AVANCE EL TP (SEMAFOROS, QUANTUM, ETC)
 }config_t;
 
-typedef struct pedidoBytesMemoriaStruct {
-	int pid;
-	int	nroPagina;
-	int offset;
-	int tamanio;
-} pedidoBytesMemoria_t;
-
-typedef struct pedidoAlmacenarBytesMemoriaStruct {
-	pedidoBytesMemoria_t pedidoBytes;
-	char* buffer;
-} pedidoAlmacenarBytesMemoria_t;
-
-typedef struct pedidoSolicitudPaginasStruct {
-	int pid;
-	int cantidadPaginas;
-} pedidoSolicitudPaginas_t;
-
 typedef struct t_semaforo {
 	int valorSemaforo;
 	t_queue* colaSemaforo;
 } t_semaforo;
-
-enum tipoDeCliente {
-
-	soyConsola = 1,
-	soyCPU = 2
-};
-
-//OJO: El numero corresponde al numero del proceso con el que se comunica
-//Cambiar un numero SOLO ACA implica romper la comunicacion
-enum tipoMensaje {
-
-	envioScript = 1,
-	accionContinuarProceso = 5, //CPU
-	accionObtenerPCB = 7, //CPU
-	accionFinInstruccion = 8, //CPU
-	accionFinProceso = 9, //CPU
-	accionImprimirTextoKernel = 10, //primitiva - CPU
-	accionImprimirVariableKernel = 11, //primitiva - CPU
-	accionAsignarValorCompartidaKernel = 12, //primitiva -CPU
-	accionPedirValorCompartidaKernel = 13, //primitiva -CPU
-	accionQuantumInterrumpido = 14 //signal -CPU
-};
 
 t_config* configKernel;
 config_t config;

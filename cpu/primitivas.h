@@ -34,9 +34,9 @@ enum tipoVariable
 
 t_puntero definir_variable(t_nombre_variable variable);
 t_puntero obtener_posicion_de(t_nombre_variable variable);
-t_valor_variable desreferenciar_variable(t_puntero direccion_variable);
+t_valor_variable dereferenciar_variable(t_puntero direccion_variable);
 void asignar(t_puntero direccion_variable, t_valor_variable valor);
-void irAlLabel(t_nombre_etiqueta t_nombre_etiqueta);
+void ir_al_label(t_nombre_etiqueta t_nombre_etiqueta);
 void finalizar(void);
 
 

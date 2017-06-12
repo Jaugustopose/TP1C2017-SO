@@ -18,6 +18,7 @@
 #include <pthread.h>
 #include <commons/collections/list.h>
 #include <stdbool.h>
+#include "estructurasCompartidas.h"
 
 typedef struct configMemo {
 	char* ip_kernel;
@@ -40,23 +41,6 @@ typedef struct tablaPaginaStruct {
 	int	nroPagina;
 } tablaPagina_t;
 
-typedef struct pedidoBytesMemoriaStruct {
-	int pid;
-	int	nroPagina;
-	int offset;
-	int tamanio;
-} pedidoBytesMemoria_t;
-
-typedef struct pedidoAlmacenarBytesMemoriaStruct {
-	pedidoBytesMemoria_t pedidoBytes;
-	char* buffer;
-} pedidoAlmacenarBytesMemoria_t;
-
-typedef struct pedidoSolicitudPaginasStruct {
-	int pid;
-	int cantidadPaginas;
-} pedidoSolicitudPaginas_t;
-
 t_config* configMemo;
 config_t config;
 
@@ -65,14 +49,6 @@ int tamanioMemoria;
 int tamanioTablaPagina;
 //t_list* listaProcesosActivos;
 
-enum accionMemoria {
-	inicializarProgramaAccion = 1,
-	solicitarPaginasAccion = 2,
-	almacenarBytesAccion = 3,
-	solicitarBytesAccion = 4,
-	finalizarProgramaAccion = 5,
-	obtenerTamanioPaginas = 6
-};
 enum accionConsolaMemoria {
 	retardo = 1,
 	dumpCache = 2,

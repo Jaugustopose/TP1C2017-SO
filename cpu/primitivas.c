@@ -49,7 +49,6 @@ void validarOverflow(t_puntero direccion) {
 	enviarSolicitudBytes(pid,pagina,offset,size);
 }
 
-
 void enviarDireccionAMemoria(t_puntero direccion) {
 	int pagina = (int)(direccion/tamanioPaginas) + cantidadPagCodigo; //Agrego el desplazamiento por las paginas ya ocupadas por el codigo
 	int offset = direccion % tamanioPaginas;
@@ -59,7 +58,8 @@ void enviarDireccionAMemoria(t_puntero direccion) {
 	enviarSolicitudBytes(pid, pagina, offset, size);
 }
 
-/******************************* PRIMIIVAS ******************************/
+/******************************* PRIMITIVAS ******************************/
+
 t_puntero obtener_posicion_de(t_nombre_variable variable) {
 
 	t_puntero posicionAbsoluta = 0;
@@ -73,7 +73,7 @@ t_puntero obtener_posicion_de(t_nombre_variable variable) {
 			posicionRelativa = (t_pedido*)dictionary_get(head->identificadores,cadena);
 			break;
 		case PARAMETRO:
-			posicionRelativa = (t_pedido*)list_get(head->argumentos,nombreToInt(variable));
+			posicionRelativa = (t_pedido*)list_get(head->argumentos, nombreToInt(variable));
 			break;
 		case NOEXISTE:
 			posicionAbsoluta = -1;
@@ -84,14 +84,11 @@ t_puntero obtener_posicion_de(t_nombre_variable variable) {
 			posicionAbsoluta = (posicionRelativa->nroPagina*tamanioPaginas) + posicionRelativa->offset;
 	} else {
 		finalizarProcesoVariableInvalida();
-		goto fin;
 	}
 
 
 	free(cadena);
 	return posicionAbsoluta;
-
-	fin: return 0;
 }
 
 t_puntero definir_variable(t_nombre_variable variable) {
@@ -102,22 +99,20 @@ t_puntero definir_variable(t_nombre_variable variable) {
 
 	if(esParametro(variable))
 	{
-	 list_add(head->argumentos,(void*)direccion);
+		list_add(head->argumentos,(void*)direccion);
 	}else{
-
 		//agrego el caracter a una cadena
-	 dictionary_put(head->identificadores, cadena, (void*) direccion);
+	 dictionary_put(head->identificadores, cadena, (void*)direccion);
 	}
 
 	free(cadena);
+	//free(direccion);
 
 	return (direccion->nroPagina*tamanioPaginas) + direccion->offset;
 }
 
-t_valor_variable desreferenciar_variable(t_puntero direccion_variable)
+t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 {
-	if(salteaCircuitoConGoTo){goto fin;}
-
 		t_valor_variable valor;
 		char* accion = (char*)almacenarBytesAccion;
 		send(memoria, accion, sizeof(accion), 0);
@@ -151,8 +146,6 @@ t_valor_variable desreferenciar_variable(t_puntero direccion_variable)
 
 void asignar(t_puntero direccion_variable, t_valor_variable valor)
 {
-	if(salteaCircuitoConGoTo){goto fin;}
-
 	char* accion = (char*)almacenarBytesAccion;
 	send(memoria, accion, sizeof(accion), 0);
 
@@ -172,60 +165,102 @@ void asignar(t_puntero direccion_variable, t_valor_variable valor)
 		overflowException(overflow);
 	}
 	return;
-	fin: goToMagia();
 }
 
-void irAlLabel(t_nombre_etiqueta label)
+void ir_al_label(t_nombre_etiqueta label)
 {
-	if(salteaCircuitoConGoTo){goto fin;}
+	t_puntero_instruccion posPrimeraInstruccionUtil = -1;
 
-		t_puntero_instruccion posPrimeraInstruccionUtil = -1;
+	if (existeLabel(label)) {
+		posPrimeraInstruccionUtil = obtenerPosicionLabel(label);
+	}
+	else
+	{
+		//ERRROR!
+		//devuelve posPrimeraInstruccionUtil = -1
+	}
 
-		if (existeLabel(label)) {
-			posPrimeraInstruccionUtil = obtenerPosicionLabel(label);
-		}
-		//Si no entra al if, devuelve posPrimeraInstruccionUtil = -1
+	actualizarPC(pcbNuevo, posPrimeraInstruccionUtil);
 
-		actualizarPC(pcbNuevo, posPrimeraInstruccionUtil);
-
-		return;
-
-		fin: goToMagia();
+	return;
 }
-
 
 void finalizar()
 {
 
 }
 
-t_valor_variable obtener_valor_compartida(t_nombre_compartida variable)
+t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableCompartida)
 {
+	t_valor_variable valorCompartida;
+	int tamanioNombreCompartida = strlen(nombreVariableCompartida) + 1;
+
+	//manda a nucleo el nombre de la variable
+	//recibe el valor
+
+	return valorCompartida;
 
 }
 
-t_valor_variable asignar_valor_compartida(t_nombre_compartida variable, t_valor_variable valor)
+t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableCompartida, t_valor_variable valorCompartida)
 {
+	t_valor_variable valorAsignado;
 
+	//manda a nucleo el nombre y valor de la variable
+	//recibe el valor asignado
+
+	return valorAsignado;
 }
+
 void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 {
 
 }
+
 void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
 {
+	t_puntero_instruccion posicionFuncion =  obtenerPosicionLabel(etiqueta);
 
+	t_elemento_stack* newHead = stack_elemento_crear();
+
+		newHead->valRetorno.nroPagina = (int)(donde_retornar/tamanioPaginas) + cantidadPagCodigo;
+		newHead->valRetorno.offset = donde_retornar % tamanioPaginas;
+		newHead->valRetorno.size = sizeof(int);
+
+		//dondeRetornar
+		newHead->posRetorno = pcbNuevo->contadorPrograma;
+		// Si el stack tiene pos 0, size=1, si tiene 0 y 1, size=2,... Da la posicion del lugar nuevo.
+		newHead->pos = stack_tamanio(stack);
+		//newHead->valorDeRetorno es el parser quien en retornar le pasa en que variable guardar el resultado.
+		stack_push(stack, newHead);
+
+		actualizarPC(pcbNuevo, posicionFuncion);
+
+		return;
 }
 
-void retornar(t_valor_variable retorno)
+void retornar(t_valor_variable unaVariable)
 {
+	t_elemento_stack* head = stack_pop(stack);
+	t_puntero_instruccion retorno = head->posRetorno;
 
+	//Envio a memoria direccion de la variable
+	//Envio a memoria valor de la variable
+
+
+	// Libero ese nivel del stack, porque termino de ejecutarse la funcion que lo creo y ya no es necesario
+	stack_elemento_destruir(head);
+
+	actualizarPC(pcbNuevo, retorno);
+
+	return;
 }
 
 void wait(t_nombre_semaforo identificador_semaforo)
 {
 
 }
+
 void signal(t_nombre_semaforo identificador_semaforo)
 {
 
@@ -276,11 +311,11 @@ void inicializarPrimitivas() {
 
 	funciones.AnSISOP_definirVariable = &definir_variable;
 	funciones.AnSISOP_obtenerPosicionVariable = &obtener_posicion_de;
-	funciones.AnSISOP_dereferenciar = &desreferenciar_variable;
+	funciones.AnSISOP_dereferenciar = &dereferenciar_variable;
 	funciones.AnSISOP_asignar = &asignar;
 	funciones.AnSISOP_obtenerValorCompartida = &obtener_valor_compartida;
 	funciones.AnSISOP_asignarValorCompartida = &asignar_valor_compartida;
-	funciones.AnSISOP_irAlLabel = &irAlLabel;
+	funciones.AnSISOP_irAlLabel = &ir_al_label;
 	funciones.AnSISOP_llamarSinRetorno = &llamar_sin_retorno;
 	funciones.AnSISOP_llamarConRetorno = &llamar_con_retorno;
 	funciones.AnSISOP_finalizar = &finalizar;

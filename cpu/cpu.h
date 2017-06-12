@@ -24,28 +24,6 @@
 #include <parser/metadata_program.h>
 #include <math.h>
 
-
-//OJO: El numero corresponde al numero del proceso con el que se comunica
-//Cambiar un numero SOLO ACA implica romper la comunicacion
-enum accionCPU {
-	solicitarPaginasAccion = 2,
-	solicitarBytesAccion = 4,
-	accionContinuarProceso = 5,
-	obtenerTamanioPaginas = 6,
-	accionObtenerPCB = 7,
-	accionFinInstruccion = 8,
-	accionFinProceso = 9,
-	accionImprimirTextoKernel = 10, //primitiva kernel
-	accionImprimirVariableKernel = 11, //primitiva kernel
-	accionAsignarValorCompartidaKernel = 12, //primitiva kernel
-	accionPedirValorCompartidaKernel = 13, //primitiva kernel
-	accionQuantumInterrumpido = 14, //signal
-	almacenarBytesAccion = 16, // memoria (asignar, primitiva)
-	accionException = 17, //para overflow
-	accionError = 18
-
-};
-
 t_log *logger;
 t_log *debugLogger;
 
