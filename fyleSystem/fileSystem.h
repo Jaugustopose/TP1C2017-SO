@@ -9,24 +9,45 @@
 #define FILESYSTEM_H_
 
 #include <commons/config.h>
+#include <commons/string.h>
+#include <commons/bitarray.h>
 #include <unistd.h>
 
-typedef struct configuracion {
-	char* IP_KERNEL;
-	int PUERTO_KERNEL;
-	char* IP_FS;
-	int PUERTO_FS;
-};
+typedef struct{
+	int PUERTO;
+	char* PUNTO_MONTAJE;
+}configuracion_t;
 
-t_config* configFs;
-struct configuracion config;
+typedef struct{
+	int TAMANIO_BLOQUES;
+	int CANTIDAD_BLOQUES;
+	char* MAGIC_NUMBER;
+}metadata_t;
+
+typedef struct{
+	int TAMANIO;
+	char **BLOQUES;
+}archivo_t;
+
+typedef struct{
+	char* Archivos;
+	char* Bloques;
+	char* Metadata;
+	char* Bitmap;
+
+}paths_t;
+
+paths_t paths;
+configuracion_t config;
+metadata_t metadata;
+t_bitarray *bitmap;
 
 /*****************************PROTOTIPO*************/
-void validarArchivo(char path);
-void crearArchivo(char path);
-void borrarArchivo(char path);
-char* obtenerDatos(char path, int offset, int size);
-void guardarDatos(char path, int offset, int size, char* buffer);
+int validarArchivo(char *path);
+int crearArchivo(char *path);
+void borrarArchivo(char *path);
+char* obtenerDatos(char *path, int offset, int size);
+void guardarDatos(char *path, int offset, int size, char* buffer);
 
 
 #endif /* FILESYSTEM_H_ */
