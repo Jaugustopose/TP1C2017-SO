@@ -258,11 +258,55 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 
 	switch (idMensaje) {
 
-	case accionAsignarValorCompartidaKernel:
+	case accionSignal:
 
 	break;
 
-	case accionPedirValorCompartidaKernel:
+	case accionAsignarValorCompartida:
+
+	break;
+
+	case accionObtenerValorCompartida:
+
+	break;
+
+	case accionWait:
+
+	break;
+
+	case accionSignal:
+
+	break;
+
+	case accionEscribir:
+
+	break;
+
+	case accionMoverCursor:
+
+	break;
+
+	case accionAbrirArchivo:
+
+	break;
+
+	case accionCrearArchivo:
+
+	break;
+
+	case accionBorrarArchivo:
+
+	break;
+
+	case accionObtenerDatosArchivo:
+
+	break;
+
+	case accionReservarHeap:
+
+	break;
+
+	case accionLiberarHeap:
 
 	break;
 

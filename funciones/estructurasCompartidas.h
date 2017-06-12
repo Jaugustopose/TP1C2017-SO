@@ -21,16 +21,25 @@ enum tipoMensaje {
 	accionObtenerPCB = 9,
 	accionFinInstruccion = 10,
 	accionFinProceso = 11,
-	accionImprimirTextoKernel = 12,
-	accionImprimirVariableKernel = 13,
-	accionAsignarValorCompartidaKernel = 14,
-	accionPedirValorCompartidaKernel = 15,
+	accionObtenerValorCompartida = 14,
+	accionAsignarValorCompartida = 15,
 	accionQuantumInterrumpido = 16,
 	accionException = 17,
 	accionError = 18,
 	accionConsolaFinalizarNormalmente = 19,
 	accionConsolaFinalizarErrorInstruccion = 20,
-	accionImprimirTextoConsola = 21
+	accionImprimirTextoConsola = 21,
+	accionWait = 22,
+	accionSignal = 23,
+	accionEscribir = 24, //puede ser en archivo o consola, depende el FD
+	accionMoverCursor = 25,
+	accionAbrirArchivo = 26,
+	accionCrearArchivo = 27,
+	accionBorrarArchivo = 28,
+	accionObtenerDatosArchivo = 29,
+	accionReservarHeap = 30,
+	accionLiberarHeap = 31
+
 };
 
 enum tipoDeCliente {
