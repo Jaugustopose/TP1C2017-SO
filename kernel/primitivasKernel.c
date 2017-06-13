@@ -25,14 +25,17 @@ void primitivaWait(int cliente, char* semaforoID)
 		//TODO: IMPLEMENTAR! bloquearProcesoSem(cliente, semaforoID);
 	}
 }
+
 int primitivaDevolverCompartida()
 {
 
 }
+
 void primitivaAsignarCompartida()
 {
 
 }
+
 void imprimir()
 {
 
