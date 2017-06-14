@@ -48,14 +48,14 @@ enum tipoDeCliente {
 	soyCPU = 2
 };
 
-typedef enum {
+typedef enum identidad {
 
-	SOYCONSOLA, //0
-	SOYKERNEL, //1
-	SOYCPU, //2
-	SOYMEMORIA //3
+	SOYCONSOLA = 0,
+	SOYKERNEL = 1,
+	SOYCPU = 2,
+	SOYMEMORIA = 3
 
-}t_identidad;
+};
 
 
 typedef struct {

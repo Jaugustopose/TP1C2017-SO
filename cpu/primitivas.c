@@ -114,50 +114,50 @@ t_puntero definir_variable(t_nombre_variable variable) {
 t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 {
 		t_valor_variable valor;
+
+		//manda codigo de accion
 		char* accion = (char*)almacenarBytesAccion;
 		send(memoria, accion, sizeof(accion), 0);
 
-		//validarOverflow(direccion_variable);
+		//manda pedidoa memoria
 		enviarDireccionAMemoria(direccion_variable);
 
 		if(!hayOverflow()){
 
-			//TODO:Encapsular esta porqueria
-			char* buffer = malloc(sizeof(int));
-			char* valorRecibido = recv(memoria, buffer, sizeof(int), MSG_WAITALL);
+			//recibe valor de memoria
+			char* bufferValor = malloc(sizeof(int));
+			int valorRecibido = recv(memoria, bufferValor, sizeof(int), 0);
 			if (valorRecibido <= 0)
 			{
 				perror("recv devolvio un numero menor que cero");
 				exit(1);
 			}
 
-			free(buffer);
+			valor = char4ToInt(bufferValor);
 
-			valor = (int)valorRecibido;
-			free(valorRecibido);
+			free(bufferValor);
 
 			return valor;
-		}else{
-			overflowException(overflow);
-		}
 
-		fin: return 0;
+		}
+		else{
+			return overflowException(overflow);
+		}
 }
 
 void asignar(t_puntero direccion_variable, t_valor_variable valor)
 {
+	//Manda codigo de accion
 	char* accion = (char*)almacenarBytesAccion;
 	send(memoria, accion, sizeof(accion), 0);
 
-	//validarOverflow(direccion_variable);
+	//Manda pedido a memoria
 	enviarDireccionAMemoria(direccion_variable);
-
-	//VER OVERFLOW
 
 	if(!hayOverflow()){
 
 		//Revisar si es necesario serializar el int
-		char* valorSerializado = (char*)valor;
+		char* valorSerializado = intToChar4(valor);
 		send(memoria, valorSerializado, sizeof(t_valor_variable), 0);
 
 		free(valorSerializado);
@@ -187,6 +187,24 @@ void ir_al_label(t_nombre_etiqueta label)
 
 void finalizar()
 {
+	t_elemento_stack* head = stack_pop(stack);
+
+	//posRetorno coincide con el PC. Es a donde tiene que volver
+	t_puntero_instruccion retorno = head->posRetorno;
+
+	stack_elemento_destruir(head);
+
+	int elementos = stack_tamanio(stack);
+
+	if(elementos <= 0)
+	{
+
+	}
+
+	actualizarPC(pcbNuevo, retorno);
+
+
+
 
 }
 
@@ -214,6 +232,19 @@ t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableComp
 
 void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 {
+	t_puntero_instruccion posicionFuncion =  obtenerPosicionLabel(etiqueta);
+	t_elemento_stack* newHead = stack_elemento_crear();
+
+	//dondeRetornar
+	newHead->posRetorno = pcbNuevo->contadorPrograma;
+
+	// Si el stack tiene pos 0, size=1, si tiene 0 y 1, size=2,... Da la posicion del lugar nuevo.
+	newHead->pos = stack_tamanio(stack);
+
+	//newHead->valorDeRetorno es el parser quien en retornar le pasa en que variable guardar el resultado.
+	stack_push(stack, newHead);
+
+	actualizarPC(pcbNuevo, posicionFuncion);
 
 }
 
@@ -223,29 +254,38 @@ void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
 
 	t_elemento_stack* newHead = stack_elemento_crear();
 
-		newHead->valRetorno.nroPagina = (int)(donde_retornar/tamanioPaginas) + cantidadPagCodigo;
-		newHead->valRetorno.offset = donde_retornar % tamanioPaginas;
-		newHead->valRetorno.size = sizeof(int);
+	newHead->valRetorno.nroPagina = (int)(donde_retornar/tamanioPaginas) + cantidadPagCodigo;
+	newHead->valRetorno.offset = donde_retornar % tamanioPaginas;
+	newHead->valRetorno.size = sizeof(int);
 
-		//dondeRetornar
-		newHead->posRetorno = pcbNuevo->contadorPrograma;
-		// Si el stack tiene pos 0, size=1, si tiene 0 y 1, size=2,... Da la posicion del lugar nuevo.
-		newHead->pos = stack_tamanio(stack);
-		//newHead->valorDeRetorno es el parser quien en retornar le pasa en que variable guardar el resultado.
-		stack_push(stack, newHead);
+	//dondeRetornar
+	newHead->posRetorno = pcbNuevo->contadorPrograma;
+	// Si el stack tiene pos 0, size=1, si tiene 0 y 1, size=2,... Da la posicion del lugar nuevo.
+	newHead->pos = stack_tamanio(stack);
+	//newHead->valorDeRetorno es el parser quien en retornar le pasa en que variable guardar el resultado.
+	stack_push(stack, newHead);
 
-		actualizarPC(pcbNuevo, posicionFuncion);
+	actualizarPC(pcbNuevo, posicionFuncion);
 
-		return;
+	return;
 }
 
 void retornar(t_valor_variable unaVariable)
 {
 	t_elemento_stack* head = stack_pop(stack);
+
+	//posRetorno coincide con el PC. Es a donde tiene que volver
 	t_puntero_instruccion retorno = head->posRetorno;
 
-	//Envio a memoria direccion de la variable
-	//Envio a memoria valor de la variable
+	 //Manda codigo de accion
+     char* accion = (char*)almacenarBytesAccion;
+     send(memoria, accion, sizeof(accion), 0);
+
+	//Manda pedido a memoria
+     enviarSolicitudBytes(pcbNuevo->PID,
+    		 	 	 	  head->valRetorno.nroPagina,
+						  head->valRetorno.offset,
+						  head->valRetorno.size);
 
 
 	// Libero ese nivel del stack, porque termino de ejecutarse la funcion que lo creo y ya no es necesario

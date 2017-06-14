@@ -28,6 +28,7 @@ t_log *logger;
 t_log *debugLogger;
 
 //GLOBALES
+int identidadCpu = SOYCPU;
 struct sockaddr_in dirKernel;
 int kernel;
 struct sockaddr_in dirMemoria;
