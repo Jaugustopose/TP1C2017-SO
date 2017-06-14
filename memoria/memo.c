@@ -109,21 +109,9 @@ int finalizarPrograma(int pid, tablaPagina_t* tablaPaginasInvertida) {
 			retorno = EXIT_SUCCESS;
 		}
 	}
-	//Quitamos pid del listado de procesos activos
-//	if (retorno == EXIT_SUCCESS) {
-//		for (i=0; i < list_size(listaProcesosActivos); i++) {
-//			if (pid == list_get(listaProcesosActivos, i)) {
-//				list_remove(listaProcesosActivos, i);
-//				break;
-//			}
-//		}
-//	}
+
 	return retorno;
 }
-
-//void estaEnLista(*t_list lista, (void*) valor) {
-//	if (list_ge);
-//}
 
 int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPaginasInvertida) {
 	int i;
@@ -187,23 +175,32 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPag
  * @param nroPagina
  * @param offset
  * @param tamanio
- * @return char* a los bytes solicitados, o NULL si se produce algún error
+ * @return char* con [codResult + bytesSolicitados]
+ * codResult = int
+ * bytesSolicitados = char*
  */
 char* solicitarBytes(int pid, int nroPagina, int offset, int tamanio, tablaPagina_t* tablaPaginasInvertida){
-	char* bytesSolicitados = NULL;
+	int codResult;
+	char* respuesta = malloc(tamanio + sizeof(codResult));
+	char* bytesSolicitados = malloc(tamanio);
+	memset(bytesSolicitados, '\0', tamanio);
+	memset(respuesta, '\0', tamanio + sizeof(codResult));
 	int marco = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
 	printf("Marco encontrado solicitarBytes: %d\n", marco);
 	if (marco == -10){
+		codResult = marco;
 		printf("El nro de página %d para el pid %d no existe\n", pid, nroPagina);
 	} else if ((offset + tamanio) > config.marco_size) {
+		codResult = -12;
 		printf("El pedido de lectura excede el tamaño de la página\n");
 	} else {
 		printf("Tamaño solicitado: %d\n", tamanio);
-		bytesSolicitados = malloc(tamanio);
+		codResult = EXIT_SUCCESS;
 		memcpy(bytesSolicitados, memoria + marco * config.marco_size + offset, tamanio);
 	}
-
-	return bytesSolicitados;
+	memcpy(respuesta, &codResult, sizeof(codResult));
+	memcpy(respuesta + sizeof(codResult), bytesSolicitados, tamanio);
+	return respuesta;
 
 }
 
@@ -217,6 +214,21 @@ int buscarMarco(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida) {
 	return -10;
 }
 
+/**
+ *
+ * Procesa un pedido de almacenamiento de bytes para un pid en un nro de página determinado del mismo
+ * con un offset y de un tamaño determinados.
+ *
+ * @param pid
+ * @param nroPagina
+ * @param offset
+ * @param tamanio
+ * @param buffer
+ * @param tablaPaginasInvertida
+ * @return int con el resultado de la acción
+ * 			  0: Éxito
+ * 			-12: El pedido excede le tamaño de página
+ */
 int almacenarBytes(int pid, int nroPagina, int offset, int tamanio, char* buffer, tablaPagina_t* tablaPaginasInvertida) {
 	//TODO SEMÁFORO DESDE ACÁ
 	printf("Inicia almacenarBytes\n");
@@ -467,8 +479,10 @@ int main(void){
 						bytesSolicitados = solicitarBytes(pedidoBytes.pid,
 								pedidoBytes.nroPagina, pedidoBytes.offset,
 								pedidoBytes.tamanio, tablaPaginasInvertida);
-						printf("Solicitar bytes devolvió los Bytes solicitados: %s\n", bytesSolicitados);
-						send(sockClie, bytesSolicitados, pedidoBytes.tamanio, 0);
+						memcpy(&resultAccion, bytesSolicitados, sizeof(resultAccion));
+						printf("Solicitud de finalizar programa terminó con resultado de acción: %d\n", resultAccion);
+						printf("Solicitar bytes devolvió los Bytes solicitados: %s\n", bytesSolicitados + sizeof(resultAccion));
+						send(sockClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), 0);
 						free(bytesSolicitados);
 						break;
 
@@ -482,7 +496,7 @@ int main(void){
 						break;
 
 					case obtenerTamanioPaginas:
-						send(sockClie,&config.marco_size,sizeof(int32_t),0);
+						send(sockClie, &config.marco_size, sizeof(int32_t),0);
 						break;
 
 					default:
