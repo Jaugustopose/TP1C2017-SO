@@ -2,10 +2,6 @@
 #include "cpu.h"
 
 
-#define MAXBYTESREAD 100
-
-t_identidad* identidadCpu = SOYCPU;
-
 int char4ToInt(char* chars){
 	int a;
 	deserializar_int(&a,chars);
@@ -67,11 +63,8 @@ void overflowException(int mensajeMemoria){
 			finalizarProceso(false);
 
 			lanzarOverflowExep=false;
-			salteaCircuitoConGoTo=true;
 		}
 }
-
-void goToMagia(){};
 
 void actualizarPC(t_PCB* pcb, t_puntero_instruccion pc) {
 
@@ -92,7 +85,6 @@ void finalizarProcesoVariableInvalida(){
 	//Falta: Destruir PCB
 
 	ejecutar = false;
-	salteaCircuitoConGoTo = true;
 	pcbNuevo = NULL;
 
 }
@@ -290,9 +282,19 @@ void enviarSolicitudBytes(int pid, int pagina, int offset, int size) {
 
 	char* solicitud = string_new();
 
-	//VER LA SERIALIZACION
 	int tamanio = serializar_pedido_bytes(solicitud, pedido);
 	send(memoria, solicitud, tamanio , 0);
+
+	char* stackOverflow = malloc(sizeof(int));
+	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), 0);
+	overflow = char4ToInt(stackOverflow);
+    free(stackOverflow);
+
+	if (hayOverflow()) {
+		overflowException(overflow);
+	}
+    free(solicitud);
+
 }
 
 t_sentencia* obtenerSentenciaRelativa(int* paginaInicioSentencia) {
@@ -420,7 +422,6 @@ void parsear(char* sentencia)
 	//Le paso sentencia, set de primitivas de CPU y set de primitivas de kernel
 	analizadorLinea(sentencia, &funciones, &funcionesKernel);
 
-	if(salteaCircuitoConGoTo){return;}
 
 	char* accionEnviar = (char*)accionFinInstruccion;
 	send(kernel, accionEnviar, 1, 0);
@@ -458,7 +459,6 @@ void recibirOrdenes(char* accionRecibida)
 	switch((int)accionRecibida){
 
 		case accionObtenerPCB: //Recibir nuevo PCB del Kernel
-			salteaCircuitoConGoTo = false;
 			overflow = false;
 			lanzarOverflowExep = false;
 			obtenerPCB();
@@ -469,7 +469,6 @@ void recibirOrdenes(char* accionRecibida)
 			if(!finalizarEjecucion()){
 				pedirSentencia();
 			}
-			salteaCircuitoConGoTo = false;
 			break;
 		case accionFinProceso: //Envio PCB al Kernel
 
