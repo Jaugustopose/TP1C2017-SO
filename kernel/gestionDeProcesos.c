@@ -4,16 +4,15 @@
 void transformarCodigoToMetadata(t_PCB pcb, char* cod)
 {
 	t_metadata_program* metadata = metadata_desde_literal(cod);
-	t_sentencia sentencia;
+
 
 	    //Llena indice de codigo
 		int i;
 		for (i = 0; i < metadata->instrucciones_size; i++) {
-
-				sentencia = malloc(sizeof(t_sentencia));
-				sentencia->inicio = metadata->instrucciones_serializado[i].start;
-				sentencia->fin = sentencia->inicio + metadata->instrucciones_serializado[i].offset;
-				list_add(pcb.indiceCodigo, sentencia);
+				t_sentencia sentencia;
+				sentencia.inicio = metadata->instrucciones_serializado[i].start;
+				sentencia.fin = sentencia.inicio + metadata->instrucciones_serializado[i].offset;
+				list_add(pcb.indiceCodigo, &sentencia);
 			}
 
 		//Llena indice de etiquetas
@@ -46,30 +45,28 @@ void transformarCodigoToMetadata(t_PCB pcb, char* cod)
 
 t_PCB crearPCB()
 {
-	t_PCB pcb = malloc(sizeof(t_PCB));
+	t_PCB pcb;
 
 	pcb.PID=0;
-	pcb->contadorPrograma = 0;
-	pcb->cantidadPaginas = 0;
+	pcb.contadorPrograma = 0;
+	pcb.cantidadPaginas = 0;
 
-	pcb->stackPointer = stack_crear();
-	pcb->indiceCodigo = list_create();
-	pcb->indiceEtiquetas = dictionary_create();
+	pcb.stackPointer = stack_crear();
+	pcb.indiceCodigo = list_create();
+	pcb.indiceEtiquetas = dictionary_create();
 
 	return pcb;
 }
 
 t_proceso crearProceso(int pid, int consolaDuenio, char* codigo)
 {
-	t_proceso proceso = malloc(sizeof(t_proceso));
-	proceso->PCB = crearPCB();
+	t_proceso proceso;
+	proceso.PCB = crearPCB();
+	proceso.PCB.PID = pid;
+	proceso.ConsolaDuenio = consolaDuenio;
+	proceso.CpuDuenio = -1;
 
-	//datos falsos por ahora
-	proceso->PCB->PID = pid;
-	proceso->ConsolaDuenio = consolaDuenio;
-	proceso->CpuDuenio = -1;
-
-	transformarCodigoToMetadata(proceso->PCB, codigo);
+	transformarCodigoToMetadata(proceso.PCB, codigo);
 
 	return proceso;
 }
