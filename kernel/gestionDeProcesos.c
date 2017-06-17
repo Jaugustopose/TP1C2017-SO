@@ -58,15 +58,15 @@ t_PCB crearPCB()
 	return pcb;
 }
 
-t_proceso crearProceso(int pid, int consolaDuenio, char* codigo)
+t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo)
 {
-	t_proceso proceso;
-	proceso.PCB = crearPCB();
-	proceso.PCB.PID = pid;
-	proceso.ConsolaDuenio = consolaDuenio;
-	proceso.CpuDuenio = -1;
+	t_proceso* proceso;
+	proceso -> PCB = crearPCB();
+	proceso -> PCB.PID = pid;
+	proceso -> ConsolaDuenio = consolaDuenio;
+	proceso -> CpuDuenio = -1;
 
-	transformarCodigoToMetadata(proceso.PCB, codigo);
+	transformarCodigoToMetadata(proceso -> PCB, codigo);
 
 	return proceso;
 }

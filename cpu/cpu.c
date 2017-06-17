@@ -506,7 +506,7 @@ void esperarProgramas()
 
 int main(void){
 
-
+	identidadCpu = SOYCPU;
 	cargarConfiguracion();
 	inicializarPrimitivas();
 	inicializarContexto();

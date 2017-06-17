@@ -134,7 +134,7 @@ void crearPrograma()
 //
 //	send(cliente,&identidad, sizeof(int),0);
 
-	conectarConKernel();
+
 
 	int pidRecibido;
 	recv(cliente, &pidRecibido, sizeof(int32_t), MSG_WAITALL);
@@ -160,12 +160,12 @@ void imprimeMenuUsuario()
 
 void pidePathAlUsuario()
 {
-  printf("Ingresar archivo ansisop: ");
+  printf("Ingresar archivo ansisop: \n");
   scanf("%c", path);
 
   programa = fopen("/home/utnso/Escritorio/facil.ansisop","rb");
   if(programa == NULL){
-	  perror("No se encontro el archivo.");
+	  perror("No se encontro el archivo.\n");
     }
   else
     {
@@ -278,6 +278,8 @@ int main(void){
 	limpiaMensajes();
 
     cargarConfiguracion();
+
+    conectarConKernel();
 
     escucharUsuario();
 

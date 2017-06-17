@@ -1,10 +1,10 @@
-
+#include "kernel.h"
 
 void primitivaSignal(int cliente, char* semaforoID)
 {
 	t_semaforo* semaforo = (t_semaforo*)dictionary_get(tablaSemaforos, semaforoID);
 
-		if (!queue_is_empty(semaforo->colaSemaforo)){
+		if (!queue_is_empty(semaforo->colaSemaforo)) {
 
 			t_proceso* proceso = queue_pop(semaforo->colaSemaforo);
 			//TODO: IMPLEMENTAR! desbloquearProceso(proceso);
