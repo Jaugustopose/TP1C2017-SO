@@ -75,10 +75,12 @@ void cargarConfiguracion() {
 
 void inicializarContexto() {
 	listaDeProcesos = list_create();
+	tablaPaginasHeap = list_create();
 	tablaSemaforos = dictionary_create();
 	tablaCompartidas = dictionary_create();
 	crearSemaforos();
 	crearCompartidas();
+
 }
 
 int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {

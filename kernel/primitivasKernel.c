@@ -40,3 +40,18 @@ void imprimir()
 {
 
 }
+
+void recibirPedidoMemoria(int tamanioSolicitud, int pidSolicitante)
+{
+	if(peticion_valida(tamanioSolicitud))
+	{
+		//pedido a memoria de una pagina: cantpaginas = 1, pidSolicitante
+		//recibe respuesta
+		crearPagina(pidSolicitante, tamanioSolicitud);
+
+
+	}else
+	{
+		//finalizar programa abruptamente por exceder tamanio del pedido
+	}
+}
