@@ -138,18 +138,18 @@ int leerArchivo(char *path, archivo_t *archivo){
 	free(pat);
 
 	if(config==NULL){
-		return -1;
+		return -1; //Archivo inexistente
 	}
 
 	if (config_has_property(config, "TAMANIO")){
 		archivo->TAMANIO = config_get_int_value(config,"TAMANIO");
 	}else{
-		return -2;
+		return -2; //Archivo corrupto
 	}
 	if (config_has_property(config, "BLOQUES")){
 		archivo->BLOQUES = config_get_array_value(config,"BLOQUES");
 	}else{
-		return -2;
+		return -2; //Archivo corrupto
 	}
 
 	return 0;
@@ -211,7 +211,11 @@ int crearArchivo(char *path)
 void borrarArchivo(char *path)
 {
 	archivo_t *archivo = newArchivo();
-	leerArchivo(path, archivo);
+	int res = leerArchivo(path, archivo);
+	if(res<0){
+		puts("Error al borrar el archivo");
+		return;
+	}
 	int i=0;
 	while(archivo->BLOQUES[i]){
 		liberarBloque(strtol(archivo->BLOQUES[i],NULL,10));
@@ -228,7 +232,9 @@ void borrarArchivo(char *path)
 
 char* obtenerDatos(char *path, int offset, int size)
 {
-	return "algo";
+	//TODO: Implementar lectura de archivo
+	char *texto = "Algo";
+	return texto;
 }
 
 void guardarDatos(char *path, int offset, int size, char* buffer)
@@ -244,13 +250,106 @@ int main(void) {
 
 	cargarConfiguracion();//Cargo configuracion
 	leerMetadata();
-
 	leerBitmap();
+
 	printf("Cantidad de bloques en bitmap = %i\n", bitarray_get_max_bit(bitmap));
 
-	borrarArchivo("test.bin");
-	destruirBitmap(bitmap);
+	struct sockaddr_in direccionServidor; // Información sobre mi dirección
+	struct sockaddr_in direccionCliente; // Información sobre la dirección del cliente
+	int addrlen; // El tamaño de la direccion del cliente
+	int sockServ; // Socket de nueva conexion aceptada
+	int sockClie; // Socket a la escucha
+	int cantBytesRecibidos;
 
+	sockServ = crearSocket();
+	reusarSocket(sockServ, 1);
+	direccionServidor = crearDireccionServidor(config.PUERTO);
+	bind_w(sockServ, &direccionServidor);
+	listen_w(sockServ);
+	printf("Escuchando nuevas solicitudes tcp en el puerto %d...\n", config.PUERTO);
+
+	for (;;) {
+		if ((sockClie = accept(sockServ, (struct sockaddr*) &direccionCliente, &addrlen)) == -1) {
+			perror("Error en el accept");
+		} else {
+			printf("Server: nueva conexion de %s en socket %d\n", inet_ntoa(direccionCliente.sin_addr), sockClie);
+			for (;;) {
+				// Gestionar datos de un cliente. Recibimos el código de acción que quiere realizar.
+				int codAccion;
+				if ((cantBytesRecibidos = recv(sockClie, &codAccion, sizeof(int), 0)) <= 0) {
+					// error o conexión cerrada por el cliente
+					if (cantBytesRecibidos == 0) {
+						// conexión cerrada
+						printf("Server: socket %d termino la conexion\n", sockClie);
+						close(sockClie);
+						break;
+					} else {
+						perror("Se ha producido un error en el Recv");
+						break;
+					}
+				} else {
+					printf("He recibido %d bytes con la acción: %d\n", cantBytesRecibidos, codAccion);
+					char* bytesAEscribir;
+					char* bytesSolicitados;
+					int resultAccion;
+					int pidAFinalizar;
+
+					switch (codAccion) {
+
+					case accionAbrirArchivo:
+						int largoMsg;
+						recv(sockClie, &largoMsg, sizeof(largoMsg), 0);
+						char *path = (char*) malloc(sizeof(char)*largoMsg);
+						recv(sockClie, path, largoMsg, 0);
+						int res = validarArchivo(path);
+						send(sockClie, &res, sizeof(res),0);
+						printf("Recibida solicitud de apertura de archivo: %s\n", path);
+						break;
+
+					case accionBorrarArchivo:
+						int largoMsg;
+						recv(sockClie, &largoMsg, sizeof(largoMsg), 0);
+						char *path = (char*) malloc(sizeof(char)*largoMsg);
+						recv(sockClie, path, largoMsg, 0);
+						int res = borrarArchivo(path);
+						send(sockClie, &res, sizeof(res),0);
+						printf("Recibida solicitud de borrado de archivo: %s\n", path);
+						break;
+
+					case accionCrearArchivo:
+						int largoMsg;
+						recv(sockClie, &largoMsg, sizeof(largoMsg), 0);
+						char *path = (char*) malloc(sizeof(char)*largoMsg);
+						recv(sockClie, path, largoMsg, 0);
+						int res = crearArchivo(path);
+						send(sockClie, &res, sizeof(res),0);
+						printf("Recibida solicitud de creacion de archivo: %s\n", path);
+						break;
+
+					case accionObtenerDatosArchivo:
+						int largoMsg;
+						recv(sockClie, &largoMsg, sizeof(largoMsg), 0);
+						char *path = (char*) malloc(sizeof(char)*largoMsg);
+						recv(sockClie, path, largoMsg, 0);
+						int offset;
+						int size;
+						recv(sockClie, &offset, sizeof(offset), 0);
+						recv(sockClie, &size, sizeof(size), 0);
+						char * datos = obtenerDatos(path, offset, size);
+						send(sockClie, datos, size,0);
+						printf("Recibida solicitud de lectura de archivo: %s\n", path);
+						break;
+
+					default:
+						printf("No reconozco el código de acción\n");
+						resultAccion = -13;
+						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
+					}
+					printf("Fin atención acción\n");
+				}
+			}
+		}
+	}
 
 /*
     //Creo Cliente
