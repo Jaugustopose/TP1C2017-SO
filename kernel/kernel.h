@@ -72,7 +72,7 @@ int yes;
 int cantBytes; // La cantidad de bytes. Lo voy a usar para saber cuantos bytes me mandaron.
 int addrlen; // El tamaño de la direccion del cliente
 int identidadCliente;
-int i, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
+int fdCliente, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
 int tamanioPag;
 //int identificadorProceso = 0;
 int identificadorProceso;

@@ -8,7 +8,7 @@ void cargarConfiguracion() {
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	string_append(&pat, "/kernel.cfg");
+	string_append(&pat, "/Debug/kernel.cfg");
 	configKernel = config_create(pat);
 	free(pat);
 
@@ -61,14 +61,6 @@ void cargarConfiguracion() {
 				"SHARED_VARS");
 		printf("SEM_INIT: %s\n\n\n", config.SHARED_VARS);
 	}
-
-	printf(
-			"--------------Configuración cargada exitosamente--------------\n\n");
-	printf("Seleccione la opción que desee realizar:\n"
-			"1) Listado de procesos del sistema\n"
-			"2) Finalizar un proceso\n"
-			"3) Consultar estado de un proceso\n"
-			"4) Detener planificación\n");
 
 }
 
@@ -178,7 +170,13 @@ int paginas_que_ocupa(int unTamanio, int tamanioPagina) {
 
 void interactuar_con_usuario() {
 
-	//Interactuo con el usuario
+	printf(
+				"--------------Configuración cargada exitosamente--------------\n\n");
+		printf("Seleccione la opción que desee realizar:\n"
+				"1) Listado de procesos del sistema\n"
+				"2) Finalizar un proceso\n"
+				"3) Consultar estado de un proceso\n"
+				"4) Detener planificación\n");
 }
 
 void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProcesos) {
@@ -186,8 +184,8 @@ void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProces
 	//Encontrar cada proceso con proceso.ConsolaDuenio = fileDescriptor
 	//Cambiarle el exit code a -6 (finalizo por desconexion de consola)
 	//Llevo el proceso con exit code = 6 a la cola de exit
-	for (i = 0; i < list_size(listaConProcesos); i++) {
-		t_proceso* proceso = list_get(listaConProcesos, i);
+	for (fdCliente = 0; fdCliente < list_size(listaConProcesos); fdCliente++) {
+		t_proceso* proceso = list_get(listaConProcesos, fdCliente);
 		if (proceso -> ConsolaDuenio == fileDescriptor) {
 			proceso -> PCB.exitCode = -6;
 			queue_push(colaExit,&proceso);
@@ -207,8 +205,8 @@ void liberar_procesos_de_cpu(int fileDescriptor, t_list* listaConProcesos) {
 	//Encontrar cada proceso con proceso.CpuDuenio = filedescriptor
 	//Y cambiarle el CpuDuenio a -1 (el menos 1 significa que no tiene cpu asignado)
 
-	for (i = 0; i < list_size(listaConProcesos); i++) {
-		t_proceso* proceso = list_get(listaConProcesos, i);
+	for (fdCliente = 0; fdCliente < list_size(listaConProcesos); fdCliente++) {
+		t_proceso* proceso = list_get(listaConProcesos, fdCliente);
 		if (proceso -> CpuDuenio == fileDescriptor) {
 			proceso -> CpuDuenio = -1;
 		}
@@ -243,39 +241,40 @@ void conexion_de_cliente_finalizada() {
 	// error o conexión cerrada por el cliente
 	if (cantBytes == 0) {
 		// conexión cerrada
-		printf("Server: socket %d termino la conexion\n", i);
+		printf("Server: socket %d termino la conexion\n", fdCliente);
 	} else {
 		perror("recv");
 	}
 	// Eliminar del conjunto maestro y su respectiva bolsa
-	FD_CLR(i, &master);
-	if (FD_ISSET(i, &bolsaConsolas)) {
-		FD_CLR(i, &bolsaConsolas);
-		printf("Se desconecto consola del socket %d", i);
+	FD_CLR(fdCliente, &master);
+	if (FD_ISSET(fdCliente, &bolsaConsolas)) {
+		FD_CLR(fdCliente, &bolsaConsolas);
+		printf("Se desconecto consola del socket %d", fdCliente);
 
-		procesos_exit_code_corto_consola(i, listaDeProcesos);
+		procesos_exit_code_corto_consola(fdCliente, listaDeProcesos);
 
 	} else {
-		FD_CLR(i, &bolsaCpus);
-		printf("Se desconecto cpu del socket %d", i);
+		FD_CLR(fdCliente, &bolsaCpus);
+		printf("Se desconecto cpu del socket %d", fdCliente);
 
-		liberar_procesos_de_cpu(i, listaDeProcesos);
+		liberar_procesos_de_cpu(fdCliente, listaDeProcesos);
 	}
-	close(i); // Si se perdio la conexion, la cierro.
+	close(fdCliente); // Si se perdio la conexion, la cierro.
 }
 
-void Accion_envio_script(int tamanioScript, int memoria) {
+void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMensaje) {
 	if (config.GRADO_MULTIPROG < list_size(listaDeProcesos)) {
-		recv(i, &tamanioScript, sizeof(int32_t), 0);
+		recv(fdCliente, &tamanioScript, sizeof(int32_t), 0);
 		char* buff = malloc(tamanioScript);
 		//char* cadena = malloc(tamanio*sizeof(char));
-		recv(i, buff, tamanioScript, 0);
+		recv(fdCliente, buff, tamanioScript, 0);
 		//memcpy(cadena,buff,tamanio * sizeof(char));
 		printf("el valor de cadena es: %s\n", buff);
 		///////////FIN DE DESERIALIZADOR///////////////
-		t_proceso* proceso = crearProceso(identificadorProceso, i, (char*) buff);
+		t_proceso* proceso = crearProceso(identificadorProceso, fdCliente, (char*) buff);
 		list_add(listaDeProcesos, &proceso); //Agregar un proceso a esa bendita lista
 		identificadorProceso++;
+		send(consola,&identificadorProceso,sizeof(int32_t),0);
 		//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
 		int paginasASolicitar = redondear(tamanioScript / tamanioPag);
 		int resultadoAccionInicializar = pedido_Inicializar_Programa(memoria,paginasASolicitar, proceso -> PCB.PID);
@@ -350,12 +349,12 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 	}
 }
 
-void atender_accion_consola(int idMensaje, int tamanioScript, int memoria) {
+void atender_accion_consola(int idMensaje, int tamanioScript, int memoria, int consola) {
 
 	switch (idMensaje) {
 
 	case envioScript:
-		Accion_envio_script(tamanioScript, memoria);
+		Accion_envio_script(tamanioScript, memoria, consola, idMensaje);
 
 	}
 }
@@ -453,9 +452,9 @@ int main(void) {
 			exit(1);
 		};
 
-		for (i = 0; i <= maxFd; i++) {
-			if (FD_ISSET(i, &read_fds)) { // Me fijo si tengo datos listos para leer
-				if (i == sockServ) { //si entro en este "if", significa que tengo datos.
+		for (fdCliente = 0; fdCliente <= maxFd; fdCliente++) {
+			if (FD_ISSET(fdCliente, &read_fds)) { // Me fijo si tengo datos listos para leer
+				if (fdCliente == sockServ) { //si entro en este "if", significa que tengo datos.
 
 					// gestionar nuevas conexiones
 					addrlen = sizeof(direccionCliente);
@@ -476,18 +475,18 @@ int main(void) {
 					int idMensaje;
 					int tamanioScript;
 
-					if ((cantBytes = recv(i, &idMensaje, sizeof(int32_t), 0))
+					if ((cantBytes = recv(fdCliente, &idMensaje, sizeof(int32_t), 0))
 							<= 0) {
 
 						conexion_de_cliente_finalizada();
 
 					} else {
 
-						if (FD_ISSET(i, &bolsaConsolas)) { // EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UNA CONSOLA.
+						if (FD_ISSET(fdCliente, &bolsaConsolas)) { // EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UNA CONSOLA.
 
-							atender_accion_consola(idMensaje, tamanioScript, memoria);
+							atender_accion_consola(idMensaje, tamanioScript, memoria, fdCliente);
 						}
-						if (FD_ISSET(i, &bolsaCpus)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UN CPU
+						if (FD_ISSET(fdCliente, &bolsaCpus)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UN CPU
 
 							atender_accion_cpu(idMensaje, tamanioScript, memoria); //Argumentos que le paso muy probablemente cambien
 						}
