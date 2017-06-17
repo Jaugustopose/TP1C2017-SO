@@ -27,7 +27,7 @@ t_list* tablaPaginasHeap; //elementos: pidHeap
 
 typedef struct heapMetadata{
  int size;
- bool isFree;
+ _Bool isFree;
 }heapMetadata;
 
 typedef struct bloque{
@@ -36,6 +36,7 @@ typedef struct bloque{
 }t_bloqueHeap;
 
 typedef struct pagina{
+  int pid;
   int nro;
   int tamdDisponible;
   t_list* bloques; //elementos: bloque
