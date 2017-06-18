@@ -116,7 +116,7 @@ t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 		t_valor_variable valor;
 
 		//manda codigo de accion
-		char* accion = (char*)almacenarBytesAccion;
+		char* accion = (char*)solicitarBytesAccion;
 		send(memoria, accion, sizeof(accion), 0);
 
 		//manda pedidoa memoria
