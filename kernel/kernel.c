@@ -419,7 +419,7 @@ int main(void) {
 	inicializarContexto();
 
 	//Conectar con memoria
-	int memoria = socket(AF_INET, SOCK_STREAM, 0);
+    memoria = socket(AF_INET, SOCK_STREAM, 0);
 	crearDireccionServidor(9030);
 	conectar_con_server(memoria, &direccionServidor);
 	tamanioPag = obtener_tamanio_pagina(memoria);

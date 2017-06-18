@@ -67,6 +67,7 @@ struct sockaddr_in direccionServidor; // Información sobre mi dirección
 struct sockaddr_in direccionCliente; // Información sobre la dirección del cliente
 int sockServ; // Socket de nueva conexion aceptada
 int sockClie; // Socket a la escucha
+int memoria;
 int maxFd; // Numero del ultimo socket creado (maximo file descriptor)
 int yes = 1;
 int cantBytes; // La cantidad de bytes. Lo voy a usar para saber cuantos bytes me mandaron.

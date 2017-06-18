@@ -26,7 +26,7 @@ void buscarPIDHeap(int pid, int solicitud)
 
 	if(elemento == NULL)
 	{
-		//Crea la pagina
+		//Crea la nueva pagina
 		elemento = malloc(sizeof(t_pidHeap));
 		elemento->pid = pid;
 		elemento->paginas = list_create();
@@ -46,10 +46,31 @@ void buscarPIDHeap(int pid, int solicitud)
 		list_add(pagina->bloques, bloque);
 		list_add(elemento->paginas, pagina);
 
-		//mandar solicitud de bytes a memoria
+		//Envia Solicitud de paginas HEAP
+		int offset = 0;
+		int codigoAccion = solicitarPaginasAccion;
+		char* bufferMemoria = malloc(sizeof(codigoAccion) + sizeof(pedidoSolicitudPaginas_t));
 
-		//
+		pedidoSolicitudPaginas_t pedido;
+		pedido.pid = pid;
+		pedido.cantidadPaginas = 1;
 
+		memcpy(bufferMemoria, &codigoAccion, sizeof(codigoAccion));
+		offset += sizeof(codigoAccion);
+		memcpy(bufferMemoria + offset , &pedido, sizeof(pedidoSolicitudPaginas_t));
+		offset += sizeof(pedidoSolicitudPaginas_t);
+
+		send(memoria, bufferMemoria, offset, 0);
+
+		char* resultadoBuffer = malloc(sizeof(int));
+		recv(memoria,resultadoBuffer,sizeof(int),0);
+		int* resultado;
+		deserializar_int(&resultado, resultadoBuffer);
+
+		//interpretar resultado
+
+		free(bufferMemoria);
+		free(resultadoBuffer);
 
 
 	}else
