@@ -116,8 +116,8 @@ void conectarConKernel(int socket) {
 void crearPrograma(param_programa parametrosCrearPrograma)
 {
 
-	pthread_t idHilo = pthread_self();
-	printf("Soy hilo: %d\n", idHilo);
+	//pthread_t idHilo = pthread_self();
+	//printf("Soy hilo: %d\n", idHilo);
 
 //	struct sockaddr_in direccionServidor; //Creo y configuro el servidor
 //	direccionServidor.sin_family = AF_INET;
@@ -129,7 +129,7 @@ void crearPrograma(param_programa parametrosCrearPrograma)
 //	}
 //
 //	send(cliente,&identidad, sizeof(int),0);
-	int accion = 1;
+	int accion = envioScript;
 	int longitudPrograma = strlen(parametrosCrearPrograma.programaACrear);
 	int tamanioBufferCrearPrograma = sizeof(int32_t)+sizeof(int32_t)+(strlen(parametrosCrearPrograma.programaACrear));
 
@@ -142,11 +142,11 @@ void crearPrograma(param_programa parametrosCrearPrograma)
 	int pidRecibido;
 	recv(parametrosCrearPrograma.socket, &pidRecibido, sizeof(int32_t), 0);
 
-
+	printf("PID: %d\n", pidRecibido);
 
 	list_add(listaPIDs,&pidRecibido);
 
-	printf("PID: %d\n", pidRecibido);
+
 }
 
 void limpiaMensajes()
@@ -252,7 +252,12 @@ void escucharUsuario(int kernel)
 								break;
 							}else {
 								printf("Iniciando!...\n");
-								crearHiloPrograma(kernel,programaSolicitado);
+								//crearHiloPrograma(kernel,programaSolicitado);
+
+								param_programa parametrosPrograma;
+								parametrosPrograma.socket = kernel;
+								parametrosPrograma.programaACrear = programaSolicitado;
+								crearPrograma(parametrosPrograma);
 								limpiaMensajes();
 								imprimeMenuUsuario();
 								break;
@@ -287,6 +292,7 @@ void escucharPedidosKernel(int socket)
 }
 
 int main(void){
+
 	int kernel = socket_ws();
 
 	limpiaMensajes();
@@ -297,7 +303,7 @@ int main(void){
 
     escucharUsuario(kernel);
 
-    escucharPedidosKernel(kernel);
+   // escucharPedidosKernel(kernel); //Mal hecho, nunca entra por el while(1) del escucharUsuario
 
 	return EXIT_SUCCESS;
 }

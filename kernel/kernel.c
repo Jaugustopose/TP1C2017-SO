@@ -46,22 +46,26 @@ void cargarConfiguracion() {
 	if (config_has_property(configKernel, "GRADO_MULTIPROG")) {
 		config.GRADO_MULTIPROG = config_get_int_value(configKernel,
 				"GRADO_MULTIPROG");
-		printf("GRADO_MULTIPROG: %d\n\n\n", config.GRADO_MULTIPROG);
+		printf("GRADO_MULTIPROG: %d\n", config.GRADO_MULTIPROG);
 	}
 	if (config_has_property(configKernel, "SEM_IDS")) {
 		config.SEM_IDS = config_get_array_value(configKernel, "SEM_IDS");
-		printf("SEM_IDS: %s\n\n\n", config.SEM_IDS);
+		printf("SEM_IDS: %s\n", config.SEM_IDS);
 	}
 	if (config_has_property(configKernel, "SEM_INIT")) {
 		config.SEM_INIT = config_get_array_value(configKernel, "SEM_INIT");
-		printf("SEM_INIT: %s\n\n\n", config.SEM_INIT);
+		printf("SEM_INIT: %s\n", config.SEM_INIT);
 	}
 	if (config_has_property(configKernel, "SHARED_VARS")) {
 		config.SHARED_VARS = config_get_array_value(configKernel,
 				"SHARED_VARS");
-		printf("SEM_INIT: %s\n\n\n", config.SHARED_VARS);
+		printf("SEM_INIT: %s\n", config.SHARED_VARS);
 	}
-
+	if (config_has_property(configKernel, "STACK_SIZE")) {
+			config.STACK_SIZE = config_get_int_value(configKernel,
+					"STACK_SIZE");
+			printf("STACK_SIZE: %d\n", config.STACK_SIZE);
+		}
 }
 
 void inicializarContexto() {
@@ -91,59 +95,55 @@ int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
 	return resultAccion;
 }
 
-int enviarSolicitudAlmacenarBytes(int cliente, t_proceso* unProceso,
-		char* buffer, int tamanioTotal) {
-	int codigoAccion = 3;
-	char* buffer2;
+int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, char* buffer, int tamanioTotal) {
+	int codigoAccion = almacenarBytesAccion;
+	int tamanioBufferParaMemoria = ((sizeof(codigoAccion) + sizeof(int32_t)*4) * unProceso->PCB.cantidadPaginas) + tamanioTotal;
+	void* bufferParaAlmacenarEnMemoria = malloc(tamanioBufferParaMemoria);
 	int m;
 	int tamanioAAlmacenar;
-	//Armo buffer para enviar
-	void* bufferParaAlmacenarEnMemoria = malloc(
-			(sizeof(codigoAccion) + sizeof(unProceso -> PCB.PID) + sizeof(int32_t)
-					+ sizeof(int32_t)) * unProceso -> PCB.cantidadPaginas
-					+ tamanioTotal);
+	int start=0;
 
-	for (m = 0; m < unProceso -> PCB.cantidadPaginas; m++) {
+	for (m = 0; (m < (unProceso -> PCB.cantidadPaginas)) & (tamanioTotal != 0); m++) {
 		if (tamanioTotal > tamanioPag) {
 
 			tamanioAAlmacenar = tamanioPag;
 			tamanioTotal = tamanioTotal - tamanioPag;
-		} else {
+		} else{
+
 			tamanioAAlmacenar = tamanioTotal;
+			tamanioTotal = 0;
 		}
 		pedidoAlmacenarBytesMemoria_t pedidoAlmacenar;
 		pedidoAlmacenar.pedidoBytes.pid = unProceso -> PCB.PID;
 		pedidoAlmacenar.pedidoBytes.nroPagina = m;
 		pedidoAlmacenar.pedidoBytes.offset = 0;
 		pedidoAlmacenar.pedidoBytes.tamanio = tamanioAAlmacenar;
-		pedidoAlmacenar.buffer = buffer;
-		void* buffer2 = serializarMemoria(codigoAccion, pedidoAlmacenar.buffer,
-				pedidoAlmacenar.pedidoBytes.tamanio);
-		int tamanioBuffer2 = sizeof(pedidoAlmacenar.pedidoBytes)
-				+ sizeof(pedidoAlmacenar.pedidoBytes.tamanio)
-				+ sizeof(codigoAccion);
-		if (m != 0) {
-			memcpy(
-					bufferParaAlmacenarEnMemoria
-							+ ((sizeof(codigoAccion)
-									+ sizeof(pedidoAlmacenar.pedidoBytes)) * m)
-							+ tamanioPag, buffer2, tamanioBuffer2);
-		} else {
-			memcpy(bufferParaAlmacenarEnMemoria, buffer2, tamanioBuffer2);
-		}
-		free(buffer2);
-		send(cliente, bufferParaAlmacenarEnMemoria,
-				sizeof(codigoAccion) + sizeof(pedidoAlmacenar.pedidoBytes)
-						+ pedidoAlmacenar.pedidoBytes.tamanio, 0);
+		pedidoAlmacenar.buffer = string_substring_from(buffer,start);
+		start = start + tamanioPag;
 
-		//Ahora recibo la respuesta
-		int resultAccion;
-		recv(cliente, &resultAccion, sizeof(resultAccion), 0);
-		printf("almacenarBytes resultó con código de acción: %d\n",
-				resultAccion);
-		return resultAccion;
-		free(buffer2);
+		void* bufferAux = serializarMemoria(codigoAccion, pedidoAlmacenar.buffer, pedidoAlmacenar.pedidoBytes.tamanio);
+		int tamanioBufferAux = sizeof(pedidoAlmacenar.pedidoBytes) + pedidoAlmacenar.pedidoBytes.tamanio + sizeof(codigoAccion);
+		if (m != 0) {
+			memcpy(bufferParaAlmacenarEnMemoria + (tamanioBufferAux)*m,bufferAux,tamanioBufferAux);
+
+		} else {
+			memcpy(bufferParaAlmacenarEnMemoria, bufferAux, tamanioBufferAux);
+		}
+		free(bufferAux);
+
+
+//		//Ahora recibo la respuesta
+//		int resultAccion;
+//		recv(cliente, &resultAccion, sizeof(resultAccion), 0);
+//		printf("almacenarBytes resultó con código de acción: %d\n", resultAccion);
+//		return resultAccion;
 	}
+	send(memoria, bufferParaAlmacenarEnMemoria,tamanioBufferParaMemoria,0);
+			int resultAccion;
+			recv(memoria, &resultAccion, sizeof(resultAccion), 0);
+			printf("almacenarBytes resultó con código de acción: %d\n", resultAccion);
+			return resultAccion;
+
 }
 
 void comprobarSockets(int maxSock, fd_set* read_fds) {
@@ -263,7 +263,7 @@ void conexion_de_cliente_finalizada() {
 }
 
 void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMensaje) {
-	if (config.GRADO_MULTIPROG < list_size(listaDeProcesos)) {
+	if (config.GRADO_MULTIPROG > list_size(listaDeProcesos)) {
 		recv(consola, &tamanioScript, sizeof(int32_t), 0);
 		char* buff = malloc(tamanioScript);
 		//char* cadena = malloc(tamanio*sizeof(char));
@@ -271,16 +271,16 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 		//memcpy(cadena,buff,tamanio * sizeof(char));
 		printf("el valor de cadena es: %s\n", buff);
 		///////////FIN DE DESERIALIZADOR///////////////
+		identificadorProceso++;
 		t_proceso* proceso = crearProceso(identificadorProceso, consola, (char*) buff);
 		list_add(listaDeProcesos, &proceso); //Agregar un proceso a esa bendita lista
-		identificadorProceso++;
 		send(consola,&identificadorProceso,sizeof(int32_t),0);
 		//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
-		int paginasASolicitar = redondear(tamanioScript / tamanioPag);
+		int paginasASolicitar = redondear((float) tamanioScript /(float) tamanioPag) + config.STACK_SIZE;
 		int resultadoAccionInicializar = pedido_Inicializar_Programa(memoria,paginasASolicitar, proceso -> PCB.PID);
-		if (resultadoAccionInicializar == 0) {
-			queue_push(colaNew,&proceso);
-			//Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
+		if (resultadoAccionInicializar == 0) {//Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
+
+			//queue_push(colaNew,&proceso); TODO: arreglar esto que no anda
 			proceso -> PCB.cantidadPaginas = paginasASolicitar;
 			int resultadoAccionAlmacenar = enviarSolicitudAlmacenarBytes(memoria, proceso, buff, tamanioScript);
 			if (resultadoAccionAlmacenar == 0) {

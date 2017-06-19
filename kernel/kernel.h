@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/socket.h>
-//#include <bits/socket_type.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <arpa/inet.h>
@@ -46,6 +45,7 @@ typedef struct configuracion {
 	char** SEM_IDS;
 	char** SEM_INIT;
 	char** SHARED_VARS;
+	int STACK_SIZE;
 	// FALTAN AGREGAR VARIABLES SEGUN AVANCE EL TP (SEMAFOROS, QUANTUM, ETC)
 }config_t;
 

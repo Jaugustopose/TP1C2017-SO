@@ -16,6 +16,7 @@ void reusarSocket(int sockServ, int yes);
 void bind_w(int sockServ, const struct sockaddr_in* mi_addr);
 void listen_w(int sockServ);
 struct sockaddr_in crearDireccionServidor(unsigned short PORT);
+int redondear(float numero);
 
 
 
