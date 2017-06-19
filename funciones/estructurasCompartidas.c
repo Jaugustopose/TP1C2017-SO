@@ -58,12 +58,23 @@ int stack_tamanio(t_stack* stack){
 	return list_size(stack);
 }
 
-t_pedido* stack_proximo_pedido(t_stack* stack, int tamanioPagina) {
+//t_pedido* stack_proximo_pedido(t_stack* stack, int tamanioPagina) {
+//
+//	t_pedido* pedido = malloc(sizeof(t_pedido));
+//	int tamanioActualDeStack = stack_tamanio_memoria(stack);
+//	pedido->nroPagina = tamanioActualDeStack / tamanioPagina;
+//	pedido->offset = tamanioActualDeStack - (pedido->nroPagina * tamanioPagina);
+//	pedido->size = sizeof(int);
+//	return pedido;
+//}
+
+//ATENCION: SE TOMAN LAS DIRECCIONES LOGICAS DESDE LA PAGINA 1 DEL CODIGO + STACK + HEAP
+t_pedido* stack_proximo_pedido(t_stack* stack, int tamanioPagina, int cantidadPaginasCodigo) {
 
 	t_pedido* pedido = malloc(sizeof(t_pedido));
 	int tamanioActualDeStack = stack_tamanio_memoria(stack);
-	pedido->nroPagina = tamanioActualDeStack / tamanioPagina;
-	pedido->offset = tamanioActualDeStack - (pedido->nroPagina * tamanioPagina);
+	pedido->nroPagina = (cantidadPaginasCodigo + tamanioActualDeStack) / tamanioPagina;
+	pedido->offset = (cantidadPaginasCodigo + tamanioActualDeStack) - (pedido->nroPagina * tamanioPagina);
 	pedido->size = sizeof(int);
 	return pedido;
 }

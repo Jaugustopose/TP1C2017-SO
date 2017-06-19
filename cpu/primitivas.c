@@ -93,7 +93,10 @@ t_puntero obtener_posicion_de(t_nombre_variable variable) {
 
 t_puntero definir_variable(t_nombre_variable variable) {
 
-	t_pedido* direccion = stack_proximo_pedido(stack, tamanioPaginas);
+	//t_pedido* direccion = stack_proximo_pedido(stack, tamanioPaginas);
+
+	//ATENCION: ACA SE TOMAN LAS DIRECCIONES LOGICAS: CODIGO + STACK + HEAP
+	t_pedido* direccion = stack_proximo_pedido(stack, tamanioPaginas, cantidadPagCodigo);
 	t_elemento_stack* head = stack_head(stack);
 	char* cadena = string_from_format("%c",variable);
 
