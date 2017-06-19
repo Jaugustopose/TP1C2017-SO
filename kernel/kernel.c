@@ -217,7 +217,7 @@ void liberar_procesos_de_cpu(int fileDescriptor, t_list* listaConProcesos) {
 
 void Colocar_en_respectivo_fdset() {
 	//Recibo identidad y coloco en la bolsa correspondiente
-	recv(sockClie, &identidadCliente, sizeof(int), 0);
+	recv(sockClie, &identidadCliente, sizeof(int32_t), 0);
 	switch (identidadCliente) {
 
 	case soyConsola:
@@ -264,14 +264,14 @@ void conexion_de_cliente_finalizada() {
 
 void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMensaje) {
 	if (config.GRADO_MULTIPROG < list_size(listaDeProcesos)) {
-		recv(fdCliente, &tamanioScript, sizeof(int32_t), 0);
+		recv(consola, &tamanioScript, sizeof(int32_t), 0);
 		char* buff = malloc(tamanioScript);
 		//char* cadena = malloc(tamanio*sizeof(char));
 		recv(fdCliente, buff, tamanioScript, 0);
 		//memcpy(cadena,buff,tamanio * sizeof(char));
 		printf("el valor de cadena es: %s\n", buff);
 		///////////FIN DE DESERIALIZADOR///////////////
-		t_proceso* proceso = crearProceso(identificadorProceso, fdCliente, (char*) buff);
+		t_proceso* proceso = crearProceso(identificadorProceso, consola, (char*) buff);
 		list_add(listaDeProcesos, &proceso); //Agregar un proceso a esa bendita lista
 		identificadorProceso++;
 		send(consola,&identificadorProceso,sizeof(int32_t),0);
@@ -289,7 +289,7 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 			}
 		}
 	}else{
-		printf("El proceso no pudo ingresar a la cola de New ya que excede el grado de multiprogramacion");
+		printf("El proceso no pudo ingresar a la cola de New ya que excede el grado de multiprogramacion\n");
 	}
 
 }

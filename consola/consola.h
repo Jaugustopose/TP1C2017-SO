@@ -15,12 +15,21 @@
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
 #include <stdio.h>
+#include "cliente-servidor.h"
+#include "serializador.h"
+#include <pthread.h>
 
 
-struct configuracion{
+typedef struct configuracion{
 	int IP_KERNEL;
 	char* PUERTO_KERNEL;
-};
+}config_t;
+
+typedef struct parametrosCrearPrograma{
+	int socket;
+	char* programaACrear;
+
+}param_programa;
 
 enum opcionesUsuario {
 	iniciarPrograma = 1,
@@ -31,11 +40,10 @@ enum opcionesUsuario {
 
 int identidad = 1;
 t_config* configConsola;
-struct configuracion config;
+config_t config;
 char* path;
 FILE* programa;
 struct sockaddr_in dirKernel;
-int kernel;
 
 t_list* listaPIDs;
 char* programasExec;

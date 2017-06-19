@@ -386,8 +386,8 @@ int main(void){
 	bind_w(sockServ, &direccionServidor);
 	listen_w(sockServ);
 	printf("Escuchando nuevas solicitudes tcp en el puerto %d...\n", config.puerto);
-	//pthread_t unHilo;
-	//pthread_create(&unHilo, NULL, (void*) escucharConsolaMemoria, (void*) tablaPaginasInvertida);
+	pthread_t unHilo;
+	pthread_create(&unHilo, NULL, (void*) escucharConsolaMemoria, (void*) tablaPaginasInvertida);
 
 	// gestionar nuevas conexiones
 	addrlen = sizeof(direccionCliente);

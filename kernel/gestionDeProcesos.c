@@ -1,7 +1,7 @@
 #include "gestionDeProcesos.h"
 
 
-void transformarCodigoToMetadata(t_PCB pcb, char* cod)
+/*void transformarCodigoToMetadata(t_PCB pcb, char* cod)
 {
 	t_metadata_program* metadata = metadata_desde_literal(cod);
 
@@ -41,7 +41,7 @@ void transformarCodigoToMetadata(t_PCB pcb, char* cod)
 
 
 		free(metadata);
-}
+}*/
 
 t_PCB crearPCB()
 {
@@ -66,7 +66,7 @@ t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo)
 	proceso -> ConsolaDuenio = consolaDuenio;
 	proceso -> CpuDuenio = -1;
 
-	transformarCodigoToMetadata(proceso -> PCB, codigo);
+//	transformarCodigoToMetadata(proceso -> PCB, codigo);
 
 	return proceso;
 }
