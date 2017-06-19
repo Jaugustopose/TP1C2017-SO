@@ -1,7 +1,6 @@
 #include "kernel.h"
 
-#include <bits/socket_type.h>
-#include <sys/select.h>
+//#include <sys/select.h>
 
 /********************************** INICIALIZACIONES *****************************************************/
 
@@ -9,7 +8,7 @@ void cargarConfiguracion() {
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	string_append(&pat, "/Debug/kernel.cfg");
+	string_append(&pat, "/kernel.cfg");
 	configKernel = config_create(pat);
 	free(pat);
 
@@ -51,16 +50,16 @@ void cargarConfiguracion() {
 	}
 	if (config_has_property(configKernel, "SEM_IDS")) {
 		config.SEM_IDS = config_get_array_value(configKernel, "SEM_IDS");
-		printf("SEM_IDS: %d\n\n\n", config.SEM_IDS);
+		printf("SEM_IDS: %s\n\n\n", config.SEM_IDS);
 	}
 	if (config_has_property(configKernel, "SEM_INIT")) {
 		config.SEM_INIT = config_get_array_value(configKernel, "SEM_INIT");
-		printf("SEM_INIT: %d\n\n\n", config.SEM_INIT);
+		printf("SEM_INIT: %s\n\n\n", config.SEM_INIT);
 	}
 	if (config_has_property(configKernel, "SHARED_VARS")) {
 		config.SHARED_VARS = config_get_array_value(configKernel,
 				"SHARED_VARS");
-		printf("SEM_INIT: %d\n\n\n", config.SHARED_VARS);
+		printf("SEM_INIT: %s\n\n\n", config.SHARED_VARS);
 	}
 
 	printf(
@@ -91,7 +90,6 @@ int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
 	printf("Sizeof pedidoPaginas: %d\n", sizeof(pedidoPaginas));
 	void* buffer = serializarMemoria(codigoAccion, &pedidoPaginas,
 			sizeof(pedidoPaginas));
-	printf("buffer serializado: %d\n", *buffer);
 	send(cliente, buffer, sizeof(codigoAccion) + sizeof(pedidoPaginas), 0);
 	free(buffer);
 	//Reservo para recibir un int con el resultAccion
@@ -103,7 +101,7 @@ int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
 	return resultAccion;
 }
 
-int enviarSolicitudAlmacenarBytes(int cliente, t_proceso unProceso,
+int enviarSolicitudAlmacenarBytes(int cliente, t_proceso* unProceso,
 		char* buffer, int tamanioTotal) {
 	int codigoAccion = 3;
 	char* buffer2;
@@ -111,11 +109,11 @@ int enviarSolicitudAlmacenarBytes(int cliente, t_proceso unProceso,
 	int tamanioAAlmacenar;
 	//Armo buffer para enviar
 	void* bufferParaAlmacenarEnMemoria = malloc(
-			(sizeof(codigoAccion) + sizeof(unProceso.PCB.PID) + sizeof(int32_t)
-					+ sizeof(int32_t)) * unProceso.PCB.cantidadPaginas
+			(sizeof(codigoAccion) + sizeof(unProceso -> PCB.PID) + sizeof(int32_t)
+					+ sizeof(int32_t)) * unProceso -> PCB.cantidadPaginas
 					+ tamanioTotal);
 
-	for (m = 0; m < unProceso.PCB.cantidadPaginas; m++) {
+	for (m = 0; m < unProceso -> PCB.cantidadPaginas; m++) {
 		if (tamanioTotal > tamanioPag) {
 
 			tamanioAAlmacenar = tamanioPag;
@@ -124,7 +122,7 @@ int enviarSolicitudAlmacenarBytes(int cliente, t_proceso unProceso,
 			tamanioAAlmacenar = tamanioTotal;
 		}
 		pedidoAlmacenarBytesMemoria_t pedidoAlmacenar;
-		pedidoAlmacenar.pedidoBytes.pid = unProceso.PCB.PID;
+		pedidoAlmacenar.pedidoBytes.pid = unProceso -> PCB.PID;
 		pedidoAlmacenar.pedidoBytes.nroPagina = m;
 		pedidoAlmacenar.pedidoBytes.offset = 0;
 		pedidoAlmacenar.pedidoBytes.tamanio = tamanioAAlmacenar;
@@ -185,19 +183,25 @@ void interactuar_con_usuario() {
 	//Interactuo con el usuario
 }
 
-void procesos_exit_code_corto_consola(int fileDescriptor,
-		t_list* listaConProcesos) {
+void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProcesos) {
 
 	//Encontrar cada proceso con proceso.ConsolaDuenio = fileDescriptor
-	// Y cambiarle el exit code a -6 (finalizo por desconexion de consola)
-
+	//Cambiarle el exit code a -6 (finalizo por desconexion de consola)
+	//Llevo el proceso con exit code = 6 a la cola de exit
 	for (i = 0; i < list_size(listaConProcesos); i++) {
-		t_proceso proceso = list_get(listaConProcesos, i);
-		if (proceso.ConsolaDuenio == fileDescriptor) {
-			proceso.PCB.exitCode = -6;
+		t_proceso* proceso = list_get(listaConProcesos, i);
+		if (proceso -> ConsolaDuenio == fileDescriptor) {
+			proceso -> PCB.exitCode = -6;
+			queue_push(colaExit,&proceso);
 		}
 
 	}
+	//Función privada dentro de este scope (para la condicion del remove)
+			bool exit_code_de_proceso(t_proceso p) {
+
+				return (-6 == p.PCB.exitCode);
+			}
+	list_remove_by_condition(listaConProcesos,exit_code_de_proceso);
 }
 
 void liberar_procesos_de_cpu(int fileDescriptor, t_list* listaConProcesos) {
@@ -206,9 +210,9 @@ void liberar_procesos_de_cpu(int fileDescriptor, t_list* listaConProcesos) {
 	//Y cambiarle el CpuDuenio a -1 (el menos 1 significa que no tiene cpu asignado)
 
 	for (i = 0; i < list_size(listaConProcesos); i++) {
-		t_proceso proceso = list_get(listaConProcesos, i);
-		if (proceso.CpuDuenio == fileDescriptor) {
-			proceso.CpuDuenio = -1;
+		t_proceso* proceso = list_get(listaConProcesos, i);
+		if (proceso -> CpuDuenio == fileDescriptor) {
+			proceso -> CpuDuenio = -1;
 		}
 
 	}
@@ -271,21 +275,19 @@ void Accion_envio_script(int tamanioScript, int memoria) {
 		//memcpy(cadena,buff,tamanio * sizeof(char));
 		printf("el valor de cadena es: %s\n", buff);
 		///////////FIN DE DESERIALIZADOR///////////////
-		t_proceso proceso = crearProceso(identificadorProceso, i, (char*) buff);
-		list_add(listaDeProcesos, &proceso); //TODO: Agregar un proceso a esa bendita lista
+		t_proceso* proceso = crearProceso(identificadorProceso, i, (char*) buff);
+		list_add(listaDeProcesos, &proceso); //Agregar un proceso a esa bendita lista
 		identificadorProceso++;
 		//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
 		int paginasASolicitar = redondear(tamanioScript / tamanioPag);
-		int resultadoAccionInicializar = pedido_Inicializar_Programa(memoria,
-				paginasASolicitar, proceso.PCB.PID);
+		int resultadoAccionInicializar = pedido_Inicializar_Programa(memoria,paginasASolicitar, proceso -> PCB.PID);
 		if (resultadoAccionInicializar == 0) {
 			queue_push(colaNew,&proceso);
 			//Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
-			proceso.PCB.cantidadPaginas = paginasASolicitar;
-			int resultadoAccionAlmacenar = enviarSolicitudAlmacenarBytes(
-					memoria, proceso, buff, tamanioScript);
+			proceso -> PCB.cantidadPaginas = paginasASolicitar;
+			int resultadoAccionAlmacenar = enviarSolicitudAlmacenarBytes(memoria, proceso, buff, tamanioScript);
 			if (resultadoAccionAlmacenar == 0) {
-				queue_pop(colaNew,&proceso);
+				queue_pop(colaNew);
 				queue_push(colaReady, &proceso);
 			}
 		}
@@ -312,10 +314,6 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 		break;
 
 	case accionWait:
-
-		break;
-
-	case accionSignal:
 
 		break;
 
@@ -396,8 +394,7 @@ void destruirCompartida(int* compartida) {
 }
 
 void destruirCompartidas() {
-	dictionary_destroy_and_destroy_elements(tablaCompartidas,
-			(void*) destruirSemaforo);
+	dictionary_destroy_and_destroy_elements(tablaCompartidas, destruirCompartida);
 }
 
 void destruirSemaforo(t_semaforo* semaforo) {
@@ -406,30 +403,38 @@ void destruirSemaforo(t_semaforo* semaforo) {
 }
 
 void destruirSemaforos() {
-	dictionary_destroy_and_destroy_elements(tablaSemaforos,
-			(void*) destruirSemaforo);
+	dictionary_destroy_and_destroy_elements(tablaSemaforos, destruirSemaforo);
 }
 
 /************************************** MAIN ****************************************************************/
 
 int main(void) {
+	identificadorProceso = 0;
+	yes = 1;
+
 	//Cargar configuracion
 	cargarConfiguracion();
 
 	inicializarContexto();
 
-	//Conectar con memoria
-    memoria = socket(AF_INET, SOCK_STREAM, 0);
-	crearDireccionServidor(9030);
-	conectar_con_server(memoria, &direccionServidor);
-	tamanioPag = obtener_tamanio_pagina(memoria);
-
 	//Crear socket. Dejar reutilizable. Crear direccion del servidor. Bind. Listen.
-	sockServ = crearSocket();
-	reusarSocket(sockServ, yes);
-	direccionServidor = crearDireccionServidor(config.PUERTO_KERNEL);
-	bind_w(sockServ, &direccionServidor);
-	listen_w(sockServ);
+		sockServ = crearSocket();
+		reusarSocket(sockServ, yes);
+		direccionServidor = crearDireccionServidor(config.PUERTO_KERNEL);
+		bind_w(sockServ, &direccionServidor);
+		listen_w(sockServ);
+
+	//Conectar con memoria
+		int memoria = socket(AF_INET, SOCK_STREAM, 0);
+		struct sockaddr_in direccionServ;
+			direccionServ.sin_family = AF_INET;
+			direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red
+			direccionServ.sin_addr.s_addr = inet_addr("127.0.0.1");
+			memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
+//		crearDireccionServidor(9030);
+//		conectar_con_server(memoria, &direccionServidor);
+			connect(memoria, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
+		tamanioPag = obtener_tamanio_pagina(memoria);
 
 	//Añadir listener al conjunto maestro
 	FD_SET(sockServ, &master);
@@ -480,15 +485,13 @@ int main(void) {
 
 					} else {
 
-						if (FD_SET(i, &bolsaConsolas)) { // EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UNA CONSOLA.
+						if (FD_ISSET(i, &bolsaConsolas)) { // EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UNA CONSOLA.
 
-							atender_accion_consola(idMensaje, tamanioScript,
-									memoria);
+							atender_accion_consola(idMensaje, tamanioScript, memoria);
 						}
-						if (FD_SET(i, &bolsaCpus)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UN CPU
+						if (FD_ISSET(i, &bolsaCpus)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UN CPU
 
-							atender_accion_cpu(idMensaje, tamanioScript,
-									memoria); //Argumentos que le paso muy probablemente cambien
+							atender_accion_cpu(idMensaje, tamanioScript, memoria); //Argumentos que le paso muy probablemente cambien
 						}
 					}
 				}

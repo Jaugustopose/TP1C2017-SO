@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/socket.h>
+//#include <bits/socket_type.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <arpa/inet.h>
@@ -69,13 +70,14 @@ int sockServ; // Socket de nueva conexion aceptada
 int sockClie; // Socket a la escucha
 int memoria;
 int maxFd; // Numero del ultimo socket creado (maximo file descriptor)
-int yes = 1;
+int yes;
 int cantBytes; // La cantidad de bytes. Lo voy a usar para saber cuantos bytes me mandaron.
 int addrlen; // El tamaño de la direccion del cliente
 int identidadCliente;
 int i, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
 int tamanioPag;
-int identificadorProceso = 0;
+//int identificadorProceso = 0;
+int identificadorProceso;
 
 t_list* listaDeProcesos;
 t_queue* colaNew;
