@@ -23,6 +23,9 @@
 #include <math.h>
 
 t_list* tablaPaginasHeap; //elementos: pidHeap
+int pidCondicion;
+int solicitudCondicion;
+int numeroDePaginaCondicion;
 
 
 typedef struct heapMetadata{
@@ -30,15 +33,10 @@ typedef struct heapMetadata{
  _Bool isFree;
 }heapMetadata;
 
-typedef struct bloque{
- heapMetadata metadata;
- char* data;
-}t_bloqueHeap;
-
 typedef struct pagina{
   int pid;
   int nro;
-  int tamdDisponible;
+  int tamDisponible;
   t_list* bloques; //elementos: bloque
 }t_paginaHeap;
 
