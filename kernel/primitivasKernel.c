@@ -55,3 +55,20 @@ void recibirPedidoMemoria(int tamanioSolicitud, int pidSolicitante)
 		//finalizar programa abruptamente por exceder tamanio del pedido
 	}
 }
+
+void obtenerValorCompartida()
+{
+	char* bufferVarComp;
+	recv(fdCliente, bufferVarComp, sizeof(int32_t), 0);
+	int tamanio = (int)*bufferVarComp;
+	char* nombreVariable = malloc(tamanio);
+	recv(fdCliente, nombreVariable, tamanio, 0);
+
+	char* nombre = nombreVariable;
+	int valorPrueba = 172;
+
+
+	void* resultado = malloc(sizeof(int32_t));
+	memcpy(resultado, &valorPrueba, sizeof(int32_t));
+	send(fdCliente, resultado, sizeof(int32_t), 0);
+}

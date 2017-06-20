@@ -214,10 +214,22 @@ void finalizar()
 t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableCompartida)
 {
 	t_valor_variable valorCompartida;
+	int codigoAccion = accionObtenerValorCompartida;
 	int tamanioNombreCompartida = strlen(nombreVariableCompartida) + 1;
+	char* bufferVarComp = malloc(sizeof(int) + sizeof(int) + sizeof(tamanioNombreCompartida));
 
-	//manda a nucleo el nombre de la variable
-	//recibe el valor
+	int offset = 0;
+
+	memcpy(bufferVarComp, &codigoAccion, sizeof(codigoAccion));
+	offset += sizeof(codigoAccion);
+	memcpy(bufferVarComp + offset, &tamanioNombreCompartida, sizeof(int));
+	offset += sizeof(tamanioNombreCompartida);
+	memcpy(bufferVarComp + offset, nombreVariableCompartida, tamanioNombreCompartida);
+	offset += tamanioNombreCompartida;
+
+	send(kernel, bufferVarComp, offset, 0);
+
+	recv(kernel, &valorCompartida, sizeof(int), 0);
 
 	return valorCompartida;
 

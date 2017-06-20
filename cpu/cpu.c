@@ -104,7 +104,7 @@ void cargarConfiguracion()
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat,getcwd(cwd,sizeof(cwd)));
-	string_append(&pat,"/cpu.cfg");
+	string_append(&pat,"/Debug/cpu.cfg");
 	t_config* configCpu = config_create(pat);
 	free(pat);
 	if (config_has_property(configCpu, "IP_MEMORIA"))
@@ -508,14 +508,17 @@ int main(void){
 
 	identidadCpu = SOYCPU;
 	cargarConfiguracion();
-	inicializarPrimitivas();
-	inicializarContexto();
+	//inicializarPrimitivas();
+	//inicializarContexto();
 	conectarConKernel();
-    conectarConMemoria();
+
+	obtener_valor_compartida("pruebaVariable");
+
+   // conectarConMemoria();
     //tamanioPaginas = obtener_tamanio_pagina(memoria);
 
 
-    esperarProgramas();
+  //  esperarProgramas();
    // destruirLogs();
 
 	return EXIT_SUCCESS;
