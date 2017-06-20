@@ -54,8 +54,9 @@ void crearPaginaHeap() {
 	t_pidHeap* pidHeap = list_find(tablaPaginasHeap, (void*) existePid);
 }
 
-bool bloqueConTamanioDisponible(heapMetadata metadata, int espacio) {
-	return (metadata->isFree && metadata->size >= (espacio + 5));
+bool bloqueConTamanioDisponible(heapMetadata* metadata, int espacio) {
+
+	return (metadata->isFree && (metadata->size >= (espacio + 5)));
 }
 
 bool bloqueDisponible(heapMetadata* bloque) {
@@ -149,7 +150,9 @@ void desfragmentar(t_list* bloques) {
 
 	indice = desde;
 	for (j = 0; j < cantBloquesContiguos; j++) {
-		list_remove_and_destroy_element(bloques, int indice, (void*)destructorBloque);
+
+		list_remove_and_destroy_element(bloques, indice, (void*)destructorBloque);
+
 		indice++;
 	}
 	heapMetadata* bloqueNuevo = malloc(sizeof(heapMetadata));
@@ -166,7 +169,7 @@ void buscarPIDHeap(int pid, int solicitud) {
 
 	if (elemento == NULL) {
 		solicitarPaginaHeap();
-		crearPidHeap();
+		crearPidHeap(pid);
 		alocar_espacio();
 	} else {
 

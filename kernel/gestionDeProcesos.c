@@ -1,7 +1,7 @@
 #include "gestionDeProcesos.h"
 
 
-void transformarCodigoToMetadata(t_PCB pcb, char* cod)
+void transformarCodigoToMetadata(t_PCB* pcb, char* cod)
 {
 	t_metadata_program* metadata = metadata_desde_literal(cod);
 
@@ -12,7 +12,7 @@ void transformarCodigoToMetadata(t_PCB pcb, char* cod)
 				t_sentencia sentencia;
 				sentencia.inicio = metadata->instrucciones_serializado[i].start;
 				sentencia.fin = sentencia.inicio + metadata->instrucciones_serializado[i].offset;
-				list_add(pcb.indiceCodigo, &sentencia);
+				list_add(pcb->indiceCodigo, &sentencia);
 			}
 
 		//Llena indice de etiquetas
@@ -28,7 +28,7 @@ void transformarCodigoToMetadata(t_PCB pcb, char* cod)
 					int* salto = malloc(sizeof(int));
 					memcpy(salto, metadata->etiquetas + i + 1, sizeof(int));
 
-					dictionary_put(pcb.indiceEtiquetas, etiqueta, salto);
+					dictionary_put(pcb->indiceEtiquetas, etiqueta, salto);
 					i = i + sizeof(int);
 					longitud = 0;
 
@@ -43,17 +43,17 @@ void transformarCodigoToMetadata(t_PCB pcb, char* cod)
 		free(metadata);
 }
 
-t_PCB crearPCB()
+t_PCB* crearPCB()
 {
-	t_PCB pcb;
+	t_PCB* pcb;
 
-	pcb.PID=0;
-	pcb.contadorPrograma = 0;
-	pcb.cantidadPaginas = 0;
+	pcb->PID=0;
+	pcb->contadorPrograma = 0;
+	pcb->cantidadPaginas = 0;
 
-	pcb.stackPointer = stack_crear();
-	pcb.indiceCodigo = list_create();
-	pcb.indiceEtiquetas = dictionary_create();
+	pcb->stackPointer = stack_crear();
+	pcb->indiceCodigo = list_create();
+	pcb->indiceEtiquetas = dictionary_create();
 
 	return pcb;
 }
@@ -61,12 +61,12 @@ t_PCB crearPCB()
 t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo)
 {
 	t_proceso* proceso;
-	proceso -> PCB = crearPCB();
-	proceso -> PCB.PID = pid;
-	proceso -> ConsolaDuenio = consolaDuenio;
-	proceso -> CpuDuenio = -1;
+	proceso->PCB = crearPCB();
+	proceso->PCB->PID = pid;
+	proceso->ConsolaDuenio = consolaDuenio;
+	proceso->CpuDuenio = -1;
 
-	transformarCodigoToMetadata(proceso -> PCB, codigo);
+	transformarCodigoToMetadata(proceso->PCB, codigo);
 
 	return proceso;
 }

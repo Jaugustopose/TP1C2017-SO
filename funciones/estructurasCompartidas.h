@@ -88,7 +88,7 @@ typedef struct {
 	int ConsolaDuenio;
 	int CpuDuenio;
 	int estado;
-	t_PCB PCB;
+	t_PCB* PCB;
 }t_proceso;
 
 typedef struct{

@@ -21,6 +21,7 @@
 #include "serializador.h"
 #include "estructurasCompartidas.h"
 #include <math.h>
+#include "kernel.h"
 
 t_list* tablaPaginasHeap; //elementos: pidHeap
 int pidCondicion;

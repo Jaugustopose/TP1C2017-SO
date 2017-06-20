@@ -109,11 +109,11 @@ int enviarSolicitudAlmacenarBytes(int cliente, t_proceso* unProceso,
 	int tamanioAAlmacenar;
 	//Armo buffer para enviar
 	void* bufferParaAlmacenarEnMemoria = malloc(
-			(sizeof(codigoAccion) + sizeof(unProceso -> PCB.PID) + sizeof(int32_t)
-					+ sizeof(int32_t)) * unProceso -> PCB.cantidadPaginas
+			(sizeof(codigoAccion) + sizeof(unProceso -> PCB->PID) + sizeof(int32_t)
+					+ sizeof(int32_t)) * unProceso -> PCB->cantidadPaginas
 					+ tamanioTotal);
 
-	for (m = 0; m < unProceso -> PCB.cantidadPaginas; m++) {
+	for (m = 0; m < unProceso -> PCB->cantidadPaginas; m++) {
 		if (tamanioTotal > tamanioPag) {
 
 			tamanioAAlmacenar = tamanioPag;
@@ -122,7 +122,7 @@ int enviarSolicitudAlmacenarBytes(int cliente, t_proceso* unProceso,
 			tamanioAAlmacenar = tamanioTotal;
 		}
 		pedidoAlmacenarBytesMemoria_t pedidoAlmacenar;
-		pedidoAlmacenar.pedidoBytes.pid = unProceso -> PCB.PID;
+		pedidoAlmacenar.pedidoBytes.pid = unProceso -> PCB->PID;
 		pedidoAlmacenar.pedidoBytes.nroPagina = m;
 		pedidoAlmacenar.pedidoBytes.offset = 0;
 		pedidoAlmacenar.pedidoBytes.tamanio = tamanioAAlmacenar;
@@ -191,15 +191,15 @@ void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProces
 	for (i = 0; i < list_size(listaConProcesos); i++) {
 		t_proceso* proceso = list_get(listaConProcesos, i);
 		if (proceso -> ConsolaDuenio == fileDescriptor) {
-			proceso -> PCB.exitCode = -6;
+			proceso -> PCB->exitCode = -6;
 			queue_push(colaExit,&proceso);
 		}
 
 	}
 	//Función privada dentro de este scope (para la condicion del remove)
-			bool exit_code_de_proceso(t_proceso p) {
+			bool exit_code_de_proceso(t_proceso* p) {
 
-				return (-6 == p.PCB.exitCode);
+				return (-6 == p->PCB->exitCode);
 			}
 	list_remove_by_condition(listaConProcesos,exit_code_de_proceso);
 }
@@ -280,11 +280,11 @@ void Accion_envio_script(int tamanioScript, int memoria) {
 		identificadorProceso++;
 		//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
 		int paginasASolicitar = redondear(tamanioScript / tamanioPag);
-		int resultadoAccionInicializar = pedido_Inicializar_Programa(memoria,paginasASolicitar, proceso -> PCB.PID);
+		int resultadoAccionInicializar = pedido_Inicializar_Programa(memoria,paginasASolicitar, proceso->PCB->PID);
 		if (resultadoAccionInicializar == 0) {
 			queue_push(colaNew,&proceso);
 			//Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
-			proceso -> PCB.cantidadPaginas = paginasASolicitar;
+			proceso->PCB->cantidadPaginas = paginasASolicitar;
 			int resultadoAccionAlmacenar = enviarSolicitudAlmacenarBytes(memoria, proceso, buff, tamanioScript);
 			if (resultadoAccionAlmacenar == 0) {
 				queue_pop(colaNew);
@@ -443,9 +443,8 @@ int main(void) {
 	maxFd = sockServ;
 
 	//Crear hilo para interaccion por terminal
-	pthread_t hiloInteraccionUsuario;
-	pthread_create(&hiloInteraccionUsuario, NULL,
-			(void*) interactuar_con_usuario, NULL);
+	pthread_t* hiloInteraccionUsuario;
+	pthread_create(&hiloInteraccionUsuario, NULL, (void*)interactuar_con_usuario, NULL);
 
 	//Bucle principal
 	for (;;) {

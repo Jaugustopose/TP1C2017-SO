@@ -31,6 +31,8 @@
 #include <pthread.h>
 #include "gestionDeProcesos.h"
 #include "CapaMemoria.h"
+#include <parser/parser.h>
+#include <parser/metadata_program.h>
 
 
 //Estructuras y enum

@@ -47,7 +47,7 @@ void recibirPedidoMemoria(int tamanioSolicitud, int pidSolicitante)
 	{
 		//pedido a memoria de una pagina: cantpaginas = 1, pidSolicitante
 		//recibe respuesta
-		crearPagina(pidSolicitante, tamanioSolicitud);
+	//	crearPagina(pidSolicitante, tamanioSolicitud);
 
 
 	}else
