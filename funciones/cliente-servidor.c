@@ -54,11 +54,14 @@ int conectar_con_server(int cliente, const struct sockaddr_in* direccionServidor
 /////////////////////////OPERACIONES VARIAS//////////////////////////////////////////
 
 int redondear(float numero) {
-	float parteDecimal = numero - (int) numero;
+		int resultado;
+		if((numero - (int)numero) !=0){
+			numero++;
+			resultado = (int) numero;
+		}else {
+			resultado = (int)numero;
+		}
 
-	if (parteDecimal != 0) {
-		numero++;
-		return numero;
-	}
+		printf("%d\n",resultado); /* prints !!!Hello World!!! */
+		return resultado;
 }
-

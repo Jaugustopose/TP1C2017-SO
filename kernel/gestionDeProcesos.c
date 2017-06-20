@@ -74,4 +74,3 @@ t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo)
 
 
 
-

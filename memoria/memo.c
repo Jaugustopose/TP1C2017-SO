@@ -4,7 +4,7 @@ void cargarConfigFile() {
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	string_append(&pat, "/memo.cfg");
+	string_append(&pat, "/Debug/memo.cfg");
 	t_config* configMemo = config_create(pat);
 	if (config_has_property(configMemo, "PUERTO_KERNEL")) {
 		config.puerto_kernel = config_get_int_value(configMemo, "PUERTO_KERNEL");
@@ -386,8 +386,8 @@ int main(void){
 	bind_w(sockServ, &direccionServidor);
 	listen_w(sockServ);
 	printf("Escuchando nuevas solicitudes tcp en el puerto %d...\n", config.puerto);
-//	pthread_t unHilo;
-//	pthread_create(&unHilo, NULL, (void*) escucharConsolaMemoria, (void*) tablaPaginasInvertida);
+	pthread_t unHilo;
+	pthread_create(&unHilo, NULL, (void*) escucharConsolaMemoria, (void*) tablaPaginasInvertida);
 
 	// gestionar nuevas conexiones
 	addrlen = sizeof(direccionCliente);
