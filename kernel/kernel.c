@@ -284,8 +284,8 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 			proceso -> PCB.cantidadPaginas = paginasASolicitar;
 			int resultadoAccionAlmacenar = enviarSolicitudAlmacenarBytes(memoria, proceso, buff, tamanioScript);
 			if (resultadoAccionAlmacenar == 0) {
-				queue_pop(colaNew);
-				queue_push(colaReady, &proceso);
+				//queue_pop(colaNew);
+				//queue_push(colaReady, &proceso);
 			}
 		}
 	}else{
