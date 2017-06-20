@@ -76,6 +76,7 @@ int fdCliente, j; // Variables para recorrer los sockets (mandar mensajes o dete
 int tamanioPag;
 //int identificadorProceso = 0;
 int identificadorProceso;
+int memoria; //NECESITO GUARDAR EL FD DE MEMORIA ACA PARA LLAMARLO SIEMPRE QUE QUIERA
 
 t_list* listaDeProcesos;
 t_queue* colaNew;
