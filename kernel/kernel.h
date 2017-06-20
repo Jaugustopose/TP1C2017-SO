@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/socket.h>
-//#include <bits/socket_type.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <arpa/inet.h>
@@ -30,9 +29,6 @@
 #include "cliente-servidor.h"
 #include <pthread.h>
 #include "gestionDeProcesos.h"
-#include "CapaMemoria.h"
-#include <parser/parser.h>
-#include <parser/metadata_program.h>
 
 
 //Estructuras y enum
@@ -49,6 +45,7 @@ typedef struct configuracion {
 	char** SEM_IDS;
 	char** SEM_INIT;
 	char** SHARED_VARS;
+	int STACK_SIZE;
 	// FALTAN AGREGAR VARIABLES SEGUN AVANCE EL TP (SEMAFOROS, QUANTUM, ETC)
 }config_t;
 
@@ -70,13 +67,12 @@ struct sockaddr_in direccionServidor; // Información sobre mi dirección
 struct sockaddr_in direccionCliente; // Información sobre la dirección del cliente
 int sockServ; // Socket de nueva conexion aceptada
 int sockClie; // Socket a la escucha
-int memoria;
 int maxFd; // Numero del ultimo socket creado (maximo file descriptor)
 int yes;
 int cantBytes; // La cantidad de bytes. Lo voy a usar para saber cuantos bytes me mandaron.
 int addrlen; // El tamaño de la direccion del cliente
 int identidadCliente;
-int i, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
+int fdCliente, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
 int tamanioPag;
 //int identificadorProceso = 0;
 int identificadorProceso;
