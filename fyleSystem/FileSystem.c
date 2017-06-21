@@ -5,24 +5,7 @@
  *      Author: utnso
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <string.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <sys/time.h>
 #include "fileSystem.h"
-#include <sys/stat.h>
-#include <sys/types.h>
-
-int conectarSocket(int socket, struct sockaddr_in* dirServidor)
-{
- return connect(socket, (struct sockaddr*) &*dirServidor, sizeof(struct sockaddr));
-}
 
 void cargarConfiguracion()
 {
@@ -86,20 +69,20 @@ void leerMetadata(){
 /***********************************BITMAP**************************************/
 
 void crearBitmap(){
-	char * bitarray = (char*) malloc(sizeof(char)*metadata.CANTIDAD_BLOQUES/8);
-	bitmap = bitarray_create_with_mode(bitarray,metadata.CANTIDAD_BLOQUES/8, LSB_FIRST);
+	char * bitarray = (char*) malloc(sizeof(char)* ((metadata.CANTIDAD_BLOQUES+8-1)/8));
+	bitmap = bitarray_create_with_mode(bitarray,(metadata.CANTIDAD_BLOQUES+8-1)/8, LSB_FIRST);
 }
 
 void leerBitmap(){
 	FILE *archivo = fopen(paths.Bitmap,"rb");
 	crearBitmap();
-	fread(bitmap->bitarray, sizeof(char), metadata.CANTIDAD_BLOQUES/8, archivo);
+	fread(bitmap->bitarray, sizeof(char), (metadata.CANTIDAD_BLOQUES+8-1)/8, archivo);
 	fclose(archivo);
 }
 
 void escribirBitmap(){
 	FILE *archivo = fopen(paths.Bitmap,"wb");
-	fwrite(bitmap->bitarray, sizeof(char), metadata.CANTIDAD_BLOQUES/8, archivo);
+	fwrite(bitmap->bitarray, sizeof(char), (metadata.CANTIDAD_BLOQUES+8-1)/8, archivo);
 	fclose(archivo);
 }
 
@@ -110,18 +93,25 @@ void destruirBitmap(t_bitarray *bitmap){
 
 /***********************************BLOQUES*************************************/
 
-int buscarBloqueLibre(){
+int* buscarBloquesLibres(int cantidad){
 	int i;
-	for (i = 0; i < metadata.CANTIDAD_BLOQUES; ++i) {
+	int j=0;
+	int *bloques = (int*) malloc(sizeof(int) * cantidad);
+	for (i = 0; i < metadata.CANTIDAD_BLOQUES && j != cantidad; ++i) {
 		if(bitarray_test_bit(bitmap, i)==0){
-			break;
+			bloques[j]=i;
+			j++;
 		}
 	}
-	return (i == metadata.CANTIDAD_BLOQUES)? -1 : i;
+	return (i == metadata.CANTIDAD_BLOQUES)? NULL : bloques;
 }
 
 void liberarBloque(int index){
 	bitarray_clean_bit(bitmap, index);
+}
+
+void reservarBloque(int index){
+	bitarray_set_bit(bitmap, index);
 }
 
 /***********************************ARCHIVOS************************************/
@@ -155,20 +145,26 @@ int leerArchivo(char *path, archivo_t *archivo){
 	return 0;
 }
 
-
-
-/***********************************OPERACIONES FS******************************/
-
-
-int validarArchivo(char *path)
-{
-	archivo_t *archivo = newArchivo();
-	return leerArchivo(path, archivo);
-	free(archivo);
+void escribirArchivo(char* path, archivo_t *archivo){
+	char* pat = string_new();
+	string_append(&pat,paths.Archivos);
+	string_append(&pat,path);
+	FILE* arch = fopen(pat, "w");
+	free(pat);
+	fprintf(arch, "TAMANIO=%i\n", archivo->TAMANIO);
+	fprintf(arch, "BLOQUES=[");
+	int i;
+	for (i = 0; archivo->BLOQUES[i]; ++i) {
+		if(i!=0){
+			fprintf(arch, ",");
+		}
+		fprintf(arch, "%s", archivo->BLOQUES[i]);
+	}
+	fprintf(arch, "]");
+	fclose(arch);
 }
 
-int crearArchivo(char *path)
-{
+int crearDirectorio(char* path){
 	char* p;
 	char* pat;
 	char* pathLocal = string_new();
@@ -182,39 +178,67 @@ int crearArchivo(char *path)
 			string_append(&pat,pathLocal);
 
 			if (mkdir(pat, S_IRWXU) != 0) {
-				if (errno != EEXIST)
+				if (errno != EEXIST){
+					free(pat);
+					free(pathLocal);
 					return -1;
+				}
 			}
 
 			*p = '/';
 			free(pat);
 		}
 	}
-	pat = string_new();
-	string_append(&pat,paths.Archivos);
-	string_append(&pat,path);
-	FILE *archivo = fopen(pat,"w");
-	free(pat);
 	free(pathLocal);
-	int bloque = buscarBloqueLibre();
-	if(bloque<0){
-		return -1;
-	}
-	bitarray_set_bit(bitmap,bloque);
-	escribirBitmap();
-	fprintf(archivo, "TAMANIO=0\n");
-	fprintf(archivo, "BLOQUES=[%i]", bloque);
-	fclose(archivo);
 	return 0;
 }
 
-void borrarArchivo(char *path)
+/***********************************OPERACIONES FS******************************/
+
+
+int validarArchivo(char *path)
+{
+	archivo_t *archivo = newArchivo();
+	return leerArchivo(path, archivo);
+	free(archivo);
+}
+
+int crearArchivo(char *path)
+{
+	int *bloque = buscarBloquesLibres(1);
+	if(bloque == NULL){
+		return -1;
+	}
+	char *pat = string_new();
+	string_append(&pat,paths.Archivos);
+	string_append(&pat,path);
+	FILE *archivo = fopen(pat,"w");
+	if(archivo == NULL){
+		if(crearDirectorio(path)<0){
+			return -1;
+		}else{
+			archivo = fopen(pat,"w");
+			if(archivo == NULL){
+				return -1;
+			}
+		}
+	}
+	bitarray_set_bit(bitmap,bloque[0]);
+	escribirBitmap();
+	fprintf(archivo, "TAMANIO=0\n");
+	fprintf(archivo, "BLOQUES=[%i]", bloque[0]);
+	fclose(archivo);
+	free(bloque);
+	return 0;
+}
+
+int borrarArchivo(char *path)
 {
 	archivo_t *archivo = newArchivo();
 	int res = leerArchivo(path, archivo);
 	if(res<0){
 		puts("Error al borrar el archivo");
-		return;
+		return -1;
 	}
 	int i=0;
 	while(archivo->BLOQUES[i]){
@@ -225,21 +249,102 @@ void borrarArchivo(char *path)
 	escribirBitmap();
 	char * pat = string_new();
 	string_append(&pat,paths.Archivos);
-	string_append(&path, path);
+	string_append(&pat, path);
 	remove(pat);
 	free(pat);
+	return 0;
 }
 
 char* obtenerDatos(char *path, int offset, int size)
 {
-	//TODO: Implementar lectura de archivo
-	char *texto = "Algo";
-	return texto;
+	archivo_t *archivo = newArchivo();
+	int res = leerArchivo(path, archivo);
+	if(res<0){
+		puts("Error al guardar datos en el archivo");
+		return NULL;
+	}
+
+	//Leer datos en bloques
+	int bloqueActual = offset / metadata.TAMANIO_BLOQUES; //Bloque inicial
+	int offsetBloque;
+	int bytesALeer = size;
+	char* buffer = (char*) malloc(sizeof(char)*size+1);
+	while(bytesALeer){
+		offsetBloque = offset - bloqueActual * metadata.TAMANIO_BLOQUES;
+		char *pat = string_new();
+		string_append(&pat,paths.Bloques);
+		string_append(&pat,archivo->BLOQUES[bloqueActual]);
+		string_append(&pat,".bin");
+		FILE* archBloque = fopen(pat,"r");
+		fseek(archBloque,offsetBloque,SEEK_SET);
+		int bytesLibres = metadata.TAMANIO_BLOQUES - offsetBloque;
+		int cant = (bytesALeer<=bytesLibres)? bytesALeer : bytesLibres;
+		fread(buffer+size-bytesALeer,sizeof(char),cant,archBloque);
+		fclose(archBloque);
+		free(pat);
+		bytesALeer-=cant;
+		bloqueActual++;
+	}
+
+	return buffer;
 }
 
-void guardarDatos(char *path, int offset, int size, char* buffer)
+int guardarDatos(char *path, int offset, int size, char* buffer)
 {
-
+	archivo_t *archivo = newArchivo();
+	int res = leerArchivo(path, archivo);
+	if(res<0){
+		puts("Error al guardar datos en el archivo");
+		return -1;
+	}
+	//Calculo bloques necesarios y los reservo
+	int tamanio = offset + size;
+	int bloquesNecesarios = (tamanio + metadata.TAMANIO_BLOQUES - 1) / metadata.TAMANIO_BLOQUES; // redondeo para arriba
+	int bloquesReservados = 0;
+	for (bloquesReservados = 0 ; archivo->BLOQUES[bloquesReservados] ; bloquesReservados++);
+	if(bloquesNecesarios>bloquesReservados){
+		int cantBloques = bloquesNecesarios-bloquesReservados;
+		int *bloques = buscarBloquesLibres(cantBloques);
+		int i;
+		char **arrBloques = (char**) malloc(sizeof(char*)*bloquesNecesarios);
+		for (i = 0; archivo->BLOQUES[i]; ++i) {
+			arrBloques[i] = archivo->BLOQUES[i];
+		}
+		int j;
+		for (j = 0; j < cantBloques; ++j) {
+			reservarBloque(bloques[j]);
+			arrBloques[i] = string_itoa(bloques[j]);
+			i++;
+		}
+		free(archivo->BLOQUES);
+		archivo->BLOQUES=arrBloques;
+	}
+	//Escribir datos en bloques
+	int bloqueActual = offset / metadata.TAMANIO_BLOQUES; //Bloque inicial
+	int offsetBloque;
+	int bytesAEscribir = size;
+	while(bytesAEscribir){
+		offsetBloque = offset - bloqueActual * metadata.TAMANIO_BLOQUES;
+		char *pat = string_new();
+		string_append(&pat,paths.Bloques);
+		string_append(&pat,archivo->BLOQUES[bloqueActual]);
+		string_append(&pat,".bin");
+		FILE* archBloque = fopen(pat,"r+");
+		fseek(archBloque,offsetBloque,SEEK_SET);
+		int bytesLibres = metadata.TAMANIO_BLOQUES - offsetBloque;
+		int cant = (bytesAEscribir<=bytesLibres)? bytesAEscribir : bytesLibres;
+		fwrite(buffer+size-bytesAEscribir,sizeof(char),cant,archBloque);
+		fclose(archBloque);
+		free(pat);
+		bytesAEscribir-=cant;
+		bloqueActual++;
+	}
+	//Escribo nuevo tamaño
+	archivo->TAMANIO = (tamanio>archivo->TAMANIO)? tamanio : archivo->TAMANIO;
+	//Escribo archivos de metadata
+	escribirArchivo(path, archivo);
+	escribirBitmap();
+	return 0;
 }
 
 // Programa Principal
@@ -254,9 +359,14 @@ int main(void) {
 
 	printf("Cantidad de bloques en bitmap = %i\n", bitarray_get_max_bit(bitmap));
 
+	//guardarDatos("texto.txt",9,2,"XX");
+	char *pepe = obtenerDatos("texto.txt",0,5);
+	fwrite(pepe,sizeof(char),5,stdout);
+
+	/*
 	struct sockaddr_in direccionServidor; // Información sobre mi dirección
 	struct sockaddr_in direccionCliente; // Información sobre la dirección del cliente
-	int addrlen; // El tamaño de la direccion del cliente
+	socklen_t addrlen; // El tamaño de la direccion del cliente
 	int sockServ; // Socket de nueva conexion aceptada
 	int sockClie; // Socket a la escucha
 	int cantBytesRecibidos;
@@ -293,43 +403,42 @@ int main(void) {
 					char* bytesSolicitados;
 					int resultAccion;
 					int pidAFinalizar;
+					int largoMsg;
+					char *path;
+					int res;
 
 					switch (codAccion) {
 
 					case accionAbrirArchivo:
-						int largoMsg;
 						recv(sockClie, &largoMsg, sizeof(largoMsg), 0);
-						char *path = (char*) malloc(sizeof(char)*largoMsg);
+						path = (char*) malloc(sizeof(char)*largoMsg);
 						recv(sockClie, path, largoMsg, 0);
-						int res = validarArchivo(path);
+						res = validarArchivo(path);
 						send(sockClie, &res, sizeof(res),0);
 						printf("Recibida solicitud de apertura de archivo: %s\n", path);
 						break;
 
 					case accionBorrarArchivo:
-						int largoMsg;
 						recv(sockClie, &largoMsg, sizeof(largoMsg), 0);
-						char *path = (char*) malloc(sizeof(char)*largoMsg);
+						path = (char*) malloc(sizeof(char)*largoMsg);
 						recv(sockClie, path, largoMsg, 0);
-						int res = borrarArchivo(path);
+						res = borrarArchivo(path);
 						send(sockClie, &res, sizeof(res),0);
 						printf("Recibida solicitud de borrado de archivo: %s\n", path);
 						break;
 
 					case accionCrearArchivo:
-						int largoMsg;
 						recv(sockClie, &largoMsg, sizeof(largoMsg), 0);
-						char *path = (char*) malloc(sizeof(char)*largoMsg);
+						path = (char*) malloc(sizeof(char)*largoMsg);
 						recv(sockClie, path, largoMsg, 0);
-						int res = crearArchivo(path);
+						res = crearArchivo(path);
 						send(sockClie, &res, sizeof(res),0);
 						printf("Recibida solicitud de creacion de archivo: %s\n", path);
 						break;
 
 					case accionObtenerDatosArchivo:
-						int largoMsg;
 						recv(sockClie, &largoMsg, sizeof(largoMsg), 0);
-						char *path = (char*) malloc(sizeof(char)*largoMsg);
+						path = (char*) malloc(sizeof(char)*largoMsg);
 						recv(sockClie, path, largoMsg, 0);
 						int offset;
 						int size;
@@ -351,50 +460,6 @@ int main(void) {
 		}
 	}
 
-/*
-    //Creo Cliente
-	struct sockaddr_in direccionServidor;//Estructura con la direccion del servidor
-	direccionServidor.sin_family = AF_INET;
-	direccionServidor.sin_addr.s_addr = inet_addr(config.IP_KERNEL);//IP a la que se conecta
-	direccionServidor.sin_addr.s_addr = INADDR_ANY;
-	direccionServidor.sin_port = htons(config.PUERTO_KERNEL);//Puerto al que se conecta
-
-	memset(&(direccionServidor.sin_zero), '\0', 8);
-
-	int cliente = socket(AF_INET, SOCK_STREAM, 0);//Pido un Socket
-	printf("cliente: %d\n", cliente);
-
-	if(conectarSocket(cliente, &direccionServidor) == -1)
-	 {
-	  perror("No se pudo conectar");
-	  exit(1);
-	 }
-
-	//Recibo mensajes y muestro en pantalla
-	while (1) {
-		int bytesRecibidos = recv(cliente, buffer, 1000, 0);
-		if (bytesRecibidos <= 0) {
-			perror("El socket se desconecto\n");
-			return 1;
-		}
-
-		buffer[bytesRecibidos] = '\0';
-		printf("Me llegaron %d bytes --> %s\n", bytesRecibidos, buffer);
-	}
-
-	free(buffer);
-
-	//Envio mensajes
-	while (1) {
-		char mensaje[1000];
-		scanf("%s", mensaje);
-
-		send(cliente, mensaje, strlen(mensaje), 0);
-	}
-
-	close(cliente);
 */
-
-
 	return 0;
 }
