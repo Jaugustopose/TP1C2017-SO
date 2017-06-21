@@ -29,7 +29,7 @@ void cargarConfiguracion(){
 	char* pat = string_new();
 		char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 		string_append(&pat,getcwd(cwd,sizeof(cwd)));
-		string_append(&pat,"/Debug/consola.cfg");
+		string_append(&pat,"/consola.cfg");
 		printf("El directorio sobre el que se esta trabajando es %s\n", pat);
 		t_config* configConsola = config_create(pat);
 		free(pat);

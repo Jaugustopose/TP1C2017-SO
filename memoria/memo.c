@@ -4,7 +4,7 @@ void cargarConfigFile() {
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	string_append(&pat, "/Debug/memo.cfg");
+	string_append(&pat, "/memo.cfg");
 	t_config* configMemo = config_create(pat);
 	if (config_has_property(configMemo, "PUERTO_KERNEL")) {
 		config.puerto_kernel = config_get_int_value(configMemo, "PUERTO_KERNEL");
@@ -95,6 +95,17 @@ void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	}
 	puts("");
 	list_destroy(listaProcesosActivos);
+}
+
+void realizarDumpContenidoMemoriaCompleta(tablaPagina_t* tablaPaginasInvertida){
+	int i;
+	char* bufferPagina = malloc(config.marco_size);
+	printf("Se procede a imprimir por pantalla el contenido de cada marco:\n");
+	for (i = 0; i < config.marcos; i++) {
+		memcpy(bufferPagina, memoria + i * config.marco_size, config.marco_size);
+		printf("Marco: %d, pid: %d, pag: %d, contenido: %s\n", i, tablaPaginasInvertida[i].pid, tablaPaginasInvertida[i].nroPagina, bufferPagina);
+	}
+	free(bufferPagina);
 }
 
 int finalizarPrograma(int pid, tablaPagina_t* tablaPaginasInvertida) {
@@ -295,8 +306,9 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 		printf("Ingrese una acción a realizar\n");
 		puts("1: Configurar retardo memoria");
 		puts("2: Realizar dump de Memoria cache");
-		puts("3: Realizar dump del contenido de la Memoria completa");
-		puts("4: Realizar dump del contenido de la Memoria para un proceso en particular");
+		puts("3: Realizar dump de Estructuras de la Memoria");
+		puts("4: Realizar dump del contenido de la Memoria completa");
+		puts("5: Realizar dump del contenido de la Memoria para un proceso en particular");
 		char accion[3];
 		if (fgets(accion, sizeof(accion), stdin) == NULL) {
 			printf("ERROR EN fgets !\n");
@@ -314,7 +326,7 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 				realizarDumpEstructurasDeMemoria(tablaPaginasInvertida);
 				break;
 			case dumpMemoriaCompleta:
-				printf("Codificar dumpMemoriaCompleta!\n");
+				realizarDumpContenidoMemoriaCompleta(tablaPaginasInvertida);
 				break;
 			case dumpMemoriaProceso:
 				printf("Codificar dumpMemoriaProceso!\n");
@@ -399,7 +411,7 @@ int main(void){
 			for (;;) {
 				// Gestionar datos de un cliente. Recibimos el código de acción que quiere realizar.
 				int codAccion;
-				if ((cantBytesRecibidos = recv(sockClie, &codAccion, sizeof(int), 0)) <= 0) {
+				if ((cantBytesRecibidos = recv(sockClie, &codAccion, sizeof(codAccion), 0)) <= 0) {
 					// error o conexión cerrada por el cliente
 					if (cantBytesRecibidos == 0) {
 						// conexión cerrada
@@ -415,7 +427,7 @@ int main(void){
 					pedidoSolicitudPaginas_t pedidoPaginas;
 					pedidoBytesMemoria_t pedidoBytes;
 					pedidoAlmacenarBytesMemoria_t pedidoAlmacenarBytes;
-					char* bytesAEscribir;
+//					char* bytesAEscribir;
 					char* bytesSolicitados;
 					int resultAccion;
 					int pidAFinalizar;
@@ -447,9 +459,10 @@ int main(void){
 
 					case almacenarBytesAccion:
 						recv(sockClie, &pedidoAlmacenarBytes.pedidoBytes, sizeof(pedidoAlmacenarBytes.pedidoBytes), 0);
-						bytesAEscribir = malloc(pedidoAlmacenarBytes.pedidoBytes.tamanio);
-						recv(sockClie, bytesAEscribir, pedidoAlmacenarBytes.pedidoBytes.tamanio, 0);
-						pedidoAlmacenarBytes.buffer = bytesAEscribir;
+						pedidoAlmacenarBytes.buffer = malloc(pedidoAlmacenarBytes.pedidoBytes.tamanio);
+
+						recv(sockClie, pedidoAlmacenarBytes.buffer, pedidoAlmacenarBytes.pedidoBytes.tamanio, 0);
+//						pedidoAlmacenarBytes.buffer = bytesAEscribir;
 						printf("Recibida solicitud de almacenar %d bytes para el pid %d en su página %d\n con un offset de %d\n",
 								pedidoAlmacenarBytes.pedidoBytes.tamanio,
 								pedidoAlmacenarBytes.pedidoBytes.pid,
@@ -465,16 +478,17 @@ int main(void){
 								tablaPaginasInvertida);
 						printf("Solicitud de almacenar bytes terminó con resultado de acción: %d\n", resultAccion);
 						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
-						free(bytesAEscribir);
+//						free(bytesAEscribir);
+						free(pedidoAlmacenarBytes.buffer);
 						break;
 
 					case solicitarBytesAccion:
 						recv(sockClie, &pedidoBytes, sizeof(pedidoBytes), 0);
 						printf("Recibida solicitud de %d bytes para el pid %d en su página %d\n con un offset de %d\n",
-								pedidoAlmacenarBytes.pedidoBytes.tamanio,
-								pedidoAlmacenarBytes.pedidoBytes.pid,
-								pedidoAlmacenarBytes.pedidoBytes.nroPagina,
-								pedidoAlmacenarBytes.pedidoBytes.offset);
+								pedidoBytes.tamanio,
+								pedidoBytes.pid,
+								pedidoBytes.nroPagina,
+								pedidoBytes.offset);
 						printf("Se procede a solicitar bytes\n");
 						bytesSolicitados = solicitarBytes(pedidoBytes.pid,
 								pedidoBytes.nroPagina, pedidoBytes.offset,
