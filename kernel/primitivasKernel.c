@@ -56,19 +56,62 @@ void recibirPedidoMemoria(int tamanioSolicitud, int pidSolicitante)
 	}
 }
 
+
+
 void obtenerValorCompartida()
 {
-	char* bufferVarComp;
-	recv(fdCliente, bufferVarComp, sizeof(int32_t), 0);
-	int tamanio = (int)*bufferVarComp;
-	char* nombreVariable = malloc(tamanio);
-	recv(fdCliente, nombreVariable, tamanio, 0);
+	char* compartidaSerial = leerTamanioYMensaje(fdCliente);
+	char* compartida = string_from_format("!%s",compartidaSerial);
+	char* valor = intToChar4(devolverCompartida(compartida));
 
-	char* nombre = nombreVariable;
-	int valorPrueba = 172;
+	send(fdCliente, valor, sizeof(int32_t), 0);
+
+	 //t_proceso* proceso = obtenerProceso(fdCliente);
+	 //if (!dictionary_has_key(tablaCompartidas,compartida))
+	//proceso->abortado=true;
+
+	free(valor);
+	free(compartidaSerial);
+	free(compartida);
+
+	//clientes[fdCliente].atentido=false;
+}
+void obtenerAsignarCompartida(){
+	char* compartidaSerial = leerTamanioYMensaje(fdCliente);
+	char* compartida = string_from_format("!%s",compartidaSerial);
+	char* valor = malloc(sizeof(int));
+	recv(fdCliente, valor, sizeof(int), 0);
+	asignarCompartida(compartida, char4ToInt(valor));
+
+	//	t_proceso* proceso = obtenerProceso(fdCliente);
+	//	if (!dictionary_has_key(tablaCompartidas,compartida))
+	//		proceso->abortado=true;
 
 
-	void* resultado = malloc(sizeof(int32_t));
-	memcpy(resultado, &valorPrueba, sizeof(int32_t));
-	send(fdCliente, resultado, sizeof(int32_t), 0);
+	//clientes[fdCliente].atentido=false;
+	int valorAsignado = devolverCompartida(compartida);
+	send(fdCliente, &valorAsignado,sizeof(int),0);
+	free(compartida);
+	free(compartidaSerial);
+	free(valor);
+}
+int devolverCompartida(char* compartida) {
+	if (dictionary_has_key(tablaCompartidas,compartida))
+	{
+		return (*(int*)dictionary_get(tablaCompartidas, compartida));
+	}
+	else{
+		//ERROR: Se solicita el valor de una compartida inexistente
+	}
+	return 0;
+}
+
+void asignarCompartida(char* compartida, int valor) {
+	if (dictionary_has_key(tablaCompartidas,compartida))
+	{
+		*(int*)dictionary_get(tablaCompartidas, compartida) = valor;
+	}
+	else{
+		//ERROR: Se solicito asignar un valor a  una compartida inexistente
+	}
 }

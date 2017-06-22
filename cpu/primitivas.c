@@ -215,19 +215,8 @@ t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableComp
 {
 	t_valor_variable valorCompartida;
 	int codigoAccion = accionObtenerValorCompartida;
-	int tamanioNombreCompartida = strlen(nombreVariableCompartida) + 1;
-	char* bufferVarComp = malloc(sizeof(int) + sizeof(int) + sizeof(tamanioNombreCompartida));
 
-	int offset = 0;
-
-	memcpy(bufferVarComp, &codigoAccion, sizeof(codigoAccion));
-	offset += sizeof(codigoAccion);
-	memcpy(bufferVarComp + offset, &tamanioNombreCompartida, sizeof(int));
-	offset += sizeof(tamanioNombreCompartida);
-	memcpy(bufferVarComp + offset, nombreVariableCompartida, tamanioNombreCompartida);
-	offset += tamanioNombreCompartida;
-
-	send(kernel, bufferVarComp, offset, 0);
+	enviarTamanioYString(codigoAccion, kernel, nombreVariableCompartida);
 
 	recv(kernel, &valorCompartida, sizeof(int), 0);
 
@@ -239,8 +228,24 @@ t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableComp
 {
 	t_valor_variable valorAsignado;
 
-	//manda a nucleo el nombre y valor de la variable
-	//recibe el valor asignado
+	int codigoAccion = accionAsignarValorCompartida;
+
+	enviarTamanioYString(codigoAccion, kernel, nombreVariableCompartida);
+
+	//envio el valor
+	char* valor = intToChar4(valorCompartida);
+	send(kernel, valor, sizeof(int), 0);
+
+	recv(kernel, &valorAsignado,sizeof(int), 0);
+
+	if(valorAsignado == *valor){
+		return valorAsignado;
+	}
+	else
+	{
+		//TODO:ERROR!
+		return 0;
+	}
 
 	return valorAsignado;
 }

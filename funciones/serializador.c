@@ -31,6 +31,21 @@ void* serializarMemoria(int codigoAccion, void* contenidoDelMensaje, int tamanio
 	return buffer;
 }
 
+int char4ToInt(char* chars){
+	int a;
+	deserializar_int(&a,chars);
+	return a;
+}
+
+char* intToChar4(int num){
+
+	char* serial = malloc(sizeof(int));
+	serializar_int(serial,&num);
+	return serial;
+}
+
+
+
 int serializar_pedido(char* destino, t_pedido* origen) {
 
 	memcpy(destino, &origen, sizeof(t_pedido));

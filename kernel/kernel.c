@@ -303,14 +303,11 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 		break;
 
 	case accionAsignarValorCompartida:
-
+			obtenerAsignarCompartida();
 		break;
 
 	case accionObtenerValorCompartida:
-
-		obtenerValorCompartida();
-
-
+			obtenerValorCompartida();
 		break;
 
 	case accionWait:

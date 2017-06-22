@@ -2,18 +2,6 @@
 #include "cpu.h"
 
 
-int char4ToInt(char* chars){
-	int a;
-	deserializar_int(&a,chars);
-	return a;
-}
-
-char* intToChar4(int num){
-
-	char* serial = malloc(sizeof(int));
-	serializar_int(serial,&num);
-	return serial;
-}
 
 char* lecturaLargoMensajeASerializar(int sock){
 
@@ -512,7 +500,8 @@ int main(void){
 	//inicializarContexto();
 	conectarConKernel();
 
-	obtener_valor_compartida("pruebaVariable");
+	asignar_valor_compartida("tiempo3", 29);
+	obtener_valor_compartida("tiempo3");
 
    // conectarConMemoria();
     //tamanioPaginas = obtener_tamanio_pagina(memoria);
