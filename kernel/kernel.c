@@ -8,7 +8,7 @@ void cargarConfiguracion() {
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	string_append(&pat, "/kernel.cfg");
+	string_append(&pat, "/Debug/kernel.cfg");
 	configKernel = config_create(pat);
 	free(pat);
 
@@ -99,7 +99,7 @@ int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffe
 	printf("tamanioTotal = %d\n", tamanioTotal);
 	int codigoAccion = almacenarBytesAccion;
 	//TODO LA RESTA DEL config.STACK_SIZE LA TIENE QUE HACER QUIEN MANDE A ESTE MÉTODO unProceso CON LA CANTIDAD DE PAGINAS SETEADAS
-	int tamanioBufferParaMemoria = ((sizeof(codigoAccion) + sizeof(pedidoBytesMemoria_t)) * (unProceso->PCB.cantidadPaginas - config.STACK_SIZE)) + tamanioTotal;
+	int tamanioBufferParaMemoria = ((sizeof(codigoAccion) + sizeof(pedidoBytesMemoria_t)) * (unProceso->PCB->cantidadPaginas - config.STACK_SIZE)) + tamanioTotal;
 	printf("tamanioBufferParaMemoria: %d\n", tamanioBufferParaMemoria);
 	void* bufferParaAlmacenarEnMemoria = malloc(tamanioBufferParaMemoria);
 	int m;
@@ -109,7 +109,8 @@ int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffe
 
 	int resultAccion;
 
-	for (m = 0; (m < ((unProceso -> PCB.cantidadPaginas) - config.STACK_SIZE)) & (tamanioTotal != 0); m++) {
+	for (m = 0; (m < ((unProceso -> PCB->cantidadPaginas) - config.STACK_SIZE)) & (tamanioTotal != 0); m++) {
+
 		if (tamanioTotal > tamanioPag) {
 
 			tamanioAAlmacenar = tamanioPag;
@@ -121,7 +122,7 @@ int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffe
 		}
 		int tamanioBufferAux = (sizeof(codigoAccion)+sizeof(pedidoBytesMemoria_t)+tamanioAAlmacenar);
 		pedidoAlmacenarBytesMemoria_t pedidoAlmacenar;
-		pedidoAlmacenar.pedidoBytes.pid = unProceso -> PCB.PID;
+		pedidoAlmacenar.pedidoBytes.pid = unProceso->PCB->PID;
 		pedidoAlmacenar.pedidoBytes.nroPagina = m;
 		pedidoAlmacenar.pedidoBytes.offset = 0;
 		pedidoAlmacenar.pedidoBytes.tamanio = tamanioAAlmacenar;
@@ -213,15 +214,15 @@ void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProces
 	for (fdCliente = 0; fdCliente < list_size(listaConProcesos); fdCliente++) {
 		t_proceso* proceso = list_get(listaConProcesos, fdCliente);
 		if (proceso -> ConsolaDuenio == fileDescriptor) {
-			proceso -> PCB.exitCode = -6;
+			proceso -> PCB->exitCode = -6;
 			queue_push(colaExit,&proceso);
 		}
 
 	}
 	//Función privada dentro de este scope (para la condicion del remove)
-			bool exit_code_de_proceso(t_proceso p) {
+			bool exit_code_de_proceso(t_proceso* p) {
 
-				return (-6 == p.PCB.exitCode);
+				return (-6 == p->PCB->exitCode);
 			}
 	list_remove_by_condition(listaConProcesos,exit_code_de_proceso);
 }
@@ -293,6 +294,7 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 		printf("Procediendo a recibir tamaño script\n");
 		recv(consola, &tamanioScript, sizeof(int32_t), 0);
 		printf("Tamaño del script: %d\n", tamanioScript);
+
 		char* buff = malloc(tamanioScript);
 		//char* cadena = malloc(tamanio*sizeof(char));
 		recv(fdCliente, buff, tamanioScript, 0);
@@ -305,12 +307,12 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 		send(consola,&identificadorProceso,sizeof(int32_t),0);
 		//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
 		int paginasASolicitar = redondear((float) tamanioScript /(float) tamanioPag) + config.STACK_SIZE;
-		int resultadoAccionInicializar = pedido_Inicializar_Programa(memoria,paginasASolicitar, proceso -> PCB.PID);
+		int resultadoAccionInicializar = pedido_Inicializar_Programa(memoria,paginasASolicitar, proceso -> PCB->PID);
 		if (resultadoAccionInicializar == 0) {//Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
 
 			//queue_push(colaNew,&proceso); TODO: arreglar esto que no anda
 			printf("Se procede a preparar solicitud almacenar para enviar\n");
-			proceso -> PCB.cantidadPaginas = paginasASolicitar;
+			proceso -> PCB->cantidadPaginas = paginasASolicitar;
 			int resultadoAccionAlmacenar = enviarSolicitudAlmacenarBytes(memoria, proceso, buff, tamanioScript);
 			if (resultadoAccionAlmacenar == 0) {
 				//queue_pop(colaNew);
@@ -332,11 +334,11 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 		break;
 
 	case accionAsignarValorCompartida:
-
+			obtenerAsignarCompartida();
 		break;
 
 	case accionObtenerValorCompartida:
-
+			obtenerValorCompartida();
 		break;
 
 	case accionWait:
@@ -536,4 +538,3 @@ int main(void) {
 //
 //							}
 //						}
-

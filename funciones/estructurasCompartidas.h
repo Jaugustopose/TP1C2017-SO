@@ -85,10 +85,11 @@ typedef struct {
 }t_PCB;
 
 typedef struct {
+
 	int32_t ConsolaDuenio;
 	int32_t CpuDuenio;
 	int32_t estado;
-	t_PCB PCB;
+	t_PCB* PCB;
 }t_proceso;
 
 typedef struct{

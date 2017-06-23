@@ -2,6 +2,7 @@
 #include "estructurasCompartidas.h"
 
 
+
 /***********OPERACIONES STACK*************************/
 
 t_stack* stack_crear() {
@@ -58,12 +59,23 @@ int stack_tamanio(t_stack* stack){
 	return list_size(stack);
 }
 
-t_pedido* stack_proximo_pedido(t_stack* stack, int tamanioPagina) {
+//t_pedido* stack_proximo_pedido(t_stack* stack, int tamanioPagina) {
+//
+//	t_pedido* pedido = malloc(sizeof(t_pedido));
+//	int tamanioActualDeStack = stack_tamanio_memoria(stack);
+//	pedido->nroPagina = tamanioActualDeStack / tamanioPagina;
+//	pedido->offset = tamanioActualDeStack - (pedido->nroPagina * tamanioPagina);
+//	pedido->size = sizeof(int);
+//	return pedido;
+//}
+
+//ATENCION: SE TOMAN LAS DIRECCIONES LOGICAS DESDE LA PAGINA 1 DEL CODIGO + STACK + HEAP
+t_pedido* stack_proximo_pedido(t_stack* stack, int tamanioPagina, int cantidadPaginasCodigo) {
 
 	t_pedido* pedido = malloc(sizeof(t_pedido));
 	int tamanioActualDeStack = stack_tamanio_memoria(stack);
-	pedido->nroPagina = tamanioActualDeStack / tamanioPagina;
-	pedido->offset = tamanioActualDeStack - (pedido->nroPagina * tamanioPagina);
+	pedido->nroPagina = (cantidadPaginasCodigo + tamanioActualDeStack) / tamanioPagina;
+	pedido->offset = (cantidadPaginasCodigo + tamanioActualDeStack) - (pedido->nroPagina * tamanioPagina);
 	pedido->size = sizeof(int);
 	return pedido;
 }
@@ -77,3 +89,30 @@ void destruir_PCB(t_PCB* pcb){
 	free(pcb);
 }
 
+
+char* leerTamanioYMensaje(int sock){
+	char* serialTamanio = malloc(sizeof(int32_t));
+	recv(sock, serialTamanio, sizeof(int32_t), 0);
+	int32_t tamanio = char4ToInt(serialTamanio);
+	char* mensaje = malloc(tamanio);
+	recv(sock, mensaje, tamanio, 0);
+	free(serialTamanio);
+	return mensaje;
+}
+
+void enviarTamanioYString(int codigoAccion, int sock, char* mensaje){
+	enviarTamanioYSerial(codigoAccion, sock, strlen(mensaje)+1, mensaje);
+}
+void enviarTamanioYSerial(int codigoAccion, int sock, int tamanio, char* mensaje){
+	int offset = 0;
+
+	char* bufferVarComp = malloc(sizeof(int) + sizeof(int) + sizeof(tamanio));
+	memcpy(bufferVarComp, &codigoAccion, sizeof(codigoAccion));
+	offset += sizeof(codigoAccion);
+	memcpy(bufferVarComp + offset, &tamanio, sizeof(int));
+	offset += sizeof(tamanio);
+	memcpy(bufferVarComp + offset, mensaje, tamanio);
+	offset += tamanio;
+
+	send(sock, bufferVarComp, offset, 0);
+}

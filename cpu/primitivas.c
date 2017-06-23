@@ -93,7 +93,10 @@ t_puntero obtener_posicion_de(t_nombre_variable variable) {
 
 t_puntero definir_variable(t_nombre_variable variable) {
 
-	t_pedido* direccion = stack_proximo_pedido(stack, tamanioPaginas);
+	//t_pedido* direccion = stack_proximo_pedido(stack, tamanioPaginas);
+
+	//ATENCION: ACA SE TOMAN LAS DIRECCIONES LOGICAS: CODIGO + STACK + HEAP
+	t_pedido* direccion = stack_proximo_pedido(stack, tamanioPaginas, cantidadPagCodigo);
 	t_elemento_stack* head = stack_head(stack);
 	char* cadena = string_from_format("%c",variable);
 
@@ -116,7 +119,7 @@ t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 		t_valor_variable valor;
 
 		//manda codigo de accion
-		char* accion = (char*)almacenarBytesAccion;
+		char* accion = (char*)solicitarBytesAccion;
 		send(memoria, accion, sizeof(accion), 0);
 
 		//manda pedidoa memoria
@@ -211,10 +214,11 @@ void finalizar()
 t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableCompartida)
 {
 	t_valor_variable valorCompartida;
-	int tamanioNombreCompartida = strlen(nombreVariableCompartida) + 1;
+	int codigoAccion = accionObtenerValorCompartida;
 
-	//manda a nucleo el nombre de la variable
-	//recibe el valor
+	enviarTamanioYString(codigoAccion, kernel, nombreVariableCompartida);
+
+	recv(kernel, &valorCompartida, sizeof(int), 0);
 
 	return valorCompartida;
 
@@ -224,8 +228,24 @@ t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableComp
 {
 	t_valor_variable valorAsignado;
 
-	//manda a nucleo el nombre y valor de la variable
-	//recibe el valor asignado
+	int codigoAccion = accionAsignarValorCompartida;
+
+	enviarTamanioYString(codigoAccion, kernel, nombreVariableCompartida);
+
+	//envio el valor
+	char* valor = intToChar4(valorCompartida);
+	send(kernel, valor, sizeof(int), 0);
+
+	recv(kernel, &valorAsignado,sizeof(int), 0);
+
+	if(valorAsignado == *valor){
+		return valorAsignado;
+	}
+	else
+	{
+		//TODO:ERROR!
+		return 0;
+	}
 
 	return valorAsignado;
 }

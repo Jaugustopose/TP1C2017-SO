@@ -8,10 +8,26 @@
 #ifndef FILESYSTEM_H_
 #define FILESYSTEM_H_
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+#include <pthread.h>
+
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <unistd.h>
+
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/bitarray.h>
-#include <unistd.h>
+
+#include "estructurasCompartidas.h"
+#include "cliente-servidor.h"
 
 typedef struct{
 	int PUERTO;
@@ -45,9 +61,9 @@ t_bitarray *bitmap;
 /*****************************PROTOTIPO*************/
 int validarArchivo(char *path);
 int crearArchivo(char *path);
-void borrarArchivo(char *path);
+int borrarArchivo(char *path);
 char* obtenerDatos(char *path, int offset, int size);
-void guardarDatos(char *path, int offset, int size, char* buffer);
+int guardarDatos(char *path, int offset, int size, char* buffer);
 
 
 #endif /* FILESYSTEM_H_ */

@@ -35,7 +35,6 @@ struct sockaddr_in dirMemoria;
 int memoria;
 bool ejecutar;
 bool finalizarEjec;
-bool salteaCircuitoConGoTo;
 int overflow;
 bool lanzarOverflowExep;
 int tamanioPaginas;
@@ -57,6 +56,7 @@ struct configuracion config;
 t_PCB* pcbNuevo;
 t_stack* stack;
 int cantidadPagCodigo;
+
 
 
 
