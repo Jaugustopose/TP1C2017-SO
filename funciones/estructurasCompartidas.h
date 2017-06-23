@@ -59,15 +59,15 @@ typedef enum identidad {
 
 
 typedef struct {
-	int nroPagina;
-	int offset;
-	int size;
+	int32_t nroPagina;
+	int32_t offset;
+	int32_t size;
 }t_pedido;
 
 typedef t_list t_stack;
 
 typedef struct {
-	int pos;
+	int32_t pos;
 	t_list* argumentos;
 	t_dictionary* identificadores;
 	t_puntero posRetorno;
@@ -75,9 +75,9 @@ typedef struct {
 } t_elemento_stack;
 
 typedef struct {
-	int PID;
-	int cantidadPaginas;
-	int contadorPrograma;
+	int32_t PID;
+	int32_t cantidadPaginas;
+	int32_t contadorPrograma;
 	t_list* indiceCodigo;
 	t_stack* stackPointer;
 	t_dictionary* indiceEtiquetas;
@@ -85,32 +85,32 @@ typedef struct {
 }t_PCB;
 
 typedef struct {
-	int ConsolaDuenio;
-	int CpuDuenio;
-	int estado;
+	int32_t ConsolaDuenio;
+	int32_t CpuDuenio;
+	int32_t estado;
 	t_PCB PCB;
 }t_proceso;
 
 typedef struct{
-	int inicio;
-	int fin;
+	int32_t inicio;
+	int32_t fin;
 }t_sentencia;
 
 typedef struct pedidoBytesMemoriaStruct {
-	int pid;
-	int	nroPagina;
-	int offset;
-	int tamanio;
+	int32_t pid;
+	int32_t	nroPagina;
+	int32_t offset;
+	int32_t tamanio;
 } pedidoBytesMemoria_t;
 
 typedef struct pedidoAlmacenarBytesMemoriaStruct {
 	pedidoBytesMemoria_t pedidoBytes;
-	char* buffer;
+	void* buffer;
 } pedidoAlmacenarBytesMemoria_t;
 
 typedef struct pedidoSolicitudPaginasStruct {
-	int pid;
-	int cantidadPaginas;
+	int32_t pid;
+	int32_t cantidadPaginas;
 } pedidoSolicitudPaginas_t;
 
 

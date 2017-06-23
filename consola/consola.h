@@ -21,8 +21,8 @@
 
 
 typedef struct configuracion{
-	int IP_KERNEL;
-	char* PUERTO_KERNEL;
+	char* IP_KERNEL;
+	int PUERTO_KERNEL;
 }config_t;
 
 typedef struct parametrosCrearPrograma{

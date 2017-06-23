@@ -88,7 +88,7 @@ t_dictionary* tablaSemaforos;
 
 
 //Prototipos
-
+int redondear(float numero);
 
 
 #endif

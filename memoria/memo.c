@@ -240,7 +240,7 @@ int buscarMarco(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida) {
  * 			  0: Éxito
  * 			-12: El pedido excede le tamaño de página
  */
-int almacenarBytes(int pid, int nroPagina, int offset, int tamanio, char* buffer, tablaPagina_t* tablaPaginasInvertida) {
+int almacenarBytes(int pid, int nroPagina, int offset, int tamanio, void* buffer, tablaPagina_t* tablaPaginasInvertida) {
 	//TODO SEMÁFORO DESDE ACÁ
 	printf("Inicia almacenarBytes\n");
 	int marcoPagina = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
@@ -458,10 +458,15 @@ int main(void){
 						break;
 
 					case almacenarBytesAccion:
-						recv(sockClie, &pedidoAlmacenarBytes.pedidoBytes, sizeof(pedidoAlmacenarBytes.pedidoBytes), 0);
-						pedidoAlmacenarBytes.buffer = malloc(pedidoAlmacenarBytes.pedidoBytes.tamanio);
+						recv(sockClie, &pedidoAlmacenarBytes.pedidoBytes.pid, sizeof(pedidoAlmacenarBytes.pedidoBytes.pid), 0);
+						recv(sockClie, &pedidoAlmacenarBytes.pedidoBytes.nroPagina, sizeof(pedidoAlmacenarBytes.pedidoBytes.nroPagina), 0);
+						recv(sockClie, &pedidoAlmacenarBytes.pedidoBytes.offset, sizeof(pedidoAlmacenarBytes.pedidoBytes.offset), 0);
+						recv(sockClie, &pedidoAlmacenarBytes.pedidoBytes.tamanio, sizeof(pedidoAlmacenarBytes.pedidoBytes.tamanio), 0);
 
-						recv(sockClie, pedidoAlmacenarBytes.buffer, pedidoAlmacenarBytes.pedidoBytes.tamanio, 0);
+
+						pedidoAlmacenarBytes.buffer = malloc (pedidoAlmacenarBytes.pedidoBytes.tamanio);
+
+						recv(sockClie, pedidoAlmacenarBytes.buffer,pedidoAlmacenarBytes.pedidoBytes.tamanio, 0);
 //						pedidoAlmacenarBytes.buffer = bytesAEscribir;
 						printf("Recibida solicitud de almacenar %d bytes para el pid %d en su página %d\n con un offset de %d\n",
 								pedidoAlmacenarBytes.pedidoBytes.tamanio,

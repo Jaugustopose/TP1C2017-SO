@@ -95,20 +95,21 @@ int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
 	return resultAccion;
 }
 
-int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, char* buffer, int tamanioTotal) {
+int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffer, int tamanioTotal) {
 	printf("tamanioTotal = %d\n", tamanioTotal);
 	int codigoAccion = almacenarBytesAccion;
 	//TODO LA RESTA DEL config.STACK_SIZE LA TIENE QUE HACER QUIEN MANDE A ESTE MÉTODO unProceso CON LA CANTIDAD DE PAGINAS SETEADAS
 	int tamanioBufferParaMemoria = ((sizeof(codigoAccion) + sizeof(pedidoBytesMemoria_t)) * (unProceso->PCB.cantidadPaginas - config.STACK_SIZE)) + tamanioTotal;
 	printf("tamanioBufferParaMemoria: %d\n", tamanioBufferParaMemoria);
-	char* bufferParaAlmacenarEnMemoria = malloc(tamanioBufferParaMemoria);
+	void* bufferParaAlmacenarEnMemoria = malloc(tamanioBufferParaMemoria);
 	int m;
 	int tamanioAAlmacenar;
-	int start=0;
+	int start=0, posicionUltimoByteEscrito = 0;
+
 
 	int resultAccion;
 
-	for (m = 0; (m < (unProceso -> PCB.cantidadPaginas)) & (tamanioTotal != 0); m++) {
+	for (m = 0; (m < ((unProceso -> PCB.cantidadPaginas) - config.STACK_SIZE)) & (tamanioTotal != 0); m++) {
 		if (tamanioTotal > tamanioPag) {
 
 			tamanioAAlmacenar = tamanioPag;
@@ -118,46 +119,42 @@ int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, char* buffe
 			tamanioAAlmacenar = tamanioTotal;
 			tamanioTotal = 0;
 		}
+		int tamanioBufferAux = (sizeof(codigoAccion)+sizeof(pedidoBytesMemoria_t)+tamanioAAlmacenar);
 		pedidoAlmacenarBytesMemoria_t pedidoAlmacenar;
 		pedidoAlmacenar.pedidoBytes.pid = unProceso -> PCB.PID;
 		pedidoAlmacenar.pedidoBytes.nroPagina = m;
 		pedidoAlmacenar.pedidoBytes.offset = 0;
 		pedidoAlmacenar.pedidoBytes.tamanio = tamanioAAlmacenar;
 //		pedidoAlmacenar.buffer = string_substring_from(buffer,start);
-		pedidoAlmacenar.buffer = string_substring(buffer,start,pedidoAlmacenar.pedidoBytes.tamanio);
-		printf("pedidoAlmacenar.buffer: %s\n", pedidoAlmacenar.buffer);
+		pedidoAlmacenar.buffer = (void*)string_substring(buffer,start,pedidoAlmacenar.pedidoBytes.tamanio);
 		start = start + tamanioPag;
 
-//		void* bufferAux = serializarMemoria(codigoAccion, pedidoAlmacenar.buffer, pedidoAlmacenar.pedidoBytes.tamanio);
-		char* bufferAux = serializarMemoria(codigoAccion, &pedidoAlmacenar.pedidoBytes, sizeof(pedidoAlmacenar.pedidoBytes) + pedidoAlmacenar.pedidoBytes.tamanio);
-		memcpy(bufferAux + sizeof(codigoAccion) + sizeof(pedidoAlmacenar.pedidoBytes), pedidoAlmacenar.buffer, pedidoAlmacenar.pedidoBytes.tamanio);
-		printf("bufferAux: %s\n", bufferAux);
-		int tamanioBufferAux = sizeof(pedidoAlmacenar.pedidoBytes) + pedidoAlmacenar.pedidoBytes.tamanio + sizeof(codigoAccion);
 
-//		send(memoria, bufferAux, tamanioBufferAux, 0);
-//		recv(memoria, &resultAccion, sizeof(resultAccion), 0);
-//		printf("almacenarBytes resultó con código de acción: %d\n", resultAccion);
+		if (m != 0) {
+			printf("memcpy para m == %d\n", m);
+			printf("corrimiento: %d\n", tamanioBufferAux * m);
+			printf("tamanioBufferAux: %d\n", tamanioBufferAux);
+			memcpy(bufferParaAlmacenarEnMemoria + posicionUltimoByteEscrito, &codigoAccion,sizeof(codigoAccion));
+			memcpy(bufferParaAlmacenarEnMemoria + posicionUltimoByteEscrito + sizeof(int32_t), &pedidoAlmacenar.pedidoBytes.pid,sizeof(pedidoAlmacenar.pedidoBytes.pid));
+			memcpy(bufferParaAlmacenarEnMemoria + posicionUltimoByteEscrito + sizeof(int32_t)*2, &pedidoAlmacenar.pedidoBytes.nroPagina,sizeof(pedidoAlmacenar.pedidoBytes.nroPagina));
+			memcpy(bufferParaAlmacenarEnMemoria + posicionUltimoByteEscrito + sizeof(int32_t)*3, &pedidoAlmacenar.pedidoBytes.offset,sizeof(pedidoAlmacenar.pedidoBytes.offset));
+			memcpy(bufferParaAlmacenarEnMemoria + posicionUltimoByteEscrito + sizeof(int32_t)*4, &pedidoAlmacenar.pedidoBytes.tamanio,sizeof(pedidoAlmacenar.pedidoBytes.tamanio));
+			memcpy(bufferParaAlmacenarEnMemoria + posicionUltimoByteEscrito + sizeof(int32_t)*5, pedidoAlmacenar.buffer, pedidoAlmacenar.pedidoBytes.tamanio);
+			posicionUltimoByteEscrito = posicionUltimoByteEscrito + tamanioBufferAux;
 
-		memcpy(bufferParaAlmacenarEnMemoria + tamanioBufferAux * m, bufferAux, tamanioBufferAux);
-		printf("codAcc: %d, pid: %d, nroPag: %d, offset: %d, tamanio: %d, buffer: %s\n", bufferParaAlmacenarEn);
-
-//		if (m != 0) {
-//			printf("memcpy para m == %d\n", m);
-//			printf("corrimiento: %d\n", tamanioBufferAux * m);
-//			printf("tamanioBufferAux: %d\n", tamanioBufferAux);
-//			memcpy(bufferParaAlmacenarEnMemoria + (tamanioBufferAux)*m, bufferAux, tamanioBufferAux);
-//
-//		} else {
-//			printf("memcpy para m == 0\n");
-//			printf("tamanioBufferAux: %d\n", tamanioBufferAux);
-//			memcpy(bufferParaAlmacenarEnMemoria, bufferAux, tamanioBufferAux);
-//		}
-		printf("Se procede a liberar bufferAux\n");
-		free(bufferAux);
+		} else {
+			memcpy(bufferParaAlmacenarEnMemoria,&codigoAccion,sizeof(codigoAccion));
+			memcpy(bufferParaAlmacenarEnMemoria + sizeof(int32_t), &pedidoAlmacenar.pedidoBytes.pid,sizeof(pedidoAlmacenar.pedidoBytes.pid));
+			memcpy(bufferParaAlmacenarEnMemoria + sizeof(int32_t)*2, &pedidoAlmacenar.pedidoBytes.nroPagina,sizeof(pedidoAlmacenar.pedidoBytes.nroPagina));
+			memcpy(bufferParaAlmacenarEnMemoria + sizeof(int32_t)*3, &pedidoAlmacenar.pedidoBytes.offset,sizeof(pedidoAlmacenar.pedidoBytes.offset));
+			memcpy(bufferParaAlmacenarEnMemoria + sizeof(int32_t)*4, &pedidoAlmacenar.pedidoBytes.tamanio,sizeof(pedidoAlmacenar.pedidoBytes.tamanio));
+			memcpy(bufferParaAlmacenarEnMemoria + sizeof(int32_t)*5, pedidoAlmacenar.buffer, pedidoAlmacenar.pedidoBytes.tamanio);
+			posicionUltimoByteEscrito = tamanioBufferAux;
+		}
 
 	}
 
-	send(memoria, bufferParaAlmacenarEnMemoria, tamanioBufferParaMemoria,0);
+	int bytesEnviados = send(memoria, bufferParaAlmacenarEnMemoria, tamanioBufferParaMemoria,0);
 	int k;
 	for (k=0; k < m; k++){
 		recv(memoria, &resultAccion, sizeof(resultAccion), 0);
@@ -184,10 +181,17 @@ int obtener_tamanio_pagina(int memoria) {
 	return valorRecibido;
 }
 
-int paginas_que_ocupa(int unTamanio, int tamanioPagina) {
+int redondear(float numero) {
+		int resultado;
+		if((numero - (int)numero) !=0){
+			numero++;
+			resultado = (int) numero;
+		}else {
+			resultado = (int)numero;
+		}
 
-	int paginas;
-	paginas = (unTamanio / tamanioPagina);
+		printf("%d\n",resultado); /* prints !!!Hello World!!! */
+		return resultado;
 }
 
 void interactuar_con_usuario() {

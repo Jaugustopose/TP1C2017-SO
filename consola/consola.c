@@ -107,8 +107,12 @@ void connect_w(int cliente, struct sockaddr_in* direccionServidor) {
 void conectarConKernel(int socket) {
 
 	//Handshake
-	struct sockaddr_in direccionKernel = crearDireccionServidor(9050);
-	conectar_con_server(socket, &direccionKernel);
+			struct sockaddr_in direccionServ;
+				direccionServ.sin_family = AF_INET;
+				direccionServ.sin_port = htons(config.PUERTO_KERNEL); // short, Ordenación de bytes de la red
+				direccionServ.sin_addr.s_addr = inet_addr("127.0.0.1");
+				memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
+				connect(socket, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
 	send(socket,&identidad, sizeof(int),0);
 
 }
