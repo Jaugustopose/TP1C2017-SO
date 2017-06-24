@@ -65,7 +65,7 @@ char* convertirArchivoACodigo()
 
 			//free(linea);
 
-			largo = 0; //no se si es necesario... pero nunca sobra xD
+			largo = 0; //no se si es necesario... pero nunca sobra
 			lectura = getline(&linea, &largo, programa);
 		}
 
@@ -104,24 +104,24 @@ void connect_w(int cliente, struct sockaddr_in* direccionServidor) {
 	}
 }
 
-void conectarConKernel() {
+void conectarConKernel(int socket) {
 
 	//Handshake
-	dirKernel = crearDireccionParaCliente(config.PUERTO_KERNEL, config.IP_KERNEL);
-
-	kernel = socket_ws();
-	connect_w(kernel, &dirKernel);
-	send(kernel,&identidad, sizeof(int),0);
+			struct sockaddr_in direccionServ;
+				direccionServ.sin_family = AF_INET;
+				direccionServ.sin_port = htons(config.PUERTO_KERNEL); // short, Ordenación de bytes de la red
+				direccionServ.sin_addr.s_addr = inet_addr("127.0.0.1");
+				memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
+				connect(socket, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
+	send(socket,&identidad, sizeof(int),0);
 
 }
 
-void crearPrograma()
+void crearPrograma(param_programa parametrosCrearPrograma)
 {
 
-    int cliente = crearSocket();
-
-	pthread_t idHilo = pthread_self();
-	printf("Soy hilo: %d\n", idHilo);
+	//pthread_t idHilo = pthread_self();
+	//printf("Soy hilo: %d\n", idHilo);
 
 //	struct sockaddr_in direccionServidor; //Creo y configuro el servidor
 //	direccionServidor.sin_family = AF_INET;
@@ -133,15 +133,24 @@ void crearPrograma()
 //	}
 //
 //	send(cliente,&identidad, sizeof(int),0);
+	int accion = envioScript;
+	int longitudPrograma = strlen(parametrosCrearPrograma.programaACrear);
+	int tamanioBufferCrearPrograma = sizeof(int32_t)+sizeof(int32_t)+(strlen(parametrosCrearPrograma.programaACrear));
 
+	void* bufferCrearPrograma = malloc(tamanioBufferCrearPrograma);
+	memcpy(bufferCrearPrograma, &accion, sizeof(int32_t));
+	memcpy(bufferCrearPrograma + sizeof(int32_t), &longitudPrograma,sizeof(int32_t));
+	memcpy(bufferCrearPrograma + sizeof(int32_t)*2, parametrosCrearPrograma.programaACrear,strlen(parametrosCrearPrograma.programaACrear));
 
-
+	send(parametrosCrearPrograma.socket,bufferCrearPrograma,tamanioBufferCrearPrograma,0);
 	int pidRecibido;
-	recv(cliente, &pidRecibido, sizeof(int32_t), MSG_WAITALL);
-
-	list_add(&listaPIDs, pidRecibido);
+	recv(parametrosCrearPrograma.socket, &pidRecibido, sizeof(int32_t), 0);
 
 	printf("PID: %d\n", pidRecibido);
+
+	list_add(listaPIDs,&pidRecibido);
+
+
 }
 
 void limpiaMensajes()
@@ -158,26 +167,29 @@ void imprimeMenuUsuario()
 			puts("4: Limpiar Mensajes");
 }
 
-void pidePathAlUsuario()
+void* pidePathAlUsuario()
 {
-  printf("Ingresar archivo ansisop: \n");
-  scanf("%c", path);
+//  printf("Ingresar archivo ansisop: \n");
+//  scanf("%c", path);
 
   programa = fopen("/home/utnso/Escritorio/facil.ansisop","rb");
   if(programa == NULL){
-	  perror("No se encontro el archivo.\n");
+	  return NULL;
     }
   else
     {
-	  convertirArchivoACodigo();
+	  char* archivoTransformado = convertirArchivoACodigo();
+	  return archivoTransformado;
     }
-
 }
 
-void crearHiloPrograma()
+void crearHiloPrograma(int kernel, char* programaACrear)
 {
 	pthread_t unHilo;
-	pthread_create(&unHilo, NULL, (void*)crearPrograma);
+	param_programa parametrosCrearPrograma;
+	parametrosCrearPrograma.socket = kernel;
+	parametrosCrearPrograma.programaACrear = programaACrear;
+	pthread_create(&unHilo, NULL, (void*)crearPrograma,(void*) &parametrosCrearPrograma);
 }
 
 void atenderAcciones(char* accionRecibida){
@@ -222,7 +234,7 @@ void imprimirProgramasEnEjecucion(){
 	free(programasExec);
 }
 
-void escucharUsuario()
+void escucharUsuario(int kernel)
 {
 	 while(1){
 
@@ -236,14 +248,24 @@ void escucharUsuario()
 
 
 			switch (codAccion) {
+						char* programaSolicitado;
 						case iniciarPrograma:
 							//crea un hilo (programa)
-							pidePathAlUsuario();
-							printf("Iniciando!...\n");
-							crearHiloPrograma();
-							limpiaMensajes();
-							imprimeMenuUsuario();
-						break;
+							if ((programaSolicitado = pidePathAlUsuario()) == NULL){
+								puts("No se encontró el archivo\n");
+								break;
+							}else {
+								printf("Iniciando!...\n");
+								//crearHiloPrograma(kernel,programaSolicitado);
+
+								param_programa parametrosPrograma;
+								parametrosPrograma.socket = kernel;
+								parametrosPrograma.programaACrear = programaSolicitado;
+								crearPrograma(parametrosPrograma);
+								limpiaMensajes();
+								imprimeMenuUsuario();
+								break;
+							}
 
 						case finalizarPrograma:
 							//recibe un PID y mata ese hilo(programa) particular
@@ -263,11 +285,11 @@ void escucharUsuario()
 	 }
 }
 
-void escucharPedidosKernel()
+void escucharPedidosKernel(int socket)
 {
 	while (1) {
 			char* accionRecibida = malloc(sizeof(int));
-			recv(kernel, accionRecibida, sizeof(char), 0);
+			recv(socket, accionRecibida, sizeof(char), 0);
 			atenderAcciones(accionRecibida);
 			free(accionRecibida);
 		}
@@ -275,15 +297,17 @@ void escucharPedidosKernel()
 
 int main(void){
 
+	int kernel = socket_ws();
+
 	limpiaMensajes();
 
     cargarConfiguracion();
 
-    conectarConKernel();
+    conectarConKernel(kernel);
 
-    escucharUsuario();
+    escucharUsuario(kernel);
 
-    escucharPedidosKernel();
+   // escucharPedidosKernel(kernel); //Mal hecho, nunca entra por el while(1) del escucharUsuario
 
 	return EXIT_SUCCESS;
 }
