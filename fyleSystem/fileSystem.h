@@ -57,6 +57,8 @@ paths_t paths;
 configuracion_t config;
 metadata_t metadata;
 t_bitarray *bitmap;
+int sockServ; // Socket de conexion
+int sockClie; // Socket de escucha
 
 /*****************************PROTOTIPO*************/
 int validarArchivo(char *path);
