@@ -148,7 +148,7 @@ void crearPrograma(param_programa parametrosCrearPrograma)
 
 	printf("PID: %d\n", pidRecibido);
 
-	list_add(listaPIDs,&pidRecibido);
+	list_add(listaPIDs, pidRecibido);
 
 
 }
@@ -294,10 +294,15 @@ void escucharPedidosKernel(int socket)
 			free(accionRecibida);
 		}
 }
-
+void inicializarContexto()
+{
+	listaPIDs = list_create();
+}
 int main(void){
 
 	int kernel = socket_ws();
+
+	inicializarContexto();
 
 	limpiaMensajes();
 

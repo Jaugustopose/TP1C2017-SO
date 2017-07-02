@@ -471,9 +471,9 @@ int main(void) {
 	maxFd = sockServ;
 
 	//Crear hilo para interaccion por terminal
-	pthread_t hiloInteraccionUsuario;
-	pthread_create(&hiloInteraccionUsuario, NULL,
-			(void*) interactuar_con_usuario, NULL);
+	//pthread_t hiloInteraccionUsuario;
+	//pthread_create(&hiloInteraccionUsuario, NULL,
+	//		(void*) interactuar_con_usuario, NULL);
 
 	//Bucle principal
 	for (;;) {
