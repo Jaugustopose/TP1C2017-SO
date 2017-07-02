@@ -453,16 +453,16 @@ int main(void) {
 	listen_w(sockServ);
 
 	//Conectar con memoria
-//		int memoria = socket(AF_INET, SOCK_STREAM, 0);
-//		struct sockaddr_in direccionServ;
-//			direccionServ.sin_family = AF_INET;
-//			direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red
-//			direccionServ.sin_addr.s_addr = inet_addr("127.0.0.1");
-//			memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
-////		crearDireccionServidor(9030);
-////		conectar_con_server(memoria, &direccionServidor);
-//			connect(memoria, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
-//		tamanioPag = obtener_tamanio_pagina(memoria);
+		int memoria = socket(AF_INET, SOCK_STREAM, 0);
+		struct sockaddr_in direccionServ;
+			direccionServ.sin_family = AF_INET;
+			direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red
+			direccionServ.sin_addr.s_addr = inet_addr("127.0.0.1");
+			memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
+//		crearDireccionServidor(9030);
+//		conectar_con_server(memoria, &direccionServidor);
+			connect(memoria, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
+		tamanioPag = obtener_tamanio_pagina(memoria);
 
 	//Añadir listener al conjunto maestro
 	FD_SET(sockServ, &master);
