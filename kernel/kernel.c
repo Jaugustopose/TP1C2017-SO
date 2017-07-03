@@ -8,7 +8,7 @@ void cargarConfiguracion() {
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	string_append(&pat, "/Debug/kernel.cfg");
+	string_append(&pat, "/kernel.cfg");
 	configKernel = config_create(pat);
 	free(pat);
 

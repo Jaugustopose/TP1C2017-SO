@@ -61,11 +61,13 @@ t_PCB* crearPCB()
 
 t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo)
 {
+	printf("Crear proceso - init\n");
 	t_proceso* proceso;
 	proceso->PCB = crearPCB();
 	proceso->PCB->PID = pid;
 	proceso->ConsolaDuenio = consolaDuenio;
 	proceso->CpuDuenio = -1;
+	printf("Crear proceso - end\n");
 
 
 transformarCodigoToMetadata(proceso->PCB, codigo);

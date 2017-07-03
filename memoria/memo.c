@@ -32,6 +32,65 @@ void cargarConfigFile() {
 	}
 }
 
+/* Inicialización vector overflow. Cada posición tiene una lista enlazada que guarda números de frames.
+ * Se llenará a medida que haya colisiones correspondientes a esa posición del vector. */
+void inicializarOverflow(int cantidad_de_marcos) {
+	overflow = malloc(sizeof(t_list*) * cantidad_de_marcos);
+	int i;
+	for (i = 0; i < CANTIDAD_DE_MARCOS; ++i) { /* Una lista por frame */
+		overflow[i] = list_create();
+	}
+}
+
+/* Función Hash */
+unsigned int calcularPosicion(int pid, int num_pagina) {
+	char str1[20];
+	char str2[20];
+	sprintf(str1, "%d", pid);
+	sprintf(str2, "%d", num_pagina);
+	strcat(str1, str2);
+	unsigned int indice = atoi(str1) % CANTIDAD_DE_MARCOS;
+	return indice;
+}
+
+/* En caso de colisión, busca el siguiente frame en el vector de overflow.
+ * Retorna el número de frame donde se encuentra la página. */
+int32_t buscarEnOverflow(int32_t indice, int32_t pid, int32_t pagina) {
+	int32_t i = 0;
+	int32_t frame = -1;
+	for (i = 0; i < list_size(overflow[indice]); i++) {
+		if (esPaginaCorrecta((int32_t)list_get(overflow[indice], i), pid, pagina)) {
+			frame = (int32_t)list_get(overflow[indice], i);
+		}
+	}
+	return frame;
+}
+
+/* A implementar por el alumno. Devuelve 1 a fin de cumplir con la condición requerida en la llamada a la función */
+int esPaginaCorrecta(int pos_candidata, int pid, int pagina) {
+	return 1;
+}
+
+/* Agrega una entrada a la lista enlazada correspondiente a una posición del vector de overflow */
+void agregarSiguienteEnOverflow(int pos_inicial, int nro_frame) {
+	list_add(overflow[pos_inicial], nro_frame);
+}
+
+/* Elimina un frame de la lista enlazada correspondiente a una determinada posición del vector de overflow  */
+void borrarDeOverflow(int posicion, int frame) {
+	int i = 0;
+	int index_frame;
+
+	for (i = 0; i < list_size(overflow[posicion]); i++) {
+		if (frame == (int) list_get(overflow[posicion], i)) {
+			index_frame = i;
+			i = list_size(overflow[posicion]);
+		}
+	}
+
+	list_remove(overflow[posicion], index_frame);
+}
+
 void enviar_mensajes(int cliente, unsigned int length) {
 	while (1) {
 		char mensaje[length];
@@ -349,6 +408,8 @@ int main(void){
 	//Setea config_t config
 	cargarConfigFile();
 
+	/***********************************************************/
+
 	//Inicializacion tabla de páginas invertida
 	tablaPagina_t tablaPaginasInvertida[config.marcos];
 	tamanioTablaPagina = config.marcos * sizeof(tablaPagina_t);
@@ -375,6 +436,13 @@ int main(void){
 	printf("Tabla de páginas invertida inicializada\n");
 	//Fin inicialización tabla de páginas invertida
 
+	/***********************************************************/
+
+	//Inicialización Overflow Tabla Páginas
+	inicializarOverflow(config.marcos);
+
+	/***********************************************************/
+
 	//Inicialización memoria
 	tamanioMemoria = config.marco_size * config.marcos;
 	printf("Inicializando la memoria de %d bytes\n", tamanioMemoria);
@@ -384,9 +452,11 @@ int main(void){
 	//Fin inicialización memoria
 	printf("Memoria inicializada\n");
 
+	/***********************************************************/
+
 	struct sockaddr_in direccionServidor; // Información sobre mi dirección
 	struct sockaddr_in direccionCliente; // Información sobre la dirección del cliente
-	int addrlen; // El tamaño de la direccion del cliente
+	socklen_t addrlen; // El tamaño de la direccion del cliente
 	int sockServ; // Socket de nueva conexion aceptada
 	int sockClie; // Socket a la escucha
 	int cantBytesRecibidos;
@@ -427,7 +497,6 @@ int main(void){
 					pedidoSolicitudPaginas_t pedidoPaginas;
 					pedidoBytesMemoria_t pedidoBytes;
 					pedidoAlmacenarBytesMemoria_t pedidoAlmacenarBytes;
-//					char* bytesAEscribir;
 					char* bytesSolicitados;
 					int resultAccion;
 					int pidAFinalizar;
@@ -467,13 +536,12 @@ int main(void){
 						pedidoAlmacenarBytes.buffer = malloc (pedidoAlmacenarBytes.pedidoBytes.tamanio);
 
 						recv(sockClie, pedidoAlmacenarBytes.buffer,pedidoAlmacenarBytes.pedidoBytes.tamanio, 0);
-//						pedidoAlmacenarBytes.buffer = bytesAEscribir;
 						printf("Recibida solicitud de almacenar %d bytes para el pid %d en su página %d\n con un offset de %d\n",
 								pedidoAlmacenarBytes.pedidoBytes.tamanio,
 								pedidoAlmacenarBytes.pedidoBytes.pid,
 								pedidoAlmacenarBytes.pedidoBytes.nroPagina,
 								pedidoAlmacenarBytes.pedidoBytes.offset);
-						printf("Se procede a almacenar bytes: %s\n", pedidoAlmacenarBytes.buffer);
+						printf("Se procede a almacenar bytes: %s\n", (char*)pedidoAlmacenarBytes.buffer);
 						resultAccion = almacenarBytes(
 								pedidoAlmacenarBytes.pedidoBytes.pid,
 								pedidoAlmacenarBytes.pedidoBytes.nroPagina,
@@ -483,7 +551,6 @@ int main(void){
 								tablaPaginasInvertida);
 						printf("Solicitud de almacenar bytes terminó con resultado de acción: %d\n", resultAccion);
 						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
-//						free(bytesAEscribir);
 						free(pedidoAlmacenarBytes.buffer);
 						break;
 

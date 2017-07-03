@@ -29,6 +29,7 @@
 #include "cliente-servidor.h"
 #include <pthread.h>
 #include "gestionDeProcesos.h"
+#include "CapaMemoria.h"
 
 
 //Estructuras y enum
