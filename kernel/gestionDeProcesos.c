@@ -5,7 +5,7 @@ void transformarCodigoToMetadata(t_PCB* pcb, char* cod)
 
 {
 	t_metadata_program* metadata = metadata_desde_literal(cod);
-
+	pcb->contadorPrograma = metadata->instruccion_inicio;
 
 	    //Llena indice de codigo
 		int i;

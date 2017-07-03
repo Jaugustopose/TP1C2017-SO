@@ -191,7 +191,7 @@ void obtenerPCB()
 
 	//Deserializacion del PCB
 	pcbNuevo = malloc(sizeof(t_PCB));
-	deserializar_PCB(&pcbNuevo, bufferPCB);
+	deserializar_PCB(pcbNuevo, bufferPCB);
 
 	//Guardo variables como globales a CPU
 	stack = pcbNuevo->stackPointer;
@@ -481,14 +481,13 @@ void recibirOrdenes(char* accionRecibida)
 
 void esperarProgramas()
 {
-	char* accionRecibida;
+	int32_t accionRecibida;
 	ejecutar = true;
 
 		while (!finalizarEjecucion()) {
 
-			recv(kernel, accionRecibida, 1, MSG_WAITALL);
+			int bytes = recv(kernel, &accionRecibida, sizeof(int32_t), MSG_WAITALL);
 			recibirOrdenes(accionRecibida);
-			free(accionRecibida);
 		}
 }
 
@@ -500,8 +499,8 @@ int main(void){
 	inicializarContexto();
 	conectarConKernel();
 
-    conectarConMemoria();
-    tamanioPaginas = obtener_tamanio_pagina(memoria);
+   // conectarConMemoria();
+   // tamanioPaginas = obtener_tamanio_pagina(memoria);
 
   //PARA PRUEBAS SOLO:pedirSentencia();
    esperarProgramas();

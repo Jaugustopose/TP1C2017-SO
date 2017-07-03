@@ -74,6 +74,8 @@ void inicializarContexto() {
 	tablaCompartidas = dictionary_create();
 	crearSemaforos();
 	crearCompartidas();
+
+	colaCPU = queue_create();
 }
 
 int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
@@ -255,6 +257,7 @@ void Colocar_en_respectivo_fdset() {
 
 	case soyCPU:
 		FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
+		queue_push(colaCPU, sockClie);
 		break;
 		printf("Se ha conectado un nuevo CPU  \n");
 	}
@@ -288,6 +291,10 @@ void conexion_de_cliente_finalizada() {
 	}
 	close(fdCliente); // Si se perdio la conexion, la cierro.
 }
+void enviarPCBaCPU(t_PCB* pcb, int cpu, int32_t accion)
+{
+	serializar_PCB(pcb, cpu, accion);
+}
 
 void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMensaje) {
 	if (config.GRADO_MULTIPROG > list_size(listaDeProcesos)) {
@@ -304,6 +311,9 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 		identificadorProceso++;
 		t_proceso* proceso = crearProceso(identificadorProceso, consola, (char*) buff);
 		list_add(listaDeProcesos, &proceso); //Agregar un proceso a esa bendita lista
+
+
+
 		send(consola,&identificadorProceso,sizeof(int32_t),0);
 		//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
 		int paginasASolicitar = redondear((float) tamanioScript /(float) tamanioPag) + config.STACK_SIZE;
@@ -318,6 +328,11 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 				//queue_pop(colaNew);
 				//queue_push(colaReady, &proceso);
 			}
+
+			//EnviarPCBaCPU
+			int cpu = queue_pop(colaCPU);
+			proceso->PCB->cantidadPaginas = paginasASolicitar -config.STACK_SIZE;
+			enviarPCBaCPU(proceso->PCB, cpu, accionObtenerPCB);
 		}
 	}else{
 		printf("El proceso no pudo ingresar a la cola de New ya que excede el grado de multiprogramacion\n");
