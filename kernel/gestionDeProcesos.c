@@ -46,7 +46,7 @@ void transformarCodigoToMetadata(t_PCB* pcb, char* cod)
 
 t_PCB* crearPCB()
 {
-	t_PCB* pcb;
+	t_PCB* pcb = malloc(sizeof(t_PCB));
 
 	pcb->PID=0;
 	pcb->contadorPrograma = 0;
@@ -61,8 +61,9 @@ t_PCB* crearPCB()
 
 t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo)
 {
+
 	printf("Crear proceso - init\n");
-	t_proceso* proceso;
+	t_proceso* proceso = malloc(sizeof(t_PCB));
 	proceso->PCB = crearPCB();
 	proceso->PCB->PID = pid;
 	proceso->ConsolaDuenio = consolaDuenio;
@@ -70,13 +71,7 @@ t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo)
 	printf("Crear proceso - end\n");
 
 
-transformarCodigoToMetadata(proceso->PCB, codigo);
-
+	transformarCodigoToMetadata(proceso->PCB, codigo);
 
 	return proceso;
 }
-
-
-
-
-

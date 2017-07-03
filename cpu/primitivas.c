@@ -318,22 +318,32 @@ void retornar(t_valor_variable unaVariable)
 
 void wait(t_nombre_semaforo identificador_semaforo)
 {
+    int codigoAccion = accionWait;
+    enviarTamanioYString(codigoAccion, kernel, identificador_semaforo);
 
 }
 
 void signal(t_nombre_semaforo identificador_semaforo)
 {
+	int codigoAccion = accionSignal;
+	enviarTamanioYString(codigoAccion, kernel, identificador_semaforo);
 
 }
 
 t_puntero reservar(t_valor_variable espacio)
 {
+	int codigoAccion = accionReservarHeap;
+	char* espacioSerial = intToChar4(espacio);
+	send(kernel, espacioSerial, sizeof(int), 0);
 
+	//TODO:recv del puntero
 }
 
 void liberar(t_puntero puntero)
 {
-
+	int codigoAccion = accionLiberarHeap;
+	char* punteroSerial = intToChar4(puntero);
+	send(kernel, punteroSerial, sizeof(int), 0);
 }
 
 t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)

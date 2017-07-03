@@ -423,13 +423,13 @@ void parsear(char* sentencia)
 void pedirSentencia()
 {
 	//Recibe del nucleo el quantum
-	recibirQuantumSleep();
+	//recibirQuantumSleep();
 
 	if(!finalizarEjecucion()){
 
 			int tamanio;
 			//Espera este tiempo antes de empezar con la proxima sentencia
-			usleep(quantumSleep*1000);
+			//usleep(quantumSleep*1000);
 			sentenciaPedida = string_new();
 			obtenerSentencia(&tamanio);
 
@@ -496,18 +496,15 @@ int main(void){
 
 	identidadCpu = SOYCPU;
 	cargarConfiguracion();
-	//inicializarPrimitivas();
-	//inicializarContexto();
+	inicializarPrimitivas();
+	inicializarContexto();
 	conectarConKernel();
 
-	asignar_valor_compartida("tiempo3", 29);
-	obtener_valor_compartida("tiempo3");
+    conectarConMemoria();
+    tamanioPaginas = obtener_tamanio_pagina(memoria);
 
-   // conectarConMemoria();
-    //tamanioPaginas = obtener_tamanio_pagina(memoria);
-
-
-  //  esperarProgramas();
+  //PARA PRUEBAS SOLO:pedirSentencia();
+   esperarProgramas();
    // destruirLogs();
 
 	return EXIT_SUCCESS;

@@ -58,6 +58,10 @@ typedef struct t_semaforo {
 t_config* configKernel;
 config_t config;
 
+typedef enum t_proceso_estado {
+	NEW, READY, EXEC, BLOCK, EXIT
+}t_proceso_estado;
+
 //VARIABLES
 
 fd_set master; // Conjunto maestro de file descriptor (Donde me voy a ir guardando todos los socket nuevos)
@@ -84,8 +88,10 @@ t_queue* colaNew;
 t_queue* colaReady;
 t_queue* colaExec;
 t_queue* colaExit;
+t_queue* colaCPU;
 t_dictionary* tablaCompartidas;
 t_dictionary* tablaSemaforos;
+
 
 
 

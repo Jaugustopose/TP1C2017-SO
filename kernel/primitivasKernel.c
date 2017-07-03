@@ -41,23 +41,6 @@ void imprimir()
 
 }
 
-void recibirPedidoMemoria(int tamanioSolicitud, int pidSolicitante)
-{
-	if(peticion_valida(tamanioSolicitud))
-	{
-		//pedido a memoria de una pagina: cantpaginas = 1, pidSolicitante
-		//recibe respuesta
-	//	crearPagina(pidSolicitante, tamanioSolicitud);
-
-
-	}else
-	{
-		//finalizar programa abruptamente por exceder tamanio del pedido
-	}
-}
-
-
-
 void obtenerValorCompartida()
 {
 	char* compartidaSerial = leerTamanioYMensaje(fdCliente);
@@ -76,6 +59,7 @@ void obtenerValorCompartida()
 
 	//clientes[fdCliente].atentido=false;
 }
+
 void obtenerAsignarCompartida(){
 	char* compartidaSerial = leerTamanioYMensaje(fdCliente);
 	char* compartida = string_from_format("!%s",compartidaSerial);
@@ -95,6 +79,7 @@ void obtenerAsignarCompartida(){
 	free(compartidaSerial);
 	free(valor);
 }
+
 int devolverCompartida(char* compartida) {
 	if (dictionary_has_key(tablaCompartidas,compartida))
 	{
@@ -113,5 +98,31 @@ void asignarCompartida(char* compartida, int valor) {
 	}
 	else{
 		//ERROR: Se solicito asignar un valor a  una compartida inexistente
+	}
+}
+
+void primitivaReservar(int espacioSolicitado)
+{
+//TODO:IMPLEMENTAR MANEJO HEAP
+
+}
+
+void primitivaLiberar(int puntero)
+{
+//TODO:IMPLEMENTAR MANEJO HEAP
+}
+
+void recibirPedidoMemoria(int tamanioSolicitud, int pidSolicitante)
+{
+	if(peticion_valida(tamanioSolicitud))
+	{
+		//pedido a memoria de una pagina: cantpaginas = 1, pidSolicitante
+		//recibe respuesta
+	//	crearPagina(pidSolicitante, tamanioSolicitud);
+
+
+	}else
+	{
+		//finalizar programa abruptamente por exceder tamanio del pedido
 	}
 }
