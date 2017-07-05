@@ -60,6 +60,14 @@ t_PCB* crearPCB()
 	return pcb;
 }
 
+void stack_PCB_main(t_PCB* pcb){
+
+	//Mete el contexto de la funcion main al stack
+	t_elemento_stack* main = stack_elemento_crear();
+	main->pos = 0;
+	stack_push(pcb->stackPointer, main);
+}
+
 t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo)
 {
 	t_proceso* proceso = malloc(sizeof(t_PCB));
@@ -68,8 +76,9 @@ t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo)
 	proceso->ConsolaDuenio = consolaDuenio;
 	proceso->CpuDuenio = -1;
 
-
 	transformarCodigoToMetadata(proceso->PCB, codigo);
+
+	stack_PCB_main(proceso->PCB);
 
 	return proceso;
 }

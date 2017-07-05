@@ -11,6 +11,7 @@
 #include <string.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <commons/log.h>
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/collections/dictionary.h>

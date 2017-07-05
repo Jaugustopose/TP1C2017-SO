@@ -50,6 +50,7 @@ config_t config;
 char* memoria;
 int tamanioMemoria;
 int tamanioTablaPagina;
+int stack_size;//lo recibe del kernel
 //t_list* listaProcesosActivos;
 
 enum accionConsolaMemoria {

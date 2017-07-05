@@ -259,18 +259,21 @@ int almacenarBytes(int pid, int nroPagina, int offset, int tamanio, void* buffer
 }
 
 int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tablaPaginasInvertida) {
+
+	int cantRealPaginasSolicitadas = cantPaginasSolicitadas + stack_size;
+
 	int i;
 	int j = 0;
-	int marcosLibres[cantPaginasSolicitadas];
+	int marcosLibres[cantRealPaginasSolicitadas];
 
 	//Inicializamos array marcosLibres (podría no hacerse. Es por el warning de "unused")
-	for (i = 0; i < cantPaginasSolicitadas; i++) {
+	for (i = 0; i < cantRealPaginasSolicitadas; i++) {
 		marcosLibres[i] = -1;
 	}
 
 	//TODO SEMAFORO DESDE ACÁ
 	//Recorro la memoria hasta que se termine o la cantidad de marcos libres encontrados satisfaga el pedido
-	for (i = 0; i < config.marcos && j < cantPaginasSolicitadas; ++i) {
+	for (i = 0; i < config.marcos && j < cantRealPaginasSolicitadas; ++i) {
 		//Si el pid es menor a -1 significa que está libre (por la inicialización)
 		if (tablaPaginasInvertida[i].pid < -1) {
 			marcosLibres[j] = i;
@@ -279,14 +282,14 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 	}
 
 	//¿Se puede satisfacer el pedido?
-	if (j < cantPaginasSolicitadas) {
+	if (j < cantRealPaginasSolicitadas) {
 		perror("El número de páginas solicitadas supera el número de disponibles");
 		return -11;
 	} else {
 		/* Los marcos libres que encontré previamente y guardé en el array marcosLibres
 		 * los uso para asignar al pid en tablaPaginasInvertida
 		 */
-		for (i = 0; i < cantPaginasSolicitadas; i++) {
+		for (i = 0; i < cantRealPaginasSolicitadas; i++) {
 			tablaPaginasInvertida[ marcosLibres[i] ].pid = pid;
 			tablaPaginasInvertida[ marcosLibres[i] ].nroPagina = i;
 		}
@@ -456,6 +459,11 @@ void atenderHilo(paramHiloDedicado* parametros)
 						case obtenerTamanioPaginas:
 							send(parametros->socketClie, &config.marco_size, sizeof(int32_t),0);
 							break;
+
+						case accionEnviarStackSize:
+							 recv(parametros->socketClie, &stack_size, sizeof(int32_t),0);
+							 printf("Recibido tamanio dle stack = %d\n", stack_size);
+							 break;
 
 						default:
 							printf("No reconozco el código de acción\n");
