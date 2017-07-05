@@ -9,11 +9,12 @@ void transformarCodigoToMetadata(t_PCB* pcb, char* cod)
 
 	    //Llena indice de codigo
 		int i;
+		t_sentencia* sentencia;
 		for (i = 0; i < metadata->instrucciones_size; i++) {
-				t_sentencia sentencia;
-				sentencia.inicio = metadata->instrucciones_serializado[i].start;
-				sentencia.fin = sentencia.inicio + metadata->instrucciones_serializado[i].offset;
-				list_add(pcb->indiceCodigo, &sentencia);
+				sentencia = malloc(sizeof(t_sentencia));
+				sentencia->inicio = metadata->instrucciones_serializado[i].start;
+				sentencia->fin = sentencia->inicio + metadata->instrucciones_serializado[i].offset;
+				list_add(pcb->indiceCodigo, sentencia);
 			}
 
 		//Llena indice de etiquetas
@@ -33,8 +34,8 @@ void transformarCodigoToMetadata(t_PCB* pcb, char* cod)
 					i = i + sizeof(int);
 					longitud = 0;
 
-					free(etiqueta);
-					free(salto);
+					//free(etiqueta);
+					//free(salto);
 
 				} else
 					longitud++;

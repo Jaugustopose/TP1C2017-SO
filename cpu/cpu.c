@@ -268,19 +268,24 @@ void enviarSolicitudBytes(int pid, int pagina, int offset, int size) {
 	pedido.offset = offset;
 	pedido.tamanio = size;
 
-	char* solicitud = string_new();
+	void* solicitud = malloc(sizeof(int) + sizeof(t_pedido));
 
-	int tamanio = serializar_pedido_bytes(solicitud, pedido);
-	send(memoria, solicitud, tamanio , 0);
+	int codAccion = solicitarBytesAccion;
+	memcpy(solicitud, &codAccion, sizeof(codAccion));
+	memcpy(solicitud + sizeof(codAccion), &pedido, sizeof(pedidoBytesMemoria_t));
+	int tamanio = sizeof(codAccion) + sizeof(pedidoBytesMemoria_t);
+	//int tamanio = serializar_pedido_bytes(solicitud, pedido);
+
+	send(memoria, solicitud, tamanio, 0);
 
 	char* stackOverflow = malloc(sizeof(int));
 	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), 0);
 	overflow = char4ToInt(stackOverflow);
     free(stackOverflow);
 
-	if (hayOverflow()) {
+	//if (hayOverflow()) {
 		overflowException(overflow);
-	}
+	//}
     free(solicitud);
 
 }
@@ -328,7 +333,7 @@ void recibirPedazoDeSentencia(int size){
 
 void pedirPrimeraSentencia(t_sentencia* sentenciaRelativa, int pagina, int* longitudRestante) {
 
-if (!hayOverflow()) {
+//if (!hayOverflow()) {
 	 int tamanioPrimeraSentencia = minimo(*longitudRestante, tamanioPaginas - sentenciaRelativa->inicio);
 
 //	 char* accion = (int)solicitarBytesAccion;
@@ -339,7 +344,7 @@ if (!hayOverflow()) {
 	(*longitudRestante) -= tamanioPrimeraSentencia;
 
 	recibirPedazoDeSentencia(tamanioPrimeraSentencia);
- }
+ //}
 }
 
 void pedirPaginaCompleta(int nroPagina) {
@@ -354,9 +359,6 @@ void pedirPaginaCompleta(int nroPagina) {
 
 void pedirUltimaSentencia(t_sentencia* sentenciaRelativa, int pagina, int longitudRestante) {
 
-//	char* accion = (char*)solicitarBytesAccion;
-//	send(memoria, accion, sizeof(accion), 0);
-//	free(accion);
 	enviarSolicitudBytes(pcbNuevo->PID, pagina, 0, longitudRestante);
 	recibirPedazoDeSentencia(longitudRestante);
 
@@ -389,7 +391,7 @@ void obtenerSentencia(int* tamanio)
 		paginaAPedir++;
 	}
 
-	free(sentenciaRelativa);
+	//free(sentenciaRelativa);
 
 }
 
@@ -433,10 +435,10 @@ void pedirSentencia()
 			sentenciaPedida = string_new();
 			obtenerSentencia(&tamanio);
 
-			if(!hayOverflow()){
+		//	if(!hayOverflow()){
 				parsear(sentenciaPedida);
 				free(sentenciaPedida);
-			}
+		//	}
 		}
 
 }
@@ -450,6 +452,8 @@ void recibirOrdenes(char* accionRecibida)
 			overflow = false;
 			lanzarOverflowExep = false;
 			obtenerPCB();
+			//A MODO DE PRUEBA NOMAS, QUITAR LUEGO
+			pedirSentencia();
 			break;
 
 		case accionContinuarProceso: //Obtener y parsear sentencias
@@ -491,6 +495,15 @@ void esperarProgramas()
 		}
 }
 
+int obtenerTamanioPagina(int memoria) {
+	int valorRecibido;
+	int idMensaje = 6;
+	send(memoria, &idMensaje, sizeof(int32_t), 0);
+	recv(memoria, &valorRecibido, sizeof(int32_t), 0);
+
+	return valorRecibido;
+}
+
 int main(void){
 
 	identidadCpu = SOYCPU;
@@ -498,10 +511,9 @@ int main(void){
 	inicializarPrimitivas();
 	inicializarContexto();
 	conectarConKernel();
-
-   // conectarConMemoria();
-   // tamanioPaginas = obtener_tamanio_pagina(memoria);
-
+    conectarConMemoria();
+    //tamanioPaginas = obtenerTamanioPagina(memoria);
+   tamanioPaginas = 32;
   //PARA PRUEBAS SOLO:pedirSentencia();
    esperarProgramas();
    // destruirLogs();

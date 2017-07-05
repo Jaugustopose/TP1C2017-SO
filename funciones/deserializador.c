@@ -84,7 +84,7 @@ int deserializar_stack_elem(t_elemento_stack* elemStack, char* origen) {
 
 	desplazamiento += deserializar_int(&elemStack->pos, origen + desplazamiento);
 	desplazamiento += deserializar_lista(elemStack->argumentos, origen + desplazamiento, sizeof(t_pedido));
-	//desplazamiento += deserializar_dictionary(elemStack->identificadores, origen + desplazamiento, sizeof(t_pedido));
+	desplazamiento += deserializar_diccionario(elemStack->identificadores, origen + desplazamiento, sizeof(t_pedido));
 	desplazamiento += deserializar_t_puntero(&elemStack->posRetorno, origen + desplazamiento);
 	desplazamiento += deserializar_pedido(&(elemStack->valRetorno), origen + desplazamiento);
 

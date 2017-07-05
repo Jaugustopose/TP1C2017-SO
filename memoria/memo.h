@@ -20,6 +20,9 @@
 #include <stdbool.h>
 #include "estructurasCompartidas.h"
 
+
+
+
 typedef struct configMemo {
 	char* ip_kernel;
 	int puerto_kernel;
@@ -60,10 +63,16 @@ enum accionConsolaMemoria {
 	sizePid = 8
 };
 
+typedef struct parametrosHiloDedicado{
+	int socketClie;
+	tablaPagina_t* tablaPaginasInvertida;
+}paramHiloDedicado;
+
 //Prototipos
 void cargarConfigFile();
 void crearMemoria();
 void inicializarMemoria();
 void inicializarTablaDeFrames();
+
 
 #endif /* MEMO_H_ */
