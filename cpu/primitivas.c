@@ -57,6 +57,14 @@ void enviarDireccionAMemoria(t_puntero direccion) {
 
 	enviarSolicitudBytes(pid, pagina, offset, size);
 }
+void enviar_direccion_y_valor_a_Memoria(t_puntero direccion, t_valor_variable valor) {
+	int pagina = (int)(direccion/tamanioPaginas) + cantidadPagCodigo; //Agrego el desplazamiento por las paginas ya ocupadas por el codigo
+	int offset = direccion % tamanioPaginas;
+	int size = sizeof(int);
+	int pid = pcbNuevo->PID;
+
+	enviarAlmacenarBytes(pid, pagina, offset, size, valor);
+}
 
 /******************************* PRIMITIVAS ******************************/
 
@@ -155,25 +163,11 @@ t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 
 void asignar(t_puntero direccion_variable, t_valor_variable valor)
 {
-	//Manda codigo de accion
-	char* accion = (char*)almacenarBytesAccion;
-	send(memoria, accion, sizeof(accion), 0);
-
 	//Manda pedido a memoria
-	enviarDireccionAMemoria(direccion_variable);
+	enviar_direccion_y_valor_a_Memoria(direccion_variable, valor);
 
-	//if(!hayOverflow()){
+	loggearFinDePrimitiva("asignar");
 
-		//Revisar si es necesario serializar el int
-		char* valorSerializado = intToChar4(valor);
-		send(memoria, valorSerializado, sizeof(t_valor_variable), 0);
-
-		loggearFinDePrimitiva("asignar");
-
-		free(valorSerializado);
-//	}else{
-//		overflowException(overflow);
-//	}
 	return;
 }
 

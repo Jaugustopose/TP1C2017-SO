@@ -290,6 +290,40 @@ void enviarSolicitudBytes(int pid, int pagina, int offset, int size) {
 
 }
 
+void enviarAlmacenarBytes(int pid, int pagina, int offset, int size, t_valor_variable valor) {
+
+	pedidoBytesMemoria_t sub_pedido;
+	sub_pedido.pid = pid;
+	sub_pedido.nroPagina = pagina;
+	sub_pedido.offset = offset;
+	sub_pedido.tamanio = size;
+
+	pedidoAlmacenarBytesMemoria_t pedido;
+	pedido.pedidoBytes = sub_pedido;
+	pedido.buffer = malloc(sizeof(sub_pedido.tamanio));
+	pedido.buffer = valor;
+
+	void* solicitud = malloc(sizeof(int) + sizeof(pedidoAlmacenarBytesMemoria_t));
+
+	int codAccion = almacenarBytesAccion;
+	memcpy(solicitud, &codAccion, sizeof(codAccion));
+	memcpy(solicitud + sizeof(codAccion), &pedido, sizeof(pedidoAlmacenarBytesMemoria_t));
+	int tamanio = sizeof(codAccion) + sizeof(pedidoAlmacenarBytesMemoria_t);
+
+	send(memoria, solicitud, tamanio, 0);
+
+	char* stackOverflow = malloc(sizeof(int));
+	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), 0);
+	overflow = char4ToInt(stackOverflow);
+    free(stackOverflow);
+
+	//if (hayOverflow()) {
+		overflowException(overflow);
+	//}
+    free(solicitud);
+
+}
+
 t_sentencia* obtenerSentenciaRelativa(int* paginaInicioSentencia) {
 
 	t_sentencia* sentenciaAbsoluta = list_get(pcbNuevo->indiceCodigo, pcbNuevo->contadorPrograma);
