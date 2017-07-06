@@ -128,7 +128,7 @@ t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 		//manda pedidoa memoria
 		enviarDireccionAMemoria(direccion_variable);
 
-		if(!hayOverflow()){
+	//	if(!hayOverflow()){
 
 			//recibe valor de memoria
 			char* bufferValor = malloc(sizeof(int));
@@ -147,10 +147,10 @@ t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 
 			return valor;
 
-		}
-		else{
-			return overflowException(overflow);
-		}
+//		}
+//		else{
+//			return overflowException(overflow);
+//		}
 }
 
 void asignar(t_puntero direccion_variable, t_valor_variable valor)
@@ -162,7 +162,7 @@ void asignar(t_puntero direccion_variable, t_valor_variable valor)
 	//Manda pedido a memoria
 	enviarDireccionAMemoria(direccion_variable);
 
-	if(!hayOverflow()){
+	//if(!hayOverflow()){
 
 		//Revisar si es necesario serializar el int
 		char* valorSerializado = intToChar4(valor);
@@ -171,9 +171,9 @@ void asignar(t_puntero direccion_variable, t_valor_variable valor)
 		loggearFinDePrimitiva("asignar");
 
 		free(valorSerializado);
-	}else{
-		overflowException(overflow);
-	}
+//	}else{
+//		overflowException(overflow);
+//	}
 	return;
 }
 

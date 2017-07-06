@@ -28,6 +28,8 @@
 t_log *logger;
 t_log *debugLogger;
 
+bool termina;
+
 //GLOBALES
 int identidadCpu;
 struct sockaddr_in dirKernel;

@@ -464,6 +464,13 @@ void destruirSemaforos() {
 	dictionary_destroy_and_destroy_elements(tablaSemaforos, destruirSemaforo);
 }
 
+void planificar()
+{
+//	int codAccion = accionContinuarProceso;
+//	int cpu = (int)queue_pop(colaCPU);
+//	send(cpu, &codAccion, sizeof(codAccion), 0);
+}
+
 /************************************** MAIN ****************************************************************/
 
 int main(void) {
@@ -556,6 +563,10 @@ int main(void) {
 				}
 			}
 		}
+
+
+		//TODO:Hay que desarrollar la planificacion, pero por ahora es lo basico
+		planificar();
 	}
 	return 0;
 }

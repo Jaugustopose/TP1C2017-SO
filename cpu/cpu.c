@@ -412,12 +412,13 @@ void parsear(char* sentencia)
 	//Le paso sentencia, set de primitivas de CPU y set de primitivas de kernel
 	analizadorLinea(sentencia, &funciones, &funcionesKernel);
 
-
-	char* accionEnviar = (char*)accionFinInstruccion;
-	send(kernel, accionEnviar, 1, 0);
-	free(accionEnviar);
+	//TODO:DESCOMENTAR LUEGO
+//	char* accionEnviar = (char*)accionFinInstruccion;
+//	send(kernel, accionEnviar, 1, 0);
+//	free(accionEnviar);
 
 	}else{
+		termina = true;
 		  finalizarProceso(true);
 	}
 }
@@ -453,7 +454,11 @@ void recibirOrdenes(char* accionRecibida)
 			lanzarOverflowExep = false;
 			obtenerPCB();
 			//A MODO DE PRUEBA NOMAS, QUITAR LUEGO
-			pedirSentencia();
+			termina = false;
+			while(!termina)
+			{
+				pedirSentencia();
+			}
 			break;
 
 		case accionContinuarProceso: //Obtener y parsear sentencias
