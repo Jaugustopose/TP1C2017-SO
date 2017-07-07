@@ -4,7 +4,7 @@ void cargarConfigFile() {
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	string_append(&pat, "/memo.cfg");
+	string_append(&pat, "/Debug/memo.cfg");
 	t_config* configMemo = config_create(pat);
 	if (config_has_property(configMemo, "PUERTO_KERNEL")) {
 		config.puerto_kernel = config_get_int_value(configMemo, "PUERTO_KERNEL");
@@ -259,18 +259,21 @@ int almacenarBytes(int pid, int nroPagina, int offset, int tamanio, void* buffer
 }
 
 int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tablaPaginasInvertida) {
+
+	int cantRealPaginasSolicitadas = cantPaginasSolicitadas + stack_size;
+
 	int i;
 	int j = 0;
-	int marcosLibres[cantPaginasSolicitadas];
+	int marcosLibres[cantRealPaginasSolicitadas];
 
 	//Inicializamos array marcosLibres (podría no hacerse. Es por el warning de "unused")
-	for (i = 0; i < cantPaginasSolicitadas; i++) {
+	for (i = 0; i < cantRealPaginasSolicitadas; i++) {
 		marcosLibres[i] = -1;
 	}
 
 	//TODO SEMAFORO DESDE ACÁ
 	//Recorro la memoria hasta que se termine o la cantidad de marcos libres encontrados satisfaga el pedido
-	for (i = 0; i < config.marcos && j < cantPaginasSolicitadas; ++i) {
+	for (i = 0; i < config.marcos && j < cantRealPaginasSolicitadas; ++i) {
 		//Si el pid es menor a -1 significa que está libre (por la inicialización)
 		if (tablaPaginasInvertida[i].pid < -1) {
 			marcosLibres[j] = i;
@@ -279,14 +282,14 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 	}
 
 	//¿Se puede satisfacer el pedido?
-	if (j < cantPaginasSolicitadas) {
+	if (j < cantRealPaginasSolicitadas) {
 		perror("El número de páginas solicitadas supera el número de disponibles");
 		return -11;
 	} else {
 		/* Los marcos libres que encontré previamente y guardé en el array marcosLibres
 		 * los uso para asignar al pid en tablaPaginasInvertida
 		 */
-		for (i = 0; i < cantPaginasSolicitadas; i++) {
+		for (i = 0; i < cantRealPaginasSolicitadas; i++) {
 			tablaPaginasInvertida[ marcosLibres[i] ].pid = pid;
 			tablaPaginasInvertida[ marcosLibres[i] ].nroPagina = i;
 		}
@@ -344,6 +347,134 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	}
 }
 
+void atenderHilo(paramHiloDedicado* parametros)
+{
+	int cantBytesRecibidos;
+	for (;;) {
+					// Gestionar datos de un cliente. Recibimos el código de acción que quiere realizar.
+					int codAccion;
+					if ((cantBytesRecibidos = recv(parametros->socketClie, &codAccion, sizeof(codAccion), 0)) <= 0) {
+						// error o conexión cerrada por el cliente
+						if (cantBytesRecibidos == 0) {
+							// conexión cerrada
+							printf("Server: socket %d termino la conexion\n", parametros->socketClie);
+							close(parametros->socketClie);
+							break;
+						} else {
+							perror("Se ha producido un error en el Recv");
+							break;
+						}
+					} else {
+						printf("He recibido %d bytes con la acción: %d\n", cantBytesRecibidos, codAccion);
+						pedidoSolicitudPaginas_t pedidoPaginas;
+						pedidoBytesMemoria_t pedidoBytes;
+						pedidoAlmacenarBytesMemoria_t pedidoAlmacenarBytes;
+	//					char* bytesAEscribir;
+						char* bytesSolicitados;
+						int resultAccion;
+						int pidAFinalizar;
+
+						switch (codAccion) {
+
+						case inicializarProgramaAccion:
+							recv(parametros->socketClie, &pedidoPaginas, sizeof(pedidoPaginas), 0);
+							printf("Recibida solicitud de %d páginas para el pid %d\n", pedidoPaginas.cantidadPaginas, pedidoPaginas.pid);
+							printf("Se procede a inicializar programa\n");
+							resultAccion = inicializarPrograma(pedidoPaginas.pid,
+									pedidoPaginas.cantidadPaginas,
+									parametros->tablaPaginasInvertida);
+							printf("Inicializar programa en Memoria terminó con resultado de acción: %d\n", resultAccion);
+							send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
+							break;
+
+						case solicitarPaginasAccion:
+							recv(parametros->socketClie, &pedidoPaginas, sizeof(pedidoPaginas), 0);
+							printf("Recibida solicitud de %d páginas para el pid %d\n", pedidoPaginas.cantidadPaginas, pedidoPaginas.pid);
+							printf("Se procede a solicitar páginas del programa\n");
+							resultAccion = solicitarAsignacionPaginas(
+									pedidoPaginas.pid,
+									pedidoPaginas.cantidadPaginas,
+									parametros->tablaPaginasInvertida);
+							printf("Solicitar páginas adicionales terminó con resultado de acción: %d\n", resultAccion);
+							send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
+							break;
+
+						case almacenarBytesAccion:
+							recv(parametros->socketClie, &pedidoAlmacenarBytes.pedidoBytes.pid, sizeof(pedidoAlmacenarBytes.pedidoBytes.pid), 0);
+							recv(parametros->socketClie, &pedidoAlmacenarBytes.pedidoBytes.nroPagina, sizeof(pedidoAlmacenarBytes.pedidoBytes.nroPagina), 0);
+							recv(parametros->socketClie, &pedidoAlmacenarBytes.pedidoBytes.offset, sizeof(pedidoAlmacenarBytes.pedidoBytes.offset), 0);
+							recv(parametros->socketClie, &pedidoAlmacenarBytes.pedidoBytes.tamanio, sizeof(pedidoAlmacenarBytes.pedidoBytes.tamanio), 0);
+
+
+							pedidoAlmacenarBytes.buffer = malloc (pedidoAlmacenarBytes.pedidoBytes.tamanio);
+
+							recv(parametros->socketClie, pedidoAlmacenarBytes.buffer,pedidoAlmacenarBytes.pedidoBytes.tamanio, 0);
+	//						pedidoAlmacenarBytes.buffer = bytesAEscribir;
+							printf("Recibida solicitud de almacenar %d bytes para el pid %d en su página %d\n con un offset de %d\n",
+									pedidoAlmacenarBytes.pedidoBytes.tamanio,
+									pedidoAlmacenarBytes.pedidoBytes.pid,
+									pedidoAlmacenarBytes.pedidoBytes.nroPagina,
+									pedidoAlmacenarBytes.pedidoBytes.offset);
+							printf("Se procede a almacenar bytes: %s\n", pedidoAlmacenarBytes.buffer);
+							resultAccion = almacenarBytes(
+									pedidoAlmacenarBytes.pedidoBytes.pid,
+									pedidoAlmacenarBytes.pedidoBytes.nroPagina,
+									pedidoAlmacenarBytes.pedidoBytes.offset,
+									pedidoAlmacenarBytes.pedidoBytes.tamanio,
+									pedidoAlmacenarBytes.buffer,
+									parametros->tablaPaginasInvertida);
+							printf("Solicitud de almacenar bytes terminó con resultado de acción: %d\n", resultAccion);
+							send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
+	//						free(bytesAEscribir);
+							free(pedidoAlmacenarBytes.buffer);
+							break;
+
+						case solicitarBytesAccion:
+							recv(parametros->socketClie, &pedidoBytes, sizeof(pedidoBytes), 0);
+							printf("Recibida solicitud de %d bytes para el pid %d en su página %d\n con un offset de %d\n",
+									pedidoBytes.tamanio,
+									pedidoBytes.pid,
+									pedidoBytes.nroPagina,
+									pedidoBytes.offset);
+							printf("Se procede a solicitar bytes\n");
+							bytesSolicitados = solicitarBytes(pedidoBytes.pid,
+									pedidoBytes.nroPagina, pedidoBytes.offset,
+									pedidoBytes.tamanio, parametros->tablaPaginasInvertida);
+							memcpy(&resultAccion, bytesSolicitados, sizeof(resultAccion));
+							printf("Solicitud de finalizar programa terminó con resultado de acción: %d\n", resultAccion);
+							printf("Solicitar bytes devolvió los Bytes solicitados: %s\n", bytesSolicitados + sizeof(resultAccion));
+							send(parametros->socketClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), 0);
+							free(bytesSolicitados);
+							break;
+
+						case finalizarProgramaAccion:
+							recv(parametros->socketClie, &pidAFinalizar, sizeof(pidAFinalizar), 0);
+							printf("Recibida solicitud para finalizar programa con pid = %d\n", pidAFinalizar);
+							printf("Se procede a finalizar el programa\n");
+							resultAccion = finalizarPrograma(pidAFinalizar, parametros->tablaPaginasInvertida);
+							printf("Solicitud de finalizar programa terminó con resultado de acción: %d\n", resultAccion);
+							send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
+							break;
+
+						case obtenerTamanioPaginas:
+							send(parametros->socketClie, &config.marco_size, sizeof(int32_t),0);
+							break;
+
+						case accionEnviarStackSize:
+							 recv(parametros->socketClie, &stack_size, sizeof(int32_t),0);
+							 printf("Recibido tamanio dle stack = %d\n", stack_size);
+							 break;
+
+						default:
+							printf("No reconozco el código de acción\n");
+							resultAccion = -13;
+							send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
+						}
+						printf("Fin atención acción\n");
+					}
+}
+}
+
 int main(void){
 
 	//Setea config_t config
@@ -389,7 +520,7 @@ int main(void){
 	int addrlen; // El tamaño de la direccion del cliente
 	int sockServ; // Socket de nueva conexion aceptada
 	int sockClie; // Socket a la escucha
-	int cantBytesRecibidos;
+
 
 	//Crear socket. Dejar reutilizable. Crear direccion del servidor. Bind. Listen.
 	sockServ = crearSocket();
@@ -407,127 +538,17 @@ int main(void){
 		if ((sockClie = accept(sockServ, (struct sockaddr*) &direccionCliente, &addrlen)) == -1) {
 			perror("Error en el accept");
 		} else {
+			pthread_t hiloDedicado;
+			paramHiloDedicado* parametros = malloc(sizeof(paramHiloDedicado));
+			parametros->socketClie = sockClie;
+			parametros->tablaPaginasInvertida = tablaPaginasInvertida;
+			pthread_create(&hiloDedicado, NULL, (void*)atenderHilo, (void*)parametros);
+
 			printf("Server: nueva conexion de %s en socket %d\n", inet_ntoa(direccionCliente.sin_addr), sockClie);
-			for (;;) {
-				// Gestionar datos de un cliente. Recibimos el código de acción que quiere realizar.
-				int codAccion;
-				if ((cantBytesRecibidos = recv(sockClie, &codAccion, sizeof(codAccion), 0)) <= 0) {
-					// error o conexión cerrada por el cliente
-					if (cantBytesRecibidos == 0) {
-						// conexión cerrada
-						printf("Server: socket %d termino la conexion\n", sockClie);
-						close(sockClie);
-						break;
-					} else {
-						perror("Se ha producido un error en el Recv");
-						break;
-					}
-				} else {
-					printf("He recibido %d bytes con la acción: %d\n", cantBytesRecibidos, codAccion);
-					pedidoSolicitudPaginas_t pedidoPaginas;
-					pedidoBytesMemoria_t pedidoBytes;
-					pedidoAlmacenarBytesMemoria_t pedidoAlmacenarBytes;
-//					char* bytesAEscribir;
-					char* bytesSolicitados;
-					int resultAccion;
-					int pidAFinalizar;
 
-					switch (codAccion) {
-
-					case inicializarProgramaAccion:
-						recv(sockClie, &pedidoPaginas, sizeof(pedidoPaginas), 0);
-						printf("Recibida solicitud de %d páginas para el pid %d\n", pedidoPaginas.cantidadPaginas, pedidoPaginas.pid);
-						printf("Se procede a inicializar programa\n");
-						resultAccion = inicializarPrograma(pedidoPaginas.pid,
-								pedidoPaginas.cantidadPaginas,
-								tablaPaginasInvertida);
-						printf("Inicializar programa en Memoria terminó con resultado de acción: %d\n", resultAccion);
-						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
-						break;
-
-					case solicitarPaginasAccion:
-						recv(sockClie, &pedidoPaginas, sizeof(pedidoPaginas), 0);
-						printf("Recibida solicitud de %d páginas para el pid %d\n", pedidoPaginas.cantidadPaginas, pedidoPaginas.pid);
-						printf("Se procede a solicitar páginas del programa\n");
-						resultAccion = solicitarAsignacionPaginas(
-								pedidoPaginas.pid,
-								pedidoPaginas.cantidadPaginas,
-								tablaPaginasInvertida);
-						printf("Solicitar páginas adicionales terminó con resultado de acción: %d\n", resultAccion);
-						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
-						break;
-
-					case almacenarBytesAccion:
-						recv(sockClie, &pedidoAlmacenarBytes.pedidoBytes.pid, sizeof(pedidoAlmacenarBytes.pedidoBytes.pid), 0);
-						recv(sockClie, &pedidoAlmacenarBytes.pedidoBytes.nroPagina, sizeof(pedidoAlmacenarBytes.pedidoBytes.nroPagina), 0);
-						recv(sockClie, &pedidoAlmacenarBytes.pedidoBytes.offset, sizeof(pedidoAlmacenarBytes.pedidoBytes.offset), 0);
-						recv(sockClie, &pedidoAlmacenarBytes.pedidoBytes.tamanio, sizeof(pedidoAlmacenarBytes.pedidoBytes.tamanio), 0);
-
-
-						pedidoAlmacenarBytes.buffer = malloc (pedidoAlmacenarBytes.pedidoBytes.tamanio);
-
-						recv(sockClie, pedidoAlmacenarBytes.buffer,pedidoAlmacenarBytes.pedidoBytes.tamanio, 0);
-//						pedidoAlmacenarBytes.buffer = bytesAEscribir;
-						printf("Recibida solicitud de almacenar %d bytes para el pid %d en su página %d\n con un offset de %d\n",
-								pedidoAlmacenarBytes.pedidoBytes.tamanio,
-								pedidoAlmacenarBytes.pedidoBytes.pid,
-								pedidoAlmacenarBytes.pedidoBytes.nroPagina,
-								pedidoAlmacenarBytes.pedidoBytes.offset);
-						printf("Se procede a almacenar bytes: %s\n", pedidoAlmacenarBytes.buffer);
-						resultAccion = almacenarBytes(
-								pedidoAlmacenarBytes.pedidoBytes.pid,
-								pedidoAlmacenarBytes.pedidoBytes.nroPagina,
-								pedidoAlmacenarBytes.pedidoBytes.offset,
-								pedidoAlmacenarBytes.pedidoBytes.tamanio,
-								pedidoAlmacenarBytes.buffer,
-								tablaPaginasInvertida);
-						printf("Solicitud de almacenar bytes terminó con resultado de acción: %d\n", resultAccion);
-						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
-//						free(bytesAEscribir);
-						free(pedidoAlmacenarBytes.buffer);
-						break;
-
-					case solicitarBytesAccion:
-						recv(sockClie, &pedidoBytes, sizeof(pedidoBytes), 0);
-						printf("Recibida solicitud de %d bytes para el pid %d en su página %d\n con un offset de %d\n",
-								pedidoBytes.tamanio,
-								pedidoBytes.pid,
-								pedidoBytes.nroPagina,
-								pedidoBytes.offset);
-						printf("Se procede a solicitar bytes\n");
-						bytesSolicitados = solicitarBytes(pedidoBytes.pid,
-								pedidoBytes.nroPagina, pedidoBytes.offset,
-								pedidoBytes.tamanio, tablaPaginasInvertida);
-						memcpy(&resultAccion, bytesSolicitados, sizeof(resultAccion));
-						printf("Solicitud de finalizar programa terminó con resultado de acción: %d\n", resultAccion);
-						printf("Solicitar bytes devolvió los Bytes solicitados: %s\n", bytesSolicitados + sizeof(resultAccion));
-						send(sockClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), 0);
-						free(bytesSolicitados);
-						break;
-
-					case finalizarProgramaAccion:
-						recv(sockClie, &pidAFinalizar, sizeof(pidAFinalizar), 0);
-						printf("Recibida solicitud para finalizar programa con pid = %d\n", pidAFinalizar);
-						printf("Se procede a finalizar el programa\n");
-						resultAccion = finalizarPrograma(pidAFinalizar, tablaPaginasInvertida);
-						printf("Solicitud de finalizar programa terminó con resultado de acción: %d\n", resultAccion);
-						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
-						break;
-
-					case obtenerTamanioPaginas:
-						send(sockClie, &config.marco_size, sizeof(int32_t),0);
-						break;
-
-					default:
-						printf("No reconozco el código de acción\n");
-						resultAccion = -13;
-						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
-					}
-					printf("Fin atención acción\n");
-				}
 			}
 		}
 	}
 
 
-}
+

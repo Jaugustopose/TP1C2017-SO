@@ -68,12 +68,26 @@ void cargarConfiguracion() {
 		}
 }
 
+void enviar_stack_size(int sock)
+{
+	int codigoAccion = accionEnviarStackSize;
+	int stackSize = config.STACK_SIZE;
+
+	void* buffer = malloc(sizeof(int32_t)*2);
+	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
+	memcpy(buffer + sizeof(codigoAccion), &stackSize, sizeof(codigoAccion));
+
+	send(sock, buffer, sizeof(int32_t)*2, 0);
+}
+
 void inicializarContexto() {
 	listaDeProcesos = list_create();
 	tablaSemaforos = dictionary_create();
 	tablaCompartidas = dictionary_create();
 	crearSemaforos();
 	crearCompartidas();
+
+	colaCPU = queue_create();
 }
 
 int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
@@ -95,11 +109,14 @@ int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
 	return resultAccion;
 }
 
+
+
 int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffer, int tamanioTotal) {
 	printf("tamanioTotal = %d\n", tamanioTotal);
 	int codigoAccion = almacenarBytesAccion;
-	//TODO LA RESTA DEL config.STACK_SIZE LA TIENE QUE HACER QUIEN MANDE A ESTE MÉTODO unProceso CON LA CANTIDAD DE PAGINAS SETEADAS
-	int tamanioBufferParaMemoria = ((sizeof(codigoAccion) + sizeof(pedidoBytesMemoria_t)) * (unProceso->PCB->cantidadPaginas - config.STACK_SIZE)) + tamanioTotal;
+	//El STACK_SIZE se envia a memoria en handshake y memoria sabe que SIEMPRE debera reservar lo que le solicite
+	//kernel en cantidadPaginasDeCodigo MAS el  stack_size que ya conoce.
+	int tamanioBufferParaMemoria = ((sizeof(codigoAccion) + sizeof(pedidoBytesMemoria_t)) * unProceso->PCB->cantidadPaginas) + tamanioTotal;
 	printf("tamanioBufferParaMemoria: %d\n", tamanioBufferParaMemoria);
 	void* bufferParaAlmacenarEnMemoria = malloc(tamanioBufferParaMemoria);
 	int m;
@@ -109,7 +126,7 @@ int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffe
 
 	int resultAccion;
 
-	for (m = 0; (m < ((unProceso -> PCB->cantidadPaginas) - config.STACK_SIZE)) & (tamanioTotal != 0); m++) {
+	for (m = 0; (m < (unProceso -> PCB->cantidadPaginas)) & (tamanioTotal != 0); m++) {
 
 		if (tamanioTotal > tamanioPag) {
 
@@ -255,6 +272,7 @@ void Colocar_en_respectivo_fdset() {
 
 	case soyCPU:
 		FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
+		queue_push(colaCPU, sockClie);
 		break;
 		printf("Se ha conectado un nuevo CPU  \n");
 	}
@@ -288,6 +306,10 @@ void conexion_de_cliente_finalizada() {
 	}
 	close(fdCliente); // Si se perdio la conexion, la cierro.
 }
+void enviarPCBaCPU(t_PCB* pcb, int cpu, int32_t accion)
+{
+	serializar_PCB(pcb, cpu, accion);
+}
 
 void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMensaje) {
 	if (config.GRADO_MULTIPROG > list_size(listaDeProcesos)) {
@@ -304,9 +326,12 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 		identificadorProceso++;
 		t_proceso* proceso = crearProceso(identificadorProceso, consola, (char*) buff);
 		list_add(listaDeProcesos, &proceso); //Agregar un proceso a esa bendita lista
+
+
+
 		send(consola,&identificadorProceso,sizeof(int32_t),0);
 		//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
-		int paginasASolicitar = redondear((float) tamanioScript /(float) tamanioPag) + config.STACK_SIZE;
+		int paginasASolicitar = redondear((float) tamanioScript /(float) tamanioPag);
 		int resultadoAccionInicializar = pedido_Inicializar_Programa(memoria,paginasASolicitar, proceso -> PCB->PID);
 		if (resultadoAccionInicializar == 0) {//Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
 
@@ -318,6 +343,11 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 				//queue_pop(colaNew);
 				//queue_push(colaReady, &proceso);
 			}
+
+			//EnviarPCBaCPU
+			int cpu = queue_pop(colaCPU);
+			proceso->PCB->cantidadPaginas = paginasASolicitar;
+			enviarPCBaCPU(proceso->PCB, cpu, accionObtenerPCB);
 		}
 	}else{
 		printf("El proceso no pudo ingresar a la cola de New ya que excede el grado de multiprogramacion\n");
@@ -434,6 +464,13 @@ void destruirSemaforos() {
 	dictionary_destroy_and_destroy_elements(tablaSemaforos, destruirSemaforo);
 }
 
+void planificar()
+{
+//	int codAccion = accionContinuarProceso;
+//	int cpu = (int)queue_pop(colaCPU);
+//	send(cpu, &codAccion, sizeof(codAccion), 0);
+}
+
 /************************************** MAIN ****************************************************************/
 
 int main(void) {
@@ -463,6 +500,7 @@ int main(void) {
 //		conectar_con_server(memoria, &direccionServidor);
 			connect(memoria, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
 		tamanioPag = obtener_tamanio_pagina(memoria);
+		enviar_stack_size(memoria);
 
 	//Añadir listener al conjunto maestro
 	FD_SET(sockServ, &master);
@@ -525,6 +563,10 @@ int main(void) {
 				}
 			}
 		}
+
+
+		//TODO:Hay que desarrollar la planificacion, pero por ahora es lo basico
+		planificar();
 	}
 	return 0;
 }

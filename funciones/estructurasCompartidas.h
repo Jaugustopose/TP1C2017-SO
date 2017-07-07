@@ -38,7 +38,8 @@ enum tipoMensaje {
 	accionBorrarArchivo = 28,
 	accionObtenerDatosArchivo = 29,
 	accionReservarHeap = 30,
-	accionLiberarHeap = 31
+	accionLiberarHeap = 31,
+	accionEnviarStackSize = 32
 
 };
 

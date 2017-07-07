@@ -194,10 +194,10 @@ int bytes_PCB(t_PCB* pcb) {
 			);
 }
 
-void* serializar_PCB(t_PCB* pcb, int sock, int codigoAccion) {
+void* serializar_PCB(t_PCB* pcb, int sock, int32_t codigoAccion) {
 
 	int tamanioEnBytes = bytes_PCB(pcb);
-	char* pcbSerializado = malloc(tamanioEnBytes);
+	void* pcbSerializado = malloc(tamanioEnBytes);
 	int desplazamiento = 0;
 
 	desplazamiento = desplazamiento + serializar_int(pcbSerializado + desplazamiento, &(pcb->PID));
@@ -213,11 +213,12 @@ void* serializar_PCB(t_PCB* pcb, int sock, int codigoAccion) {
 	desplazamiento = desplazamiento + serializar_stack(pcbSerializado + desplazamiento, pcb->stackPointer);
 
 
-	void* buffer = malloc(desplazamiento + sizeof(codigoAccion));
+	void* buffer = malloc(desplazamiento + sizeof(codigoAccion) + sizeof(tamanioEnBytes));
 	memcpy(buffer, &codigoAccion, sizeof(codigoAccion)); //PRIMERO EL CODIGO
-	memcpy(buffer + sizeof(codigoAccion), pcbSerializado, sizeof(codigoAccion) + desplazamiento ); // SEGUNDO LA DATA
+	memcpy(buffer + sizeof(tamanioEnBytes), &tamanioEnBytes, sizeof(tamanioEnBytes)); //SEGUNDO EL TAMAÑO DE LA DATA
+	memcpy(buffer + sizeof(tamanioEnBytes) + sizeof(codigoAccion), pcbSerializado, sizeof(codigoAccion)+ sizeof(tamanioEnBytes) + desplazamiento); // TERCERO LA DATA
 
-	//send(sock, &pcbSerializado, sizeof(codigoAccion) + desplazamiento, 0);
+	int bytesEnviados = send(sock, buffer, sizeof(codigoAccion) + desplazamiento + sizeof(tamanioEnBytes), 0);
 
 	return pcbSerializado;
 }
