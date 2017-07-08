@@ -441,20 +441,20 @@ void parsear(char* sentencia)
 {
 	pcbNuevo->contadorPrograma++;
 
-	if(sentenciaNoFinaliza(sentencia)){
+	//TODO:Finalizar es responsabilidad de la nueva primitiva FINALIZAR.
+	//if(sentenciaNoFinaliza(sentencia)){
 
 	//Le paso sentencia, set de primitivas de CPU y set de primitivas de kernel
 	analizadorLinea(sentencia, &funciones, &funcionesKernel);
 
 	//TODO:DESCOMENTAR LUEGO
-//	char* accionEnviar = (char*)accionFinInstruccion;
-//	send(kernel, accionEnviar, 1, 0);
-//	free(accionEnviar);
+	//	char* accionEnviar = (char*)accionFinInstruccion;
+	//	send(kernel, accionEnviar, 1, 0);
+	//	free(accionEnviar);
 
-	}else{
-		termina = true;
-		  finalizarProceso(true);
-	}
+	//	}else{
+	//
+	//	}
 }
 
 void pedirSentencia()

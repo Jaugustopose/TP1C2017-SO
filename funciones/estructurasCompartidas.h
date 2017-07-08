@@ -75,13 +75,16 @@ typedef struct {
 	t_pedido valRetorno;
 } t_elemento_stack;
 
+
 typedef struct {
 	int32_t PID;
 	int32_t cantidadPaginas;
 	int32_t contadorPrograma;
 	t_list* indiceCodigo;
 	t_stack* stackPointer;
-	t_dictionary* indiceEtiquetas;
+	char* indiceEtiquetas;
+	int etiquetasSize;
+	//t_dictionary* indiceEtiquetas;
 	int exitCode;
 }t_PCB;
 

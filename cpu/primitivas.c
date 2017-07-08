@@ -176,7 +176,7 @@ void ir_al_label(t_nombre_etiqueta label)
 	t_puntero_instruccion posPrimeraInstruccionUtil = -1;
 
 	if (existeLabel(label)) {
-		posPrimeraInstruccionUtil = obtenerPosicionLabel(label);
+		posPrimeraInstruccionUtil = metadata_buscar_etiqueta(label, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
 	}
 	else
 	{
@@ -202,9 +202,10 @@ void finalizar()
 
 	int elementos = stack_tamanio(stack);
 
-	if(elementos <= 0)
+	if(elementos == 0)
 	{
-
+		termina = true;
+		//finalizarProceso(true);
 	}
 
 	actualizarPC(pcbNuevo, retorno);
@@ -279,7 +280,8 @@ void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 
 void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
 {
-	t_puntero_instruccion posicionFuncion =  obtenerPosicionLabel(etiqueta);
+	//t_puntero_instruccion posicionFuncion =  obtenerPosicionLabel(etiqueta);
+	t_puntero_instruccion posicionFuncion = metadata_buscar_etiqueta(etiqueta, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
 
 	t_elemento_stack* newHead = stack_elemento_crear();
 

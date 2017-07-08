@@ -137,6 +137,11 @@ int deserializar_diccionario(t_dictionary* destino, char* origen, int pesoData){
 	return offset;
 }
 
+int deserializar_indice_etiquetas(char* destino, char* origen, int tamanio)
+{
+	memcpy(destino, origen, tamanio);
+	return tamanio;
+}
 
 void* deserializar_PCB(t_PCB* pcbUlt, char* pcbSerializado){
 //	int tamanio;
@@ -149,7 +154,7 @@ void* deserializar_PCB(t_PCB* pcbUlt, char* pcbSerializado){
 	int desplazamiento = 0;
 
 	pcbUlt->indiceCodigo = list_create();
-	pcbUlt->indiceEtiquetas = dictionary_create();
+	//pcbUlt->indiceEtiquetas = dictionary_create();
 	pcbUlt->stackPointer = stack_crear();
 
 	desplazamiento = desplazamiento + deserializar_int(&(pcbUlt->PID), pcbSerializado + desplazamiento);
@@ -160,7 +165,13 @@ void* deserializar_PCB(t_PCB* pcbUlt, char* pcbSerializado){
 
 	desplazamiento = desplazamiento + deserializar_lista(pcbUlt->indiceCodigo, pcbSerializado + desplazamiento, sizeof(t_sentencia));
 
-	desplazamiento = desplazamiento + deserializar_diccionario(pcbUlt->indiceEtiquetas, pcbSerializado + desplazamiento, sizeof(int));
+//	desplazamiento = desplazamiento + deserializar_diccionario(pcbUlt->indiceEtiquetas, pcbSerializado + desplazamiento, sizeof(int));
+
+	desplazamiento = desplazamiento + deserializar_int(&(pcbUlt->etiquetasSize), pcbSerializado + desplazamiento);
+
+	pcbUlt->indiceEtiquetas = malloc(pcbUlt->etiquetasSize);
+
+	desplazamiento = desplazamiento + deserializar_indice_etiquetas(pcbUlt->indiceEtiquetas, pcbSerializado + desplazamiento, pcbUlt->etiquetasSize);
 
 	desplazamiento = desplazamiento + deserializar_stack(pcbUlt->stackPointer, pcbSerializado + desplazamiento);
 

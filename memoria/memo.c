@@ -441,7 +441,7 @@ void atenderHilo(paramHiloDedicado* parametros)
 									pedidoBytes.nroPagina, pedidoBytes.offset,
 									pedidoBytes.tamanio, parametros->tablaPaginasInvertida);
 							memcpy(&resultAccion, bytesSolicitados, sizeof(resultAccion));
-							printf("Solicitud de finalizar programa terminó con resultado de acción: %d\n", resultAccion);
+							printf("Solicitud de solicitar bytes terminó con resultado de acción: %d\n", resultAccion);
 							printf("Solicitar bytes devolvió los Bytes solicitados: %s\n", bytesSolicitados + sizeof(resultAccion));
 							send(parametros->socketClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), 0);
 							free(bytesSolicitados);
