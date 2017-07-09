@@ -102,6 +102,18 @@ void primitivaLiberar(int puntero)
 //TODO:IMPLEMENTAR MANEJO HEAP
 }
 
+void atenderSolicitudMemoriaDinamica()
+{
+	char* solicitudSerial = leerTamanioYMensaje(fdCliente);
+	int espacioRequerido = char4ToInt(solicitudSerial);
+}
+
+void atenderLiberacionMemoriaDinamica()
+{
+	char* solicitudSerial = leerTamanioYMensaje(fdCliente);
+	int espacioRequerido = char4ToInt(solicitudSerial);
+}
+
 void recibirPedidoMemoria(int tamanioSolicitud, int pidSolicitante)
 {
 	if(peticion_valida(tamanioSolicitud))

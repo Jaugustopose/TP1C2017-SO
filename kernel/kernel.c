@@ -400,11 +400,11 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 		break;
 
 	case accionReservarHeap:
-
+		atenderSolicitudMemoriaDinamica();
 		break;
 
 	case accionLiberarHeap:
-
+		atenderLiberacionMemoriaDinamica();
 		break;
 
 	}

@@ -348,7 +348,7 @@ t_puntero reservar(t_valor_variable espacio)
 {
 	int codigoAccion = accionReservarHeap;
 	char* espacioSerial = intToChar4(espacio);
-	send(kernel, espacioSerial, sizeof(int), 0);
+	enviarTamanioYSerial(codigoAccion, kernel, sizeof(int), espacioSerial);
 
 	//TODO:recv del puntero
 
@@ -359,7 +359,7 @@ void liberar(t_puntero puntero)
 {
 	int codigoAccion = accionLiberarHeap;
 	char* punteroSerial = intToChar4(puntero);
-	send(kernel, punteroSerial, sizeof(int), 0);
+	enviarTamanioYSerial(codigoAccion, kernel, sizeof(int), punteroSerial);
 
 	loggearFinDePrimitiva("liberar");
 }
