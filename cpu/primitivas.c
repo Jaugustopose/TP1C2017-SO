@@ -31,12 +31,10 @@ int tipo_variable(t_nombre_variable variable, t_elemento_stack* head) {
 }
 
 bool existeLabel(t_nombre_etiqueta label) {
-	return dictionary_has_key(pcbNuevo->indiceEtiquetas, label);
+	return metadata_buscar_etiqueta(label, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
 }
 
-t_puntero_instruccion obtenerPosicionLabel(t_nombre_etiqueta label){
-	return *(t_puntero_instruccion*)dictionary_get(pcbNuevo->indiceEtiquetas, label);
-}
+
 
 void validarOverflow(t_puntero direccion) {
 
@@ -260,7 +258,7 @@ t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableComp
 
 void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 {
-	t_puntero_instruccion posicionFuncion =  obtenerPosicionLabel(etiqueta);
+	t_puntero_instruccion posicionFuncion = metadata_buscar_etiqueta(etiqueta, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
 	t_elemento_stack* newHead = stack_elemento_crear();
 
 	//dondeRetornar

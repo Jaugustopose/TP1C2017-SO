@@ -337,7 +337,6 @@ t_sentencia* obtenerSentenciaRelativa(int* paginaInicioSentencia) {
 
 		(*paginaInicioSentencia) = paginaInicio;
 
-    free(sentenciaAbsoluta);
 	return sentenciaRel;
 }
 
