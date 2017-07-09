@@ -26,16 +26,6 @@ void primitivaWait(int cliente, char* semaforoID)
 	}
 }
 
-int primitivaDevolverCompartida()
-{
-
-}
-
-void primitivaAsignarCompartida()
-{
-
-}
-
 void imprimir()
 {
 

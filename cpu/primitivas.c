@@ -242,6 +242,8 @@ t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableComp
 
 	recv(kernel, &valorAsignado,sizeof(int), 0);
 
+	loggearFinDePrimitiva("asignar_valor_compartida");
+
 	if(valorAsignado == *valor){
 		return valorAsignado;
 	}
@@ -250,8 +252,6 @@ t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableComp
 		//TODO:ERROR!
 		return 0;
 	}
-
-	loggearFinDePrimitiva("asignar_valor_compartida");
 
 	return valorAsignado;
 }
@@ -262,7 +262,8 @@ void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 	t_elemento_stack* newHead = stack_elemento_crear();
 
 	//dondeRetornar
-	newHead->posRetorno = pcbNuevo->contadorPrograma;
+	int posicion = pcbNuevo->contadorPrograma;
+	newHead->posRetorno = ++posicion;
 
 	// Si el stack tiene pos 0, size=1, si tiene 0 y 1, size=2,... Da la posicion del lugar nuevo.
 	newHead->pos = stack_tamanio(stack);
