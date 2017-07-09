@@ -55,13 +55,9 @@ struct configuracion{
 
 t_config* configCpu;
 struct configuracion config;
-
 t_PCB* pcbNuevo;
 t_stack* stack;
 int cantidadPagCodigo;
-
-
-
 
 
 #endif

@@ -187,13 +187,19 @@ int bytes_stack(t_stack* origen) {
 
 
 int bytes_PCB(t_PCB* pcb) {
-	return (int)((sizeof(int) * 3)
+	return (int)((sizeof(int) * 4)
 			+ bytes_stack(pcb->stackPointer)
 			+ bytes_list(pcb->indiceCodigo, sizeof(t_sentencia))
-			+ bytes_diccionario(pcb->indiceEtiquetas, sizeof(int))
+			//+ bytes_diccionario(pcb->indiceEtiquetas, sizeof(int))
+			+ pcb->etiquetasSize
 			);
 }
 
+int serializar_indice_etiquetas(char* destino, char* origen, int tamanio)
+{
+	memcpy(destino, origen, tamanio);
+	return tamanio;
+}
 void* serializar_PCB(t_PCB* pcb, int sock, int32_t codigoAccion) {
 
 	int tamanioEnBytes = bytes_PCB(pcb);
@@ -208,7 +214,11 @@ void* serializar_PCB(t_PCB* pcb, int sock, int32_t codigoAccion) {
 
 	desplazamiento = desplazamiento + serializar_lista(pcbSerializado + desplazamiento, pcb->indiceCodigo, sizeof(t_sentencia));
 
-	desplazamiento = desplazamiento + serializar_diccionario(pcbSerializado + desplazamiento, pcb->indiceEtiquetas, sizeof(int));
+	//desplazamiento = desplazamiento + serializar_diccionario(pcbSerializado + desplazamiento, pcb->indiceEtiquetas, sizeof(int));
+
+	desplazamiento = desplazamiento + serializar_int(pcbSerializado + desplazamiento, &(pcb->etiquetasSize));
+
+	desplazamiento = desplazamiento + serializar_indice_etiquetas(pcbSerializado + desplazamiento, pcb->indiceEtiquetas, pcb->etiquetasSize);
 
 	desplazamiento = desplazamiento + serializar_stack(pcbSerializado + desplazamiento, pcb->stackPointer);
 

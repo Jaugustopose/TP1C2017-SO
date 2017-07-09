@@ -84,7 +84,7 @@ void destruir_PCB(t_PCB* pcb){
 	//Lo usa CPU y Kernel
 	list_destroy(pcb->indiceCodigo);
 	stack_destruir(pcb->stackPointer);
-	dictionary_destroy(pcb->indiceEtiquetas);
+	//dictionary_destroy(pcb->indiceEtiquetas);
 
 	free(pcb);
 }

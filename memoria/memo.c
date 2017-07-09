@@ -4,7 +4,7 @@ void cargarConfigFile() {
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	string_append(&pat, "/Debug/memo.cfg");
+	string_append(&pat, "/memo.cfg");
 	t_config* configMemo = config_create(pat);
 	if (config_has_property(configMemo, "PUERTO_KERNEL")) {
 		config.puerto_kernel = config_get_int_value(configMemo, "PUERTO_KERNEL");
@@ -441,7 +441,7 @@ void atenderHilo(paramHiloDedicado* parametros)
 									pedidoBytes.nroPagina, pedidoBytes.offset,
 									pedidoBytes.tamanio, parametros->tablaPaginasInvertida);
 							memcpy(&resultAccion, bytesSolicitados, sizeof(resultAccion));
-							printf("Solicitud de finalizar programa terminó con resultado de acción: %d\n", resultAccion);
+							printf("Solicitud de solicitar bytes terminó con resultado de acción: %d\n", resultAccion);
 							printf("Solicitar bytes devolvió los Bytes solicitados: %s\n", bytesSolicitados + sizeof(resultAccion));
 							send(parametros->socketClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), 0);
 							free(bytesSolicitados);
