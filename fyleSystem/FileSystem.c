@@ -10,17 +10,15 @@
 int cargarConfiguracion()
 {
 	char* pat = string_new();
-	//char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
-	//string_append(&pat,getcwd(cwd,sizeof(cwd)));
-	string_append(&pat,"/home/utnso/projects/tp-2017-1c-No-Se-Recursa/fyleSystem");
-	string_append(&pat,"/FileSystem.cfg");
-	t_config* configFs = config_create(pat);
-	if(configFs==NULL){
-		return -1;
-		printf("No se encontró el archivo de configuración: %s\n", pat);
-	}
-	printf("El directorio sobre el que se esta trabajando es %s\n", pat);
-	free(pat);
+		char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
+		string_append(&pat, getcwd(cwd, sizeof(cwd)));
+		if (string_contains(pat, "/Debug")) {
+			string_append(&pat, "/FileSystem.cfg");
+		} else {
+			string_append(&pat, "/Debug/FileSystem.cfg");
+		}
+		t_config* configFs = config_create(pat);
+		free(pat);
 
 	if (config_has_property(configFs, "PUERTO")){
 		config.PUERTO = config_get_int_value(configFs,"PUERTO");

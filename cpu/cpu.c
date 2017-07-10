@@ -90,11 +90,15 @@ void sacarSaltoDeLinea(char* texto, int ultPos){
 void cargarConfiguracion()
 {
 	char* pat = string_new();
-	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
-	string_append(&pat,getcwd(cwd,sizeof(cwd)));
-	string_append(&pat,"/Debug/cpu.cfg");
-	t_config* configCpu = config_create(pat);
-	free(pat);
+		char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
+		string_append(&pat, getcwd(cwd, sizeof(cwd)));
+		if (string_contains(pat, "/Debug")) {
+			string_append(&pat, "/cpu.cfg");
+		} else {
+			string_append(&pat, "/Debug/cpu.cfg");
+		}
+		t_config* configCpu = config_create(pat);
+		free(pat);
 	if (config_has_property(configCpu, "IP_MEMORIA"))
 	{
 		config.IP_MEMORIA = config_get_string_value(configCpu, "IP_MEMORIA");
