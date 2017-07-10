@@ -350,19 +350,11 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 	//TODO SEMAFORO DESDE ACÁ
 	//Recorro la memoria hasta que se termine o la cantidad de marcos libres encontrados satisfaga el pedido
 	for (i = 0; cantPosicionesEncontradas < cantPaginasSolicitadas; ++i) {
+
 		int marco_candidato = calcularPosicion(pid, i);
-		bool estaReservado = false;
-		int i;
-		for (i=0; i < cantPaginasSolicitadas; i++) {
-			if (marcosLibres[i][0] == marco_candidato || marcosLibres[i][1] == marco_candidato){
-//				printf("El marco %d está reservado!\n", marco_candidato);
-				estaReservado = true;
-				break;
-			}
-		}
 
 		//Si el pid es menor a -1 significa que está libre (por la inicialización)
-		if (tablaPaginasInvertida[marco_candidato].pid < -1 && !estaReservado) {
+		if (tablaPaginasInvertida[marco_candidato].pid < -1 && !estaElMarcoReservado(marco_candidato, cantPaginasSolicitadas, marcosLibres)) {
 			marcosLibres[cantPosicionesEncontradas][0] = marco_candidato;
 			cantPosicionesEncontradas++;
 		} else {
@@ -370,15 +362,8 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 			int marco = marco_candidato + 1;
 			//Rehash
 			while((marco > marco_candidato && marco < config.marcos) || marco < marco_candidato){
-				estaReservado = false;
-				int i;
-				for (i=0; i < cantPaginasSolicitadas; i++) {
-					if (marcosLibres[i][0] == marco || marcosLibres[i][1] == marco){
-						estaReservado = true;
-						break;
-					}
-				}
-				if (tablaPaginasInvertida[marco].pid < -1 && !estaReservado) {
+
+				if (tablaPaginasInvertida[marco].pid < -1 && !estaElMarcoReservado(marco, cantPaginasSolicitadas, marcosLibres)) {
 					marcosLibres[cantPosicionesEncontradas][0] = marco_candidato;
 					marcosLibres[cantPosicionesEncontradas][1] = marco;
 					cantPosicionesEncontradas++;
@@ -393,7 +378,7 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 				}
 			}
 
-			//Si salió porque dio la vuelta y volvío al marco_candidato -> No hay más lugar en memoria
+			//Si salió porque dio la vuelta y volvió al marco_candidato -> No hay más lugar en memoria
 			if ( marco == marco_candidato) {
 				return -11;
 			}
@@ -425,12 +410,11 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 
 }
 
-bool estaElMarcoReservado(int marcoBuscado, int cantPaginasSolicitadas, int **marcosSolicitados) {
+bool estaElMarcoReservado(int marcoBuscado, int cantPaginasSolicitadas, int marcosSolicitados[][2]) {
 	int i;
 	for (i=0; i < cantPaginasSolicitadas; i++){
 		if (marcosSolicitados[i][0] == marcoBuscado || marcosSolicitados[i][1] == marcoBuscado){
 			return true;
-		} else {
 		}
 	}
 	return false;
