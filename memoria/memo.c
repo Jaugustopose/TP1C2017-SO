@@ -314,15 +314,20 @@ int buscarMarco(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida) {
 int almacenarBytes(int pid, int nroPagina, int offset, int tamanio, void* buffer, tablaPagina_t* tablaPaginasInvertida) {
 	//TODO SEMÁFORO DESDE ACÁ
 	printf("Inicia almacenarBytes\n");
-	int marcoPagina = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
-	printf("Marco encontrado: %d\n", marcoPagina);
 	if ((offset + tamanio) > config.marco_size) {
-		perror("El pedido excede el tamaño de la página");
-		return -12;
+			printf("El pedido excede el tamaño de la página\n");
+			return -12;
 	} else {
-		char* destino = memoria + marcoPagina * config.marco_size + offset;
-		memcpy(destino, buffer, tamanio);
-		printf("El destino quedó almacenado: %s\n", destino);
+		int marcoPagina = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
+		printf("Marco candidato: %d\n", marcoPagina);
+		if (marcoPagina > -1) {
+			char* destino = memoria + marcoPagina * config.marco_size + offset;
+			memcpy(destino, buffer, tamanio);
+			printf("El destino quedó almacenado: %s\n", destino);
+		} else {
+			printf("Marco no encontrado para pid y #pagina especificados\n");
+			return -10;
+		}
 	}
 	//TODO SEMÁFORO HASTA ACÁ
 
@@ -346,9 +351,18 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 	//Recorro la memoria hasta que se termine o la cantidad de marcos libres encontrados satisfaga el pedido
 	for (i = 0; cantPosicionesEncontradas < cantPaginasSolicitadas; ++i) {
 		int marco_candidato = calcularPosicion(pid, i);
+		bool estaReservado = false;
+		int i;
+		for (i=0; i < cantPaginasSolicitadas; i++) {
+			if (marcosLibres[i][0] == marco_candidato || marcosLibres[i][1] == marco_candidato){
+//				printf("El marco %d está reservado!\n", marco_candidato);
+				estaReservado = true;
+				break;
+			}
+		}
 
 		//Si el pid es menor a -1 significa que está libre (por la inicialización)
-		if (tablaPaginasInvertida[marco_candidato].pid < -1) {
+		if (tablaPaginasInvertida[marco_candidato].pid < -1 && !estaReservado) {
 			marcosLibres[cantPosicionesEncontradas][0] = marco_candidato;
 			cantPosicionesEncontradas++;
 		} else {
@@ -356,7 +370,15 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 			int marco = marco_candidato + 1;
 			//Rehash
 			while((marco > marco_candidato && marco < config.marcos) || marco < marco_candidato){
-				if (tablaPaginasInvertida[marco].pid < -1 && !estaElMarcoReservado(marco, cantPaginasSolicitadas, marcosLibres)) {
+				estaReservado = false;
+				int i;
+				for (i=0; i < cantPaginasSolicitadas; i++) {
+					if (marcosLibres[i][0] == marco || marcosLibres[i][1] == marco){
+						estaReservado = true;
+						break;
+					}
+				}
+				if (tablaPaginasInvertida[marco].pid < -1 && !estaReservado) {
 					marcosLibres[cantPosicionesEncontradas][0] = marco_candidato;
 					marcosLibres[cantPosicionesEncontradas][1] = marco;
 					cantPosicionesEncontradas++;
@@ -392,7 +414,7 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 		} else {
 			tablaPaginasInvertida[ marcosLibres[i][1] ].pid = pid;
 			tablaPaginasInvertida[ marcosLibres[i][1] ].nroPagina = i;
-			agregarSiguienteEnOverflow(marcosLibres[i][0], marcosLibres[0][1]);
+			agregarSiguienteEnOverflow(marcosLibres[i][0], marcosLibres[i][1]);
 		}
 	}
 
@@ -403,11 +425,12 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 
 }
 
-bool estaElMarcoReservado(int marcoBuscado, int cantPaginasSolicitadas, int marcosSolicitados[cantPaginasSolicitadas][2]) {
+bool estaElMarcoReservado(int marcoBuscado, int cantPaginasSolicitadas, int **marcosSolicitados) {
 	int i;
 	for (i=0; i < cantPaginasSolicitadas; i++){
 		if (marcosSolicitados[i][0] == marcoBuscado || marcosSolicitados[i][1] == marcoBuscado){
 			return true;
+		} else {
 		}
 	}
 	return false;
