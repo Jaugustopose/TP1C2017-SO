@@ -31,12 +31,10 @@ int tipo_variable(t_nombre_variable variable, t_elemento_stack* head) {
 }
 
 bool existeLabel(t_nombre_etiqueta label) {
-	return dictionary_has_key(pcbNuevo->indiceEtiquetas, label);
+	return metadata_buscar_etiqueta(label, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
 }
 
-t_puntero_instruccion obtenerPosicionLabel(t_nombre_etiqueta label){
-	return *(t_puntero_instruccion*)dictionary_get(pcbNuevo->indiceEtiquetas, label);
-}
+
 
 void validarOverflow(t_puntero direccion) {
 
@@ -56,6 +54,14 @@ void enviarDireccionAMemoria(t_puntero direccion) {
 	int pid = pcbNuevo->PID;
 
 	enviarSolicitudBytes(pid, pagina, offset, size);
+}
+void enviar_direccion_y_valor_a_Memoria(t_puntero direccion, t_valor_variable valor) {
+	int pagina = (int)(direccion/tamanioPaginas) + cantidadPagCodigo; //Agrego el desplazamiento por las paginas ya ocupadas por el codigo
+	int offset = direccion % tamanioPaginas;
+	int size = sizeof(int);
+	int pid = pcbNuevo->PID;
+
+	enviarAlmacenarBytes(pid, pagina, offset, size, valor);
 }
 
 /******************************* PRIMITIVAS ******************************/
@@ -86,6 +92,7 @@ t_puntero obtener_posicion_de(t_nombre_variable variable) {
 		finalizarProcesoVariableInvalida();
 	}
 
+	loggearFinDePrimitiva("obtener_posicion_de");
 
 	free(cadena);
 	return posicionAbsoluta;
@@ -108,6 +115,8 @@ t_puntero definir_variable(t_nombre_variable variable) {
 	 dictionary_put(head->identificadores, cadena, (void*)direccion);
 	}
 
+	loggearFinDePrimitiva("definir_variable");
+
 	free(cadena);
 	//free(direccion);
 
@@ -125,7 +134,7 @@ t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 		//manda pedidoa memoria
 		enviarDireccionAMemoria(direccion_variable);
 
-		if(!hayOverflow()){
+	//	if(!hayOverflow()){
 
 			//recibe valor de memoria
 			char* bufferValor = malloc(sizeof(int));
@@ -138,35 +147,25 @@ t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 
 			valor = char4ToInt(bufferValor);
 
+			loggearFinDePrimitiva("dereferenciar_variable");
+
 			free(bufferValor);
 
 			return valor;
 
-		}
-		else{
-			return overflowException(overflow);
-		}
+//		}
+//		else{
+//			return overflowException(overflow);
+//		}
 }
 
 void asignar(t_puntero direccion_variable, t_valor_variable valor)
 {
-	//Manda codigo de accion
-	char* accion = (char*)almacenarBytesAccion;
-	send(memoria, accion, sizeof(accion), 0);
-
 	//Manda pedido a memoria
-	enviarDireccionAMemoria(direccion_variable);
+	enviar_direccion_y_valor_a_Memoria(direccion_variable, valor);
 
-	if(!hayOverflow()){
+	loggearFinDePrimitiva("asignar");
 
-		//Revisar si es necesario serializar el int
-		char* valorSerializado = intToChar4(valor);
-		send(memoria, valorSerializado, sizeof(t_valor_variable), 0);
-
-		free(valorSerializado);
-	}else{
-		overflowException(overflow);
-	}
 	return;
 }
 
@@ -175,7 +174,7 @@ void ir_al_label(t_nombre_etiqueta label)
 	t_puntero_instruccion posPrimeraInstruccionUtil = -1;
 
 	if (existeLabel(label)) {
-		posPrimeraInstruccionUtil = obtenerPosicionLabel(label);
+		posPrimeraInstruccionUtil = metadata_buscar_etiqueta(label, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
 	}
 	else
 	{
@@ -184,6 +183,8 @@ void ir_al_label(t_nombre_etiqueta label)
 	}
 
 	actualizarPC(pcbNuevo, posPrimeraInstruccionUtil);
+
+	loggearFinDePrimitiva("ir_al_label");
 
 	return;
 }
@@ -199,14 +200,15 @@ void finalizar()
 
 	int elementos = stack_tamanio(stack);
 
-	if(elementos <= 0)
+	if(elementos == 0)
 	{
-
+		termina = true;
+		//finalizarProceso(true);
 	}
 
 	actualizarPC(pcbNuevo, retorno);
 
-
+	loggearFinDePrimitiva("finalizar");
 
 
 }
@@ -219,6 +221,8 @@ t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableComp
 	enviarTamanioYString(codigoAccion, kernel, nombreVariableCompartida);
 
 	recv(kernel, &valorCompartida, sizeof(int), 0);
+
+	loggearFinDePrimitiva("obtener_valor_compartida");
 
 	return valorCompartida;
 
@@ -247,12 +251,14 @@ t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableComp
 		return 0;
 	}
 
+	loggearFinDePrimitiva("asignar_valor_compartida");
+
 	return valorAsignado;
 }
 
 void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 {
-	t_puntero_instruccion posicionFuncion =  obtenerPosicionLabel(etiqueta);
+	t_puntero_instruccion posicionFuncion = metadata_buscar_etiqueta(etiqueta, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
 	t_elemento_stack* newHead = stack_elemento_crear();
 
 	//dondeRetornar
@@ -266,11 +272,14 @@ void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 
 	actualizarPC(pcbNuevo, posicionFuncion);
 
+	loggearFinDePrimitiva("llamar_sin_retorno");
+
 }
 
 void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
 {
-	t_puntero_instruccion posicionFuncion =  obtenerPosicionLabel(etiqueta);
+	//t_puntero_instruccion posicionFuncion =  obtenerPosicionLabel(etiqueta);
+	t_puntero_instruccion posicionFuncion = metadata_buscar_etiqueta(etiqueta, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
 
 	t_elemento_stack* newHead = stack_elemento_crear();
 
@@ -286,6 +295,8 @@ void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
 	stack_push(stack, newHead);
 
 	actualizarPC(pcbNuevo, posicionFuncion);
+
+	loggearFinDePrimitiva("llamar_con_retorno");
 
 	return;
 }
@@ -313,6 +324,8 @@ void retornar(t_valor_variable unaVariable)
 
 	actualizarPC(pcbNuevo, retorno);
 
+	loggearFinDePrimitiva("retornar");
+
 	return;
 }
 
@@ -320,14 +333,14 @@ void wait(t_nombre_semaforo identificador_semaforo)
 {
     int codigoAccion = accionWait;
     enviarTamanioYString(codigoAccion, kernel, identificador_semaforo);
-
+	loggearFinDePrimitiva("wait");
 }
 
 void signal(t_nombre_semaforo identificador_semaforo)
 {
 	int codigoAccion = accionSignal;
 	enviarTamanioYString(codigoAccion, kernel, identificador_semaforo);
-
+	loggearFinDePrimitiva("signal");
 }
 
 t_puntero reservar(t_valor_variable espacio)
@@ -337,6 +350,8 @@ t_puntero reservar(t_valor_variable espacio)
 	send(kernel, espacioSerial, sizeof(int), 0);
 
 	//TODO:recv del puntero
+
+	loggearFinDePrimitiva("reservar");
 }
 
 void liberar(t_puntero puntero)
@@ -344,36 +359,38 @@ void liberar(t_puntero puntero)
 	int codigoAccion = accionLiberarHeap;
 	char* punteroSerial = intToChar4(puntero);
 	send(kernel, punteroSerial, sizeof(int), 0);
+
+	loggearFinDePrimitiva("liberar");
 }
 
 t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 {
-
+	loggearFinDePrimitiva("abrir");
 }
 
 void borrar(t_descriptor_archivo direccion)
 {
-
+	loggearFinDePrimitiva("borrar");
 }
 
 void cerrar(t_descriptor_archivo descriptor_archivo)
 {
-
+	loggearFinDePrimitiva("cerrar");
 }
 
 void mover_cursor(t_descriptor_archivo descriptor_archivo, t_valor_variable posicion)
 {
-
+	loggearFinDePrimitiva("mover_cursor");
 }
 
 void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio)
 {
-
+	loggearFinDePrimitiva("escribir");
 }
 
 void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valor_variable tamanio)
 {
-
+	loggearFinDePrimitiva("leer");
 }
 
 //Esta asigna todas las implementaciones nuestras al enumerador de funciones del parser de SO

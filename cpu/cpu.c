@@ -90,11 +90,15 @@ void sacarSaltoDeLinea(char* texto, int ultPos){
 void cargarConfiguracion()
 {
 	char* pat = string_new();
-	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
-	string_append(&pat,getcwd(cwd,sizeof(cwd)));
-	string_append(&pat,"/Debug/cpu.cfg");
-	t_config* configCpu = config_create(pat);
-	free(pat);
+		char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
+		string_append(&pat, getcwd(cwd, sizeof(cwd)));
+		if (string_contains(pat, "/Debug")) {
+			string_append(&pat, "/cpu.cfg");
+		} else {
+			string_append(&pat, "/Debug/cpu.cfg");
+		}
+		t_config* configCpu = config_create(pat);
+		free(pat);
 	if (config_has_property(configCpu, "IP_MEMORIA"))
 	{
 		config.IP_MEMORIA = config_get_string_value(configCpu, "IP_MEMORIA");
@@ -191,7 +195,7 @@ void obtenerPCB()
 
 	//Deserializacion del PCB
 	pcbNuevo = malloc(sizeof(t_PCB));
-	deserializar_PCB(&pcbNuevo, bufferPCB);
+	deserializar_PCB(pcbNuevo, bufferPCB);
 
 	//Guardo variables como globales a CPU
 	stack = pcbNuevo->stackPointer;
@@ -268,19 +272,58 @@ void enviarSolicitudBytes(int pid, int pagina, int offset, int size) {
 	pedido.offset = offset;
 	pedido.tamanio = size;
 
-	char* solicitud = string_new();
+	void* solicitud = malloc(sizeof(int) + sizeof(t_pedido));
 
-	int tamanio = serializar_pedido_bytes(solicitud, pedido);
-	send(memoria, solicitud, tamanio , 0);
+	int codAccion = solicitarBytesAccion;
+	memcpy(solicitud, &codAccion, sizeof(codAccion));
+	memcpy(solicitud + sizeof(codAccion), &pedido, sizeof(pedidoBytesMemoria_t));
+	int tamanio = sizeof(codAccion) + sizeof(pedidoBytesMemoria_t);
+	//int tamanio = serializar_pedido_bytes(solicitud, pedido);
+
+	send(memoria, solicitud, tamanio, 0);
 
 	char* stackOverflow = malloc(sizeof(int));
 	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), 0);
 	overflow = char4ToInt(stackOverflow);
     free(stackOverflow);
 
-	if (hayOverflow()) {
+	//if (hayOverflow()) {
 		overflowException(overflow);
-	}
+	//}
+    free(solicitud);
+
+}
+
+void enviarAlmacenarBytes(int pid, int pagina, int offset, int size, t_valor_variable valor) {
+
+	pedidoBytesMemoria_t sub_pedido;
+	sub_pedido.pid = pid;
+	sub_pedido.nroPagina = pagina;
+	sub_pedido.offset = offset;
+	sub_pedido.tamanio = size;
+
+	pedidoAlmacenarBytesMemoria_t pedido;
+	pedido.pedidoBytes = sub_pedido;
+	pedido.buffer = malloc(sizeof(sub_pedido.tamanio));
+	pedido.buffer = valor;
+
+	void* solicitud = malloc(sizeof(int) + sizeof(pedidoAlmacenarBytesMemoria_t));
+
+	int codAccion = almacenarBytesAccion;
+	memcpy(solicitud, &codAccion, sizeof(codAccion));
+	memcpy(solicitud + sizeof(codAccion), &pedido, sizeof(pedidoAlmacenarBytesMemoria_t));
+	int tamanio = sizeof(codAccion) + sizeof(pedidoAlmacenarBytesMemoria_t);
+
+	send(memoria, solicitud, tamanio, 0);
+
+	char* stackOverflow = malloc(sizeof(int));
+	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), 0);
+	overflow = char4ToInt(stackOverflow);
+    free(stackOverflow);
+
+	//if (hayOverflow()) {
+		overflowException(overflow);
+	//}
     free(solicitud);
 
 }
@@ -298,7 +341,6 @@ t_sentencia* obtenerSentenciaRelativa(int* paginaInicioSentencia) {
 
 		(*paginaInicioSentencia) = paginaInicio;
 
-    free(sentenciaAbsoluta);
 	return sentenciaRel;
 }
 
@@ -328,7 +370,7 @@ void recibirPedazoDeSentencia(int size){
 
 void pedirPrimeraSentencia(t_sentencia* sentenciaRelativa, int pagina, int* longitudRestante) {
 
-if (!hayOverflow()) {
+//if (!hayOverflow()) {
 	 int tamanioPrimeraSentencia = minimo(*longitudRestante, tamanioPaginas - sentenciaRelativa->inicio);
 
 //	 char* accion = (int)solicitarBytesAccion;
@@ -339,7 +381,7 @@ if (!hayOverflow()) {
 	(*longitudRestante) -= tamanioPrimeraSentencia;
 
 	recibirPedazoDeSentencia(tamanioPrimeraSentencia);
- }
+ //}
 }
 
 void pedirPaginaCompleta(int nroPagina) {
@@ -354,9 +396,6 @@ void pedirPaginaCompleta(int nroPagina) {
 
 void pedirUltimaSentencia(t_sentencia* sentenciaRelativa, int pagina, int longitudRestante) {
 
-//	char* accion = (char*)solicitarBytesAccion;
-//	send(memoria, accion, sizeof(accion), 0);
-//	free(accion);
 	enviarSolicitudBytes(pcbNuevo->PID, pagina, 0, longitudRestante);
 	recibirPedazoDeSentencia(longitudRestante);
 
@@ -389,7 +428,7 @@ void obtenerSentencia(int* tamanio)
 		paginaAPedir++;
 	}
 
-	free(sentenciaRelativa);
+	//free(sentenciaRelativa);
 
 }
 
@@ -405,19 +444,20 @@ void parsear(char* sentencia)
 {
 	pcbNuevo->contadorPrograma++;
 
-	if(sentenciaNoFinaliza(sentencia)){
+	//TODO:Finalizar es responsabilidad de la nueva primitiva FINALIZAR.
+	//if(sentenciaNoFinaliza(sentencia)){
 
 	//Le paso sentencia, set de primitivas de CPU y set de primitivas de kernel
 	analizadorLinea(sentencia, &funciones, &funcionesKernel);
 
+	//TODO:DESCOMENTAR LUEGO
+	//	char* accionEnviar = (char*)accionFinInstruccion;
+	//	send(kernel, accionEnviar, 1, 0);
+	//	free(accionEnviar);
 
-	char* accionEnviar = (char*)accionFinInstruccion;
-	send(kernel, accionEnviar, 1, 0);
-	free(accionEnviar);
-
-	}else{
-		  finalizarProceso(true);
-	}
+	//	}else{
+	//
+	//	}
 }
 
 void pedirSentencia()
@@ -433,10 +473,10 @@ void pedirSentencia()
 			sentenciaPedida = string_new();
 			obtenerSentencia(&tamanio);
 
-			if(!hayOverflow()){
+		//	if(!hayOverflow()){
 				parsear(sentenciaPedida);
 				free(sentenciaPedida);
-			}
+		//	}
 		}
 
 }
@@ -450,6 +490,12 @@ void recibirOrdenes(char* accionRecibida)
 			overflow = false;
 			lanzarOverflowExep = false;
 			obtenerPCB();
+			//A MODO DE PRUEBA NOMAS, QUITAR LUEGO
+			termina = false;
+			while(!termina)
+			{
+				pedirSentencia();
+			}
 			break;
 
 		case accionContinuarProceso: //Obtener y parsear sentencias
@@ -481,28 +527,43 @@ void recibirOrdenes(char* accionRecibida)
 
 void esperarProgramas()
 {
-	char* accionRecibida;
+	int32_t accionRecibida;
 	ejecutar = true;
 
 		while (!finalizarEjecucion()) {
 
-			recv(kernel, accionRecibida, 1, MSG_WAITALL);
+			int bytes = recv(kernel, &accionRecibida, sizeof(int32_t), MSG_WAITALL);
 			recibirOrdenes(accionRecibida);
-			free(accionRecibida);
 		}
 }
 
+int obtenerTamanioPagina(int memoria) {
+	int valorRecibido;
+	int idMensaje = 6;
+	send(memoria, &idMensaje, sizeof(int32_t), 0);
+	recv(memoria, &valorRecibido, sizeof(int32_t), 0);
+
+	return valorRecibido;
+}
+
+void loggearFinDePrimitiva(char* primitiva) {
+
+	log_debug(debugLog, "La primitiva |%s| finalizó OK.", primitiva);
+}
+
 int main(void){
+
+	crearLog(string_from_format("cpu_%d", getpid()), "CPU", 1);
+	log_debug(debugLog, "Iniciando proceso CPU, PID: %d.", getpid());
 
 	identidadCpu = SOYCPU;
 	cargarConfiguracion();
 	inicializarPrimitivas();
 	inicializarContexto();
 	conectarConKernel();
-
     conectarConMemoria();
-    tamanioPaginas = obtener_tamanio_pagina(memoria);
-
+    //tamanioPaginas = obtenerTamanioPagina(memoria);
+   tamanioPaginas = 32;
   //PARA PRUEBAS SOLO:pedirSentencia();
    esperarProgramas();
    // destruirLogs();

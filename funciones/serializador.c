@@ -187,17 +187,23 @@ int bytes_stack(t_stack* origen) {
 
 
 int bytes_PCB(t_PCB* pcb) {
-	return (int)((sizeof(int) * 3)
+	return (int)((sizeof(int) * 4)
 			+ bytes_stack(pcb->stackPointer)
 			+ bytes_list(pcb->indiceCodigo, sizeof(t_sentencia))
-			+ bytes_diccionario(pcb->indiceEtiquetas, sizeof(int))
+			//+ bytes_diccionario(pcb->indiceEtiquetas, sizeof(int))
+			+ pcb->etiquetasSize
 			);
 }
 
-void* serializar_PCB(t_PCB* pcb, int sock, int codigoAccion) {
+int serializar_indice_etiquetas(char* destino, char* origen, int tamanio)
+{
+	memcpy(destino, origen, tamanio);
+	return tamanio;
+}
+void* serializar_PCB(t_PCB* pcb, int sock, int32_t codigoAccion) {
 
 	int tamanioEnBytes = bytes_PCB(pcb);
-	char* pcbSerializado = malloc(tamanioEnBytes);
+	void* pcbSerializado = malloc(tamanioEnBytes);
 	int desplazamiento = 0;
 
 	desplazamiento = desplazamiento + serializar_int(pcbSerializado + desplazamiento, &(pcb->PID));
@@ -208,16 +214,21 @@ void* serializar_PCB(t_PCB* pcb, int sock, int codigoAccion) {
 
 	desplazamiento = desplazamiento + serializar_lista(pcbSerializado + desplazamiento, pcb->indiceCodigo, sizeof(t_sentencia));
 
-	desplazamiento = desplazamiento + serializar_diccionario(pcbSerializado + desplazamiento, pcb->indiceEtiquetas, sizeof(int));
+	//desplazamiento = desplazamiento + serializar_diccionario(pcbSerializado + desplazamiento, pcb->indiceEtiquetas, sizeof(int));
+
+	desplazamiento = desplazamiento + serializar_int(pcbSerializado + desplazamiento, &(pcb->etiquetasSize));
+
+	desplazamiento = desplazamiento + serializar_indice_etiquetas(pcbSerializado + desplazamiento, pcb->indiceEtiquetas, pcb->etiquetasSize);
 
 	desplazamiento = desplazamiento + serializar_stack(pcbSerializado + desplazamiento, pcb->stackPointer);
 
 
-	void* buffer = malloc(desplazamiento + sizeof(codigoAccion));
+	void* buffer = malloc(desplazamiento + sizeof(codigoAccion) + sizeof(tamanioEnBytes));
 	memcpy(buffer, &codigoAccion, sizeof(codigoAccion)); //PRIMERO EL CODIGO
-	memcpy(buffer + sizeof(codigoAccion), pcbSerializado, sizeof(codigoAccion) + desplazamiento ); // SEGUNDO LA DATA
+	memcpy(buffer + sizeof(tamanioEnBytes), &tamanioEnBytes, sizeof(tamanioEnBytes)); //SEGUNDO EL TAMAÑO DE LA DATA
+	memcpy(buffer + sizeof(tamanioEnBytes) + sizeof(codigoAccion), pcbSerializado, sizeof(codigoAccion)+ sizeof(tamanioEnBytes) + desplazamiento); // TERCERO LA DATA
 
-	//send(sock, &pcbSerializado, sizeof(codigoAccion) + desplazamiento, 0);
+	int bytesEnviados = send(sock, buffer, sizeof(codigoAccion) + desplazamiento + sizeof(tamanioEnBytes), 0);
 
 	return pcbSerializado;
 }

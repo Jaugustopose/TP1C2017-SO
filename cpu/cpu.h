@@ -11,6 +11,7 @@
 #include <string.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <commons/log.h>
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/collections/dictionary.h>
@@ -26,6 +27,8 @@
 
 t_log *logger;
 t_log *debugLogger;
+
+bool termina;
 
 //GLOBALES
 int identidadCpu;
@@ -52,13 +55,9 @@ struct configuracion{
 
 t_config* configCpu;
 struct configuracion config;
-
 t_PCB* pcbNuevo;
 t_stack* stack;
 int cantidadPagCodigo;
-
-
-
 
 
 #endif

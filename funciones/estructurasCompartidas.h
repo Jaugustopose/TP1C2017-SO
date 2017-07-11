@@ -38,7 +38,8 @@ enum tipoMensaje {
 	accionBorrarArchivo = 28,
 	accionObtenerDatosArchivo = 29,
 	accionReservarHeap = 30,
-	accionLiberarHeap = 31
+	accionLiberarHeap = 31,
+	accionEnviarStackSize = 32
 
 };
 
@@ -53,7 +54,8 @@ typedef enum identidad {
 	SOYCONSOLA = 0,
 	SOYKERNEL = 1,
 	SOYCPU = 2,
-	SOYMEMORIA = 3
+	SOYMEMORIA = 3,
+	SOYFS = 4
 
 };
 
@@ -74,13 +76,16 @@ typedef struct {
 	t_pedido valRetorno;
 } t_elemento_stack;
 
+
 typedef struct {
 	int32_t PID;
 	int32_t cantidadPaginas;
 	int32_t contadorPrograma;
 	t_list* indiceCodigo;
 	t_stack* stackPointer;
-	t_dictionary* indiceEtiquetas;
+	char* indiceEtiquetas;
+	int etiquetasSize;
+	//t_dictionary* indiceEtiquetas;
 	int exitCode;
 }t_PCB;
 
