@@ -4,10 +4,16 @@ void cargarConfigFile() {
 	char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	string_append(&pat, "/memo.cfg");
+	if (string_contains(pat, "/Debug")) {
+		string_append(&pat, "/memo.cfg");
+	} else {
+		string_append(&pat, "/Debug/memo.cfg");
+	}
+
 	t_config* configMemo = config_create(pat);
 	if (config_has_property(configMemo, "PUERTO_KERNEL")) {
-		config.puerto_kernel = config_get_int_value(configMemo, "PUERTO_KERNEL");
+		config.puerto_kernel = config_get_int_value(configMemo,
+				"PUERTO_KERNEL");
 		printf("config.PUERTO_KERNEL: %d\n", config.puerto_kernel);
 	}
 	if (config_has_property(configMemo, "IP_KERNEL")) {
@@ -27,7 +33,8 @@ void cargarConfigFile() {
 		printf("config.MARCO_SIZE: %d\n", config.marco_size);
 	}
 	if (config_has_property(configMemo, "RETARDO_MEMORIA")) {
-		config.retardo_memoria = config_get_int_value(configMemo, "RETARDO_MEMORIA");
+		config.retardo_memoria = config_get_int_value(configMemo,
+				"RETARDO_MEMORIA");
 		printf("config.RETARDO_MEMORIA: %d\n", config.retardo_memoria);
 	}
 }
@@ -74,22 +81,23 @@ void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	puts("TABLA DE PÁGINAS INVERTIDA");
 	printf("%*s||%*s||%*s\n", 9, "Marco  ", 9, "PID   ", 12, "Nro Página");
 	for (i = 0; i < config.marcos; i++) {
-		printf("%*d||%*d||%*d\n", 9, i, 9, tablaPaginasInvertida[i].pid, 12, tablaPaginasInvertida[i].nroPagina);
+		printf("%*d||%*d||%*d\n", 9, i, 9, tablaPaginasInvertida[i].pid, 12,
+				tablaPaginasInvertida[i].nroPagina);
 		//Función privada dentro de este scope (para el closure del find)
 		int _soy_pid_buscado(void *p) {
 			return p == tablaPaginasInvertida[i].pid;
 		}
 		//Si no lo encontramos en la lista de activos lo agregamos
-		if(list_find(listaProcesosActivos, _soy_pid_buscado) == NULL) {
+		if (list_find(listaProcesosActivos, _soy_pid_buscado) == NULL) {
 			list_add(listaProcesosActivos, tablaPaginasInvertida[i].pid);
 		}
 
 	}
 	puts("LISTADO DE PROCESOS ACTIVOS");
-	for(i=0; i < list_size(listaProcesosActivos); i++) {
-		int pid = (int)list_get(listaProcesosActivos, i);
+	for (i = 0; i < list_size(listaProcesosActivos); i++) {
+		int pid = (int) list_get(listaProcesosActivos, i);
 		//No imprimimos los nros de pid correspondientes a estructuras administrativas (-1) ni libres (-10)
-		if(pid >= 0){
+		if (pid >= 0) {
 			printf("PID: %d\n", pid);
 		}
 	}
@@ -97,13 +105,16 @@ void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	list_destroy(listaProcesosActivos);
 }
 
-void realizarDumpContenidoMemoriaCompleta(tablaPagina_t* tablaPaginasInvertida){
+void realizarDumpContenidoMemoriaCompleta(tablaPagina_t* tablaPaginasInvertida) {
 	int i;
 	char* bufferPagina = malloc(config.marco_size);
 	printf("Se procede a imprimir por pantalla el contenido de cada marco:\n");
 	for (i = 0; i < config.marcos; i++) {
-		memcpy(bufferPagina, memoria + i * config.marco_size, config.marco_size);
-		printf("Marco: %d, pid: %d, pag: %d, contenido: %s\n", i, tablaPaginasInvertida[i].pid, tablaPaginasInvertida[i].nroPagina, bufferPagina);
+		memcpy(bufferPagina, memoria + i * config.marco_size,
+				config.marco_size);
+		printf("Marco: %d, pid: %d, pag: %d, contenido: %s\n", i,
+				tablaPaginasInvertida[i].pid,
+				tablaPaginasInvertida[i].nroPagina, bufferPagina);
 	}
 	free(bufferPagina);
 }
@@ -114,7 +125,8 @@ int finalizarPrograma(int pid, tablaPagina_t* tablaPaginasInvertida) {
 	int retorno = -14;
 	for (i = 0; i < config.marcos; i++) {
 		//Chequeamos, aparte de que coincida el pid, que no sea -1 (corresponde a estructuras administrativas)
-		if (tablaPaginasInvertida[i].pid == pid && tablaPaginasInvertida[i].pid != -1) {
+		if (tablaPaginasInvertida[i].pid == pid
+				&& tablaPaginasInvertida[i].pid != -1) {
 			tablaPaginasInvertida[i].pid = -10;
 			tablaPaginasInvertida[i].nroPagina = -1;
 			retorno = EXIT_SUCCESS;
@@ -124,10 +136,11 @@ int finalizarPrograma(int pid, tablaPagina_t* tablaPaginasInvertida) {
 	return retorno;
 }
 
-int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPaginasInvertida) {
+int solicitarAsignacionPaginas(int pid, int cantPaginas,
+		tablaPagina_t* tablaPaginasInvertida) {
 	int i;
 	int nroPag = -1;
-	int j=0;
+	int j = 0;
 	int marcosLibres[cantPaginas];
 
 	//Inicializamos array marcosLibres (podría no hacerse. Es por el warning de "unused")
@@ -144,7 +157,8 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPag
 
 	//Recorremos la tabla y obtenemos el último nro de página asignado al proceso
 	for (i = 0; i < config.marcos; ++i) {
-		if (tablaPaginasInvertida[i].pid == pid && tablaPaginasInvertida[i].nroPagina > nroPag){
+		if (tablaPaginasInvertida[i].pid == pid
+				&& tablaPaginasInvertida[i].nroPagina > nroPag) {
 			nroPag = tablaPaginasInvertida[i].nroPagina;
 		}
 	}
@@ -163,15 +177,16 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPag
 
 	//¿Se puede satisfacer el pedido?
 	if (j < cantPaginas) {
-		perror("El número de páginas solicitadas supera el número de disponibles");
+		perror(
+				"El número de páginas solicitadas supera el número de disponibles");
 		return -11;
 	} else {
 		/* Los marcos libres que encontré previamente y guardé en el array marcosLibres
 		 * los uso para asignar al pid en tablaPaginasInvertida
 		 */
 		for (i = 0; i < cantPaginas; i++) {
-			tablaPaginasInvertida[ marcosLibres[i] ].pid = pid;
-			tablaPaginasInvertida[ marcosLibres[i] ].nroPagina = ++nroPag; //incrementa el nroPag y luego asigna
+			tablaPaginasInvertida[marcosLibres[i]].pid = pid;
+			tablaPaginasInvertida[marcosLibres[i]].nroPagina = ++nroPag; //incrementa el nroPag y luego asigna
 		}
 	}
 	//TODO SEMAFORO HASTA ACÁ
@@ -190,7 +205,8 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPag
  * codResult = int
  * bytesSolicitados = char*
  */
-char* solicitarBytes(int pid, int nroPagina, int offset, int tamanio, tablaPagina_t* tablaPaginasInvertida){
+char* solicitarBytes(int pid, int nroPagina, int offset, int tamanio,
+		tablaPagina_t* tablaPaginasInvertida) {
 	int codResult;
 	char* respuesta = malloc(tamanio + sizeof(codResult));
 	char* bytesSolicitados = malloc(tamanio);
@@ -198,16 +214,18 @@ char* solicitarBytes(int pid, int nroPagina, int offset, int tamanio, tablaPagin
 	memset(respuesta, '\0', tamanio + sizeof(codResult));
 	int marco = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
 	printf("Marco encontrado solicitarBytes: %d\n", marco);
-	if (marco == -10){
+	if (marco == -10) {
 		codResult = marco;
-		printf("El nro de página %d para el pid %d no existe\n", pid, nroPagina);
+		printf("El nro de página %d para el pid %d no existe\n", pid,
+				nroPagina);
 	} else if ((offset + tamanio) > config.marco_size) {
 		codResult = -12;
 		printf("El pedido de lectura excede el tamaño de la página\n");
 	} else {
 		printf("Tamaño solicitado: %d\n", tamanio);
 		codResult = EXIT_SUCCESS;
-		memcpy(bytesSolicitados, memoria + marco * config.marco_size + offset, tamanio);
+		memcpy(bytesSolicitados, memoria + marco * config.marco_size + offset,
+				tamanio);
 	}
 	memcpy(respuesta, &codResult, sizeof(codResult));
 	memcpy(respuesta + sizeof(codResult), bytesSolicitados, tamanio);
@@ -217,8 +235,9 @@ char* solicitarBytes(int pid, int nroPagina, int offset, int tamanio, tablaPagin
 
 int buscarMarco(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida) {
 	int i;
-	for (i=0; i<config.marcos; i++){
-		if (tablaPaginasInvertida[i].pid==pid && tablaPaginasInvertida[i].nroPagina==nroPagina){
+	for (i = 0; i < config.marcos; i++) {
+		if (tablaPaginasInvertida[i].pid == pid
+				&& tablaPaginasInvertida[i].nroPagina == nroPagina) {
 			return i;
 		}
 	}
@@ -240,7 +259,8 @@ int buscarMarco(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida) {
  * 			  0: Éxito
  * 			-12: El pedido excede le tamaño de página
  */
-int almacenarBytes(int pid, int nroPagina, int offset, int tamanio, void* buffer, tablaPagina_t* tablaPaginasInvertida) {
+int almacenarBytes(int pid, int nroPagina, int offset, int tamanio,
+		void* buffer, tablaPagina_t* tablaPaginasInvertida) {
 	//TODO SEMÁFORO DESDE ACÁ
 	printf("Inicia almacenarBytes\n");
 	int marcoPagina = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
@@ -258,7 +278,8 @@ int almacenarBytes(int pid, int nroPagina, int offset, int tamanio, void* buffer
 	return EXIT_SUCCESS;
 }
 
-int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tablaPaginasInvertida) {
+int inicializarPrograma(int pid, int cantPaginasSolicitadas,
+		tablaPagina_t* tablaPaginasInvertida) {
 
 	int cantRealPaginasSolicitadas = cantPaginasSolicitadas + stack_size;
 
@@ -283,15 +304,16 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 
 	//¿Se puede satisfacer el pedido?
 	if (j < cantRealPaginasSolicitadas) {
-		perror("El número de páginas solicitadas supera el número de disponibles");
+		perror(
+				"El número de páginas solicitadas supera el número de disponibles");
 		return -11;
 	} else {
 		/* Los marcos libres que encontré previamente y guardé en el array marcosLibres
 		 * los uso para asignar al pid en tablaPaginasInvertida
 		 */
 		for (i = 0; i < cantRealPaginasSolicitadas; i++) {
-			tablaPaginasInvertida[ marcosLibres[i] ].pid = pid;
-			tablaPaginasInvertida[ marcosLibres[i] ].nroPagina = i;
+			tablaPaginasInvertida[marcosLibres[i]].pid = pid;
+			tablaPaginasInvertida[marcosLibres[i]].nroPagina = i;
 		}
 	}
 	//TODO SEMAFORO HASTA ACÁ
@@ -311,7 +333,8 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 		puts("2: Realizar dump de Memoria cache");
 		puts("3: Realizar dump de Estructuras de la Memoria");
 		puts("4: Realizar dump del contenido de la Memoria completa");
-		puts("5: Realizar dump del contenido de la Memoria para un proceso en particular");
+		puts(
+				"5: Realizar dump del contenido de la Memoria para un proceso en particular");
 		char accion[3];
 		if (fgets(accion, sizeof(accion), stdin) == NULL) {
 			printf("ERROR EN fgets !\n");
@@ -319,163 +342,201 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 		}
 		int codAccion = accion[0] - '0';
 		switch (codAccion) {
-			case retardo:
-				printf("Codificar retardo!\n");
-				break;
-			case dumpCache:
-				printf("Codificar dumpCache!\n");
-				break;
-			case dumpEstructurasDeMemoria:
-				realizarDumpEstructurasDeMemoria(tablaPaginasInvertida);
-				break;
-			case dumpMemoriaCompleta:
-				realizarDumpContenidoMemoriaCompleta(tablaPaginasInvertida);
-				break;
-			case dumpMemoriaProceso:
-				printf("Codificar dumpMemoriaProceso!\n");
-				break;
-			case flushCache:
-				printf("Codificar flushCache!\n");
-				break;
-			case sizeMemoria:
-				printf("Codificar sizeMemoria!\n");
-				break;
-			case sizePid:
-				printf("Codificar sizePid!\n");
-				break;
+		case retardo:
+			printf("Codificar retardo!\n");
+			break;
+		case dumpCache:
+			printf("Codificar dumpCache!\n");
+			break;
+		case dumpEstructurasDeMemoria:
+			realizarDumpEstructurasDeMemoria(tablaPaginasInvertida);
+			break;
+		case dumpMemoriaCompleta:
+			realizarDumpContenidoMemoriaCompleta(tablaPaginasInvertida);
+			break;
+		case dumpMemoriaProceso:
+			printf("Codificar dumpMemoriaProceso!\n");
+			break;
+		case flushCache:
+			printf("Codificar flushCache!\n");
+			break;
+		case sizeMemoria:
+			printf("Codificar sizeMemoria!\n");
+			break;
+		case sizePid:
+			printf("Codificar sizePid!\n");
+			break;
 		}
 	}
 }
 
-void atenderHilo(paramHiloDedicado* parametros)
-{
+void atenderHilo(paramHiloDedicado* parametros) {
 	int cantBytesRecibidos;
 	for (;;) {
-					// Gestionar datos de un cliente. Recibimos el código de acción que quiere realizar.
-					int codAccion;
-					if ((cantBytesRecibidos = recv(parametros->socketClie, &codAccion, sizeof(codAccion), 0)) <= 0) {
-						// error o conexión cerrada por el cliente
-						if (cantBytesRecibidos == 0) {
-							// conexión cerrada
-							printf("Server: socket %d termino la conexion\n", parametros->socketClie);
-							close(parametros->socketClie);
-							break;
-						} else {
-							perror("Se ha producido un error en el Recv");
-							break;
-						}
-					} else {
-						printf("He recibido %d bytes con la acción: %d\n", cantBytesRecibidos, codAccion);
-						pedidoSolicitudPaginas_t pedidoPaginas;
-						pedidoBytesMemoria_t pedidoBytes;
-						pedidoAlmacenarBytesMemoria_t pedidoAlmacenarBytes;
-	//					char* bytesAEscribir;
-						char* bytesSolicitados;
-						int resultAccion;
-						int pidAFinalizar;
+		// Gestionar datos de un cliente. Recibimos el código de acción que quiere realizar.
+		int codAccion;
+		if ((cantBytesRecibidos = recv(parametros->socketClie, &codAccion,
+				sizeof(codAccion), 0)) <= 0) {
+			// error o conexión cerrada por el cliente
+			if (cantBytesRecibidos == 0) {
+				// conexión cerrada
+				printf("Server: socket %d termino la conexion\n",
+						parametros->socketClie);
+				close(parametros->socketClie);
+				break;
+			} else {
+				perror("Se ha producido un error en el Recv");
+				break;
+			}
+		} else {
+			printf("He recibido %d bytes con la acción: %d\n",
+					cantBytesRecibidos, codAccion);
+			pedidoSolicitudPaginas_t pedidoPaginas;
+			pedidoBytesMemoria_t pedidoBytes;
+			pedidoAlmacenarBytesMemoria_t pedidoAlmacenarBytes;
+			//					char* bytesAEscribir;
+			char* bytesSolicitados;
+			int resultAccion;
+			int pidAFinalizar;
 
-						switch (codAccion) {
+			switch (codAccion) {
 
-						case inicializarProgramaAccion:
-							recv(parametros->socketClie, &pedidoPaginas, sizeof(pedidoPaginas), 0);
-							printf("Recibida solicitud de %d páginas para el pid %d\n", pedidoPaginas.cantidadPaginas, pedidoPaginas.pid);
-							printf("Se procede a inicializar programa\n");
-							resultAccion = inicializarPrograma(pedidoPaginas.pid,
-									pedidoPaginas.cantidadPaginas,
-									parametros->tablaPaginasInvertida);
-							printf("Inicializar programa en Memoria terminó con resultado de acción: %d\n", resultAccion);
-							send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
-							break;
+			case inicializarProgramaAccion:
+				recv(parametros->socketClie, &pedidoPaginas,
+						sizeof(pedidoPaginas), 0);
+				printf("Recibida solicitud de %d páginas para el pid %d\n",
+						pedidoPaginas.cantidadPaginas, pedidoPaginas.pid);
+				printf("Se procede a inicializar programa\n");
+				resultAccion = inicializarPrograma(pedidoPaginas.pid,
+						pedidoPaginas.cantidadPaginas,
+						parametros->tablaPaginasInvertida);
+				printf(
+						"Inicializar programa en Memoria terminó con resultado de acción: %d\n",
+						resultAccion);
+				send(parametros->socketClie, &resultAccion,
+						sizeof(resultAccion), 0);
+				break;
 
-						case solicitarPaginasAccion:
-							recv(parametros->socketClie, &pedidoPaginas, sizeof(pedidoPaginas), 0);
-							printf("Recibida solicitud de %d páginas para el pid %d\n", pedidoPaginas.cantidadPaginas, pedidoPaginas.pid);
-							printf("Se procede a solicitar páginas del programa\n");
-							resultAccion = solicitarAsignacionPaginas(
-									pedidoPaginas.pid,
-									pedidoPaginas.cantidadPaginas,
-									parametros->tablaPaginasInvertida);
-							printf("Solicitar páginas adicionales terminó con resultado de acción: %d\n", resultAccion);
-							send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
-							break;
+			case solicitarPaginasAccion:
+				recv(parametros->socketClie, &pedidoPaginas,
+						sizeof(pedidoPaginas), 0);
+				printf("Recibida solicitud de %d páginas para el pid %d\n",
+						pedidoPaginas.cantidadPaginas, pedidoPaginas.pid);
+				printf("Se procede a solicitar páginas del programa\n");
+				resultAccion = solicitarAsignacionPaginas(pedidoPaginas.pid,
+						pedidoPaginas.cantidadPaginas,
+						parametros->tablaPaginasInvertida);
+				printf(
+						"Solicitar páginas adicionales terminó con resultado de acción: %d\n",
+						resultAccion);
+				send(parametros->socketClie, &resultAccion,
+						sizeof(resultAccion), 0);
+				break;
 
-						case almacenarBytesAccion:
-							recv(parametros->socketClie, &pedidoAlmacenarBytes.pedidoBytes.pid, sizeof(pedidoAlmacenarBytes.pedidoBytes.pid), 0);
-							recv(parametros->socketClie, &pedidoAlmacenarBytes.pedidoBytes.nroPagina, sizeof(pedidoAlmacenarBytes.pedidoBytes.nroPagina), 0);
-							recv(parametros->socketClie, &pedidoAlmacenarBytes.pedidoBytes.offset, sizeof(pedidoAlmacenarBytes.pedidoBytes.offset), 0);
-							recv(parametros->socketClie, &pedidoAlmacenarBytes.pedidoBytes.tamanio, sizeof(pedidoAlmacenarBytes.pedidoBytes.tamanio), 0);
+			case almacenarBytesAccion:
+				recv(parametros->socketClie,
+						&pedidoAlmacenarBytes.pedidoBytes.pid,
+						sizeof(pedidoAlmacenarBytes.pedidoBytes.pid), 0);
+				recv(parametros->socketClie,
+						&pedidoAlmacenarBytes.pedidoBytes.nroPagina,
+						sizeof(pedidoAlmacenarBytes.pedidoBytes.nroPagina), 0);
+				recv(parametros->socketClie,
+						&pedidoAlmacenarBytes.pedidoBytes.offset,
+						sizeof(pedidoAlmacenarBytes.pedidoBytes.offset), 0);
+				recv(parametros->socketClie,
+						&pedidoAlmacenarBytes.pedidoBytes.tamanio,
+						sizeof(pedidoAlmacenarBytes.pedidoBytes.tamanio), 0);
 
+				pedidoAlmacenarBytes.buffer = malloc(
+						pedidoAlmacenarBytes.pedidoBytes.tamanio);
 
-							pedidoAlmacenarBytes.buffer = malloc (pedidoAlmacenarBytes.pedidoBytes.tamanio);
+				recv(parametros->socketClie, pedidoAlmacenarBytes.buffer,
+						pedidoAlmacenarBytes.pedidoBytes.tamanio, 0);
+				//						pedidoAlmacenarBytes.buffer = bytesAEscribir;
+				printf(
+						"Recibida solicitud de almacenar %d bytes para el pid %d en su página %d\n con un offset de %d\n",
+						pedidoAlmacenarBytes.pedidoBytes.tamanio,
+						pedidoAlmacenarBytes.pedidoBytes.pid,
+						pedidoAlmacenarBytes.pedidoBytes.nroPagina,
+						pedidoAlmacenarBytes.pedidoBytes.offset);
+				printf("Se procede a almacenar bytes: %s\n",
+						pedidoAlmacenarBytes.buffer);
+				resultAccion = almacenarBytes(
+						pedidoAlmacenarBytes.pedidoBytes.pid,
+						pedidoAlmacenarBytes.pedidoBytes.nroPagina,
+						pedidoAlmacenarBytes.pedidoBytes.offset,
+						pedidoAlmacenarBytes.pedidoBytes.tamanio,
+						pedidoAlmacenarBytes.buffer,
+						parametros->tablaPaginasInvertida);
+				printf(
+						"Solicitud de almacenar bytes terminó con resultado de acción: %d\n",
+						resultAccion);
+				send(parametros->socketClie, &resultAccion,
+						sizeof(resultAccion), 0);
+				//						free(bytesAEscribir);
+				free(pedidoAlmacenarBytes.buffer);
+				break;
 
-							recv(parametros->socketClie, pedidoAlmacenarBytes.buffer,pedidoAlmacenarBytes.pedidoBytes.tamanio, 0);
-	//						pedidoAlmacenarBytes.buffer = bytesAEscribir;
-							printf("Recibida solicitud de almacenar %d bytes para el pid %d en su página %d\n con un offset de %d\n",
-									pedidoAlmacenarBytes.pedidoBytes.tamanio,
-									pedidoAlmacenarBytes.pedidoBytes.pid,
-									pedidoAlmacenarBytes.pedidoBytes.nroPagina,
-									pedidoAlmacenarBytes.pedidoBytes.offset);
-							printf("Se procede a almacenar bytes: %s\n", pedidoAlmacenarBytes.buffer);
-							resultAccion = almacenarBytes(
-									pedidoAlmacenarBytes.pedidoBytes.pid,
-									pedidoAlmacenarBytes.pedidoBytes.nroPagina,
-									pedidoAlmacenarBytes.pedidoBytes.offset,
-									pedidoAlmacenarBytes.pedidoBytes.tamanio,
-									pedidoAlmacenarBytes.buffer,
-									parametros->tablaPaginasInvertida);
-							printf("Solicitud de almacenar bytes terminó con resultado de acción: %d\n", resultAccion);
-							send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
-	//						free(bytesAEscribir);
-							free(pedidoAlmacenarBytes.buffer);
-							break;
+			case solicitarBytesAccion:
+				recv(parametros->socketClie, &pedidoBytes, sizeof(pedidoBytes),
+						0);
+				printf(
+						"Recibida solicitud de %d bytes para el pid %d en su página %d\n con un offset de %d\n",
+						pedidoBytes.tamanio, pedidoBytes.pid,
+						pedidoBytes.nroPagina, pedidoBytes.offset);
+				printf("Se procede a solicitar bytes\n");
+				bytesSolicitados = solicitarBytes(pedidoBytes.pid,
+						pedidoBytes.nroPagina, pedidoBytes.offset,
+						pedidoBytes.tamanio, parametros->tablaPaginasInvertida);
+				memcpy(&resultAccion, bytesSolicitados, sizeof(resultAccion));
+				printf(
+						"Solicitud de solicitar bytes terminó con resultado de acción: %d\n",
+						resultAccion);
+				printf("Solicitar bytes devolvió los Bytes solicitados: %s\n",
+						bytesSolicitados + sizeof(resultAccion));
+				send(parametros->socketClie, bytesSolicitados,
+						pedidoBytes.tamanio + sizeof(resultAccion), 0);
+				free(bytesSolicitados);
+				break;
 
-						case solicitarBytesAccion:
-							recv(parametros->socketClie, &pedidoBytes, sizeof(pedidoBytes), 0);
-							printf("Recibida solicitud de %d bytes para el pid %d en su página %d\n con un offset de %d\n",
-									pedidoBytes.tamanio,
-									pedidoBytes.pid,
-									pedidoBytes.nroPagina,
-									pedidoBytes.offset);
-							printf("Se procede a solicitar bytes\n");
-							bytesSolicitados = solicitarBytes(pedidoBytes.pid,
-									pedidoBytes.nroPagina, pedidoBytes.offset,
-									pedidoBytes.tamanio, parametros->tablaPaginasInvertida);
-							memcpy(&resultAccion, bytesSolicitados, sizeof(resultAccion));
-							printf("Solicitud de solicitar bytes terminó con resultado de acción: %d\n", resultAccion);
-							printf("Solicitar bytes devolvió los Bytes solicitados: %s\n", bytesSolicitados + sizeof(resultAccion));
-							send(parametros->socketClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), 0);
-							free(bytesSolicitados);
-							break;
+			case finalizarProgramaAccion:
+				recv(parametros->socketClie, &pidAFinalizar,
+						sizeof(pidAFinalizar), 0);
+				printf(
+						"Recibida solicitud para finalizar programa con pid = %d\n",
+						pidAFinalizar);
+				printf("Se procede a finalizar el programa\n");
+				resultAccion = finalizarPrograma(pidAFinalizar,
+						parametros->tablaPaginasInvertida);
+				printf(
+						"Solicitud de finalizar programa terminó con resultado de acción: %d\n",
+						resultAccion);
+				send(parametros->socketClie, &resultAccion,
+						sizeof(resultAccion), 0);
+				break;
 
-						case finalizarProgramaAccion:
-							recv(parametros->socketClie, &pidAFinalizar, sizeof(pidAFinalizar), 0);
-							printf("Recibida solicitud para finalizar programa con pid = %d\n", pidAFinalizar);
-							printf("Se procede a finalizar el programa\n");
-							resultAccion = finalizarPrograma(pidAFinalizar, parametros->tablaPaginasInvertida);
-							printf("Solicitud de finalizar programa terminó con resultado de acción: %d\n", resultAccion);
-							send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
-							break;
+			case obtenerTamanioPaginas:
+				send(parametros->socketClie, &config.marco_size,
+						sizeof(int32_t), 0);
+				break;
 
-						case obtenerTamanioPaginas:
-							send(parametros->socketClie, &config.marco_size, sizeof(int32_t),0);
-							break;
+			case accionEnviarStackSize:
+				recv(parametros->socketClie, &stack_size, sizeof(int32_t), 0);
+				printf("Recibido tamanio dle stack = %d\n", stack_size);
+				break;
 
-						case accionEnviarStackSize:
-							 recv(parametros->socketClie, &stack_size, sizeof(int32_t),0);
-							 printf("Recibido tamanio dle stack = %d\n", stack_size);
-							 break;
-
-						default:
-							printf("No reconozco el código de acción\n");
-							resultAccion = -13;
-							send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
-						}
-						printf("Fin atención acción\n");
-					}
+			default:
+				printf("No reconozco el código de acción\n");
+				resultAccion = -13;
+				send(parametros->socketClie, &resultAccion,
+						sizeof(resultAccion), 0);
+			}
+			printf("Fin atención acción\n");
+		}
+	}
 }
-}
 
-int main(void){
+int main(void) {
 
 	//Setea config_t config
 	cargarConfigFile();
@@ -488,9 +549,11 @@ int main(void){
 	if (tamanioTablaPagina % config.marco_size == 0) {
 		cantMarcosOcupaTablaPaginas = (tamanioTablaPagina / config.marco_size);
 	} else {
-		cantMarcosOcupaTablaPaginas = (tamanioTablaPagina / config.marco_size) + 1;
+		cantMarcosOcupaTablaPaginas = (tamanioTablaPagina / config.marco_size)
+				+ 1;
 	}
-	printf("Cantidad de marcos que ocupa la tabla de páginas invertida: %d\n", cantMarcosOcupaTablaPaginas);
+	printf("Cantidad de marcos que ocupa la tabla de páginas invertida: %d\n",
+			cantMarcosOcupaTablaPaginas);
 
 	int i;
 	for (i = 0; i < config.marcos; ++i) {
@@ -521,34 +584,36 @@ int main(void){
 	int sockServ; // Socket de nueva conexion aceptada
 	int sockClie; // Socket a la escucha
 
-
 	//Crear socket. Dejar reutilizable. Crear direccion del servidor. Bind. Listen.
 	sockServ = crearSocket();
 	reusarSocket(sockServ, 1);
 	direccionServidor = crearDireccionServidor(config.puerto);
 	bind_w(sockServ, &direccionServidor);
 	listen_w(sockServ);
-	printf("Escuchando nuevas solicitudes tcp en el puerto %d...\n", config.puerto);
+	printf("Escuchando nuevas solicitudes tcp en el puerto %d...\n",
+			config.puerto);
 	pthread_t unHilo;
-	pthread_create(&unHilo, NULL, (void*) escucharConsolaMemoria, (void*) tablaPaginasInvertida);
+	pthread_create(&unHilo, NULL, (void*) escucharConsolaMemoria,
+			(void*) tablaPaginasInvertida);
 
 	// gestionar nuevas conexiones
 	addrlen = sizeof(direccionCliente);
 	for (;;) {
-		if ((sockClie = accept(sockServ, (struct sockaddr*) &direccionCliente, &addrlen)) == -1) {
+		if ((sockClie = accept(sockServ, (struct sockaddr*) &direccionCliente,
+				&addrlen)) == -1) {
 			perror("Error en el accept");
 		} else {
 			pthread_t hiloDedicado;
 			paramHiloDedicado* parametros = malloc(sizeof(paramHiloDedicado));
 			parametros->socketClie = sockClie;
 			parametros->tablaPaginasInvertida = tablaPaginasInvertida;
-			pthread_create(&hiloDedicado, NULL, (void*)atenderHilo, (void*)parametros);
+			pthread_create(&hiloDedicado, NULL, (void*) atenderHilo,
+					(void*) parametros);
 
-			printf("Server: nueva conexion de %s en socket %d\n", inet_ntoa(direccionCliente.sin_addr), sockClie);
+			printf("Server: nueva conexion de %s en socket %d\n",
+					inet_ntoa(direccionCliente.sin_addr), sockClie);
 
-			}
 		}
 	}
-
-
+}
 

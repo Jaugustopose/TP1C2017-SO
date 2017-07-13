@@ -54,7 +54,8 @@ typedef enum identidad {
 	SOYCONSOLA = 0,
 	SOYKERNEL = 1,
 	SOYCPU = 2,
-	SOYMEMORIA = 3
+	SOYMEMORIA = 3,
+	SOYFS = 4
 
 };
 

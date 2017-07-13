@@ -7,25 +7,32 @@
 
 #include "fileSystem.h"
 
-void cargarConfiguracion()
+int cargarConfiguracion()
 {
 	char* pat = string_new();
-	//char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
-	//string_append(&pat,getcwd(cwd,sizeof(cwd)));
-	string_append(&pat,"/home/utnso/projects/tp-2017-1c-No-Se-Recursa/fyleSystem");
-	string_append(&pat,"/FileSystem.cfg");
-	t_config* configFs = config_create(pat);
-
-	printf("El directorio sobre el que se esta trabajando es %s\n", pat);
-	free(pat);
+		char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
+		string_append(&pat, getcwd(cwd, sizeof(cwd)));
+		if (string_contains(pat, "/Debug")) {
+			string_append(&pat, "/FileSystem.cfg");
+		} else {
+			string_append(&pat, "/Debug/FileSystem.cfg");
+		}
+		t_config* configFs = config_create(pat);
+		free(pat);
 
 	if (config_has_property(configFs, "PUERTO")){
 		config.PUERTO = config_get_int_value(configFs,"PUERTO");
 		printf("config.PUERTO: %i\n", config.PUERTO);
+	}else{
+		printf("No se encontró el parámetro PUERTO dentro del archivo de configuración\n");
+		return -1;
 	}
 	if (config_has_property(configFs, "PUNTO_MONTAJE")){
 		config.PUNTO_MONTAJE = config_get_string_value(configFs,"PUNTO_MONTAJE");
 		printf("config.PUNTO_MONTAJE: %s\n", config.PUNTO_MONTAJE);
+	}else{
+		printf("No se encontró el parámetro PUNTO_MONTAJE dentro del archivo de configuración\n");
+		return -1;
 	}
 
 	pat = string_new();
@@ -47,37 +54,62 @@ void cargarConfiguracion()
 	string_append(&pat,config.PUNTO_MONTAJE);
 	string_append(&pat,"/Bloques/");
 	paths.Bloques = pat;
+
+	return 0;
 }
 
-void leerMetadata(){
+int leerMetadata(){
 	t_config* config = config_create(paths.Metadata);
+	if(config==NULL){
+		printf("No se encontró el archivo Metadata en :%s\n", paths.Metadata);
+		return -1;
+	}
 
 	if (config_has_property(config, "CANTIDAD_BLOQUES")){
 		metadata.CANTIDAD_BLOQUES = config_get_int_value(config,"CANTIDAD_BLOQUES");
 		printf("metadata.CANTIDAD_BLOQUES: %i\n", metadata.CANTIDAD_BLOQUES);
+	}else{
+		printf("No se encontró el parámetro CANTIDAD_BLOQUES dentro del archivo Metadata\n");
+		return -1;
 	}
-	if (config_has_property(config, "CANTIDAD_BLOQUES")){
+	if (config_has_property(config, "TAMANIO_BLOQUES")){
 		metadata.TAMANIO_BLOQUES = config_get_int_value(config,"TAMANIO_BLOQUES");
 		printf("metadata.TAMANIO_BLOQUES: %i\n", metadata.TAMANIO_BLOQUES);
+	}else{
+		printf("No se encontró el parámetro TAMANIO_BLOQUES dentro del archivo Metadata\n");
+		return -1;
 	}
-	if (config_has_property(config, "CANTIDAD_BLOQUES")){
+	if (config_has_property(config, "MAGIC_NUMBER")){
 		metadata.MAGIC_NUMBER = config_get_string_value(config,"MAGIC_NUMBER");
 		printf("metadata.MAGIC_NUMBER: %s\n", metadata.MAGIC_NUMBER);
+	}else{
+		printf("No se encontró el parámetro MAGIC_NUMBER dentro del archivo Metadata\n");
+		return -1;
 	}
+	//Creo carpetas de Bloques y archivos si es que no existen
+	mkdir(paths.Bloques, S_IRWXU);
+	mkdir(paths.Archivos, S_IRWXU);
+	return 0;
 }
 
 /***********************************BITMAP**************************************/
 
 void crearBitmap(){
-	char * bitarray = (char*) malloc(sizeof(char)* ((metadata.CANTIDAD_BLOQUES+8-1)/8));
+	char * bitarray = (char*) malloc(sizeof(char)* ((metadata.CANTIDAD_BLOQUES+8-1)/8)); //Redondeado para arriba
 	bitmap = bitarray_create_with_mode(bitarray,(metadata.CANTIDAD_BLOQUES+8-1)/8, LSB_FIRST);
 }
 
 void leerBitmap(){
 	FILE *archivo = fopen(paths.Bitmap,"rb");
-	crearBitmap();
-	fread(bitmap->bitarray, sizeof(char), (metadata.CANTIDAD_BLOQUES+8-1)/8, archivo);
-	fclose(archivo);
+	if(archivo==NULL){
+		archivo = fopen(paths.Bitmap, "wb");
+		crearBitmap();
+		fclose(archivo);
+	}else{
+		crearBitmap();
+		fread(bitmap->bitarray, sizeof(char), (metadata.CANTIDAD_BLOQUES+8-1)/8, archivo);
+		fclose(archivo);
+	}
 }
 
 void escribirBitmap(){
@@ -92,6 +124,23 @@ void destruirBitmap(t_bitarray *bitmap){
 }
 
 /***********************************BLOQUES*************************************/
+
+void crearBloques(){
+	int i;
+	FILE *archivo;
+	for (i = 1; i <= metadata.CANTIDAD_BLOQUES; ++i) {
+		char* pat = string_new();
+		string_append(&pat,paths.Bloques);
+		string_append(&pat,string_itoa(i));
+		string_append(&pat,".bin");
+		archivo = fopen(pat,"rb");
+		if(archivo==NULL){
+			archivo = fopen(pat,"wb");
+		}
+		free(pat);
+		fclose(archivo);
+	}
+}
 
 int* buscarBloquesLibres(int cantidad){
 	int i;
@@ -195,7 +244,6 @@ int crearDirectorio(char* path){
 
 /***********************************OPERACIONES FS******************************/
 
-
 int validarArchivo(char *path)
 {
 	archivo_t *archivo = newArchivo();
@@ -215,11 +263,11 @@ int crearArchivo(char *path)
 	FILE *archivo = fopen(pat,"w");
 	if(archivo == NULL){
 		if(crearDirectorio(path)<0){
-			return -1;
+			return -2;
 		}else{
 			archivo = fopen(pat,"w");
 			if(archivo == NULL){
-				return -1;
+				return -2;
 			}
 		}
 	}
@@ -260,7 +308,7 @@ char* obtenerDatos(char *path, int offset, int size)
 	archivo_t *archivo = newArchivo();
 	int res = leerArchivo(path, archivo);
 	if(res<0){
-		puts("Error al guardar datos en el archivo");
+		puts("Error al leer datos del archivo");
 		return NULL;
 	}
 
@@ -347,28 +395,24 @@ int guardarDatos(char *path, int offset, int size, char* buffer)
 	return 0;
 }
 
-// Programa Principal
-int main(void) {
-	//printf("Dentro del main\n");
+/*************************************SOCKETS FS********************************/
 
-	//char* buffer = malloc(5);
+int verificarIdentidad(){
+	int identidad;
+	recv(sockClie, &identidad, sizeof(int), 0);
+	if(identidad==SOYKERNEL){
+		int res = SOYFS;
+		send(sockClie, &res, sizeof(res),0);
+		return 1;
+	}
+	return 0;
+}
 
-	cargarConfiguracion();//Cargo configuracion
-	leerMetadata();
-	leerBitmap();
+void sockets(){
 
-	printf("Cantidad de bloques en bitmap = %i\n", bitarray_get_max_bit(bitmap));
-
-	//guardarDatos("texto.txt",9,2,"XX");
-	char *pepe = obtenerDatos("texto.txt",0,5);
-	fwrite(pepe,sizeof(char),5,stdout);
-
-	/*
 	struct sockaddr_in direccionServidor; // Información sobre mi dirección
 	struct sockaddr_in direccionCliente; // Información sobre la dirección del cliente
 	socklen_t addrlen; // El tamaño de la direccion del cliente
-	int sockServ; // Socket de nueva conexion aceptada
-	int sockClie; // Socket a la escucha
 	int cantBytesRecibidos;
 
 	sockServ = crearSocket();
@@ -376,12 +420,17 @@ int main(void) {
 	direccionServidor = crearDireccionServidor(config.PUERTO);
 	bind_w(sockServ, &direccionServidor);
 	listen_w(sockServ);
-	printf("Escuchando nuevas solicitudes tcp en el puerto %d...\n", config.PUERTO);
 
 	for (;;) {
+		printf("Escuchando nuevas solicitudes tcp en el puerto %d...\n", config.PUERTO);
 		if ((sockClie = accept(sockServ, (struct sockaddr*) &direccionCliente, &addrlen)) == -1) {
 			perror("Error en el accept");
 		} else {
+			if(!verificarIdentidad()){
+				close(sockClie);
+				printf("El cliente conectado no era un Kernel, se rechaza la conexión");
+				continue;
+			}
 			printf("Server: nueva conexion de %s en socket %d\n", inet_ntoa(direccionCliente.sin_addr), sockClie);
 			for (;;) {
 				// Gestionar datos de un cliente. Recibimos el código de acción que quiere realizar.
@@ -399,10 +448,7 @@ int main(void) {
 					}
 				} else {
 					printf("He recibido %d bytes con la acción: %d\n", cantBytesRecibidos, codAccion);
-					char* bytesAEscribir;
-					char* bytesSolicitados;
 					int resultAccion;
-					int pidAFinalizar;
 					int largoMsg;
 					char *path;
 					int res;
@@ -459,7 +505,37 @@ int main(void) {
 			}
 		}
 	}
+}
 
-*/
+/***************************************MAIN FS*********************************/
+
+int main(void) {
+
+	if(cargarConfiguracion()<0){
+		exit(EXIT_FAILURE);
+	}
+	if(leerMetadata()<0){
+		exit(EXIT_FAILURE);
+	}
+	crearBloques();
+	leerBitmap();
+	printf("Cantidad de bloques en bitmap = %i\n", bitarray_get_max_bit(bitmap));
+
+	//Crear hilo para manejar al comunicacion con el kernel
+	pthread_t hiloSockets;
+	pthread_create(&hiloSockets, NULL, (void*)sockets, NULL);
+
+	for(;;){
+		char *userInput=NULL;
+		size_t size=0;
+		getline(&userInput,&size,stdin);
+		if(!strcmp("exit\n",userInput)){
+			close(sockClie);
+			close(sockServ);
+			printf("Proceso finalizado por el usuario\n");
+			exit(EXIT_SUCCESS);
+		}
+	}
+
 	return 0;
 }
