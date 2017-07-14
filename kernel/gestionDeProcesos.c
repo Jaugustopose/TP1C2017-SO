@@ -60,7 +60,6 @@ t_PCB* crearPCB()
 
 	pcb->stackPointer = stack_crear();
 	pcb->indiceCodigo = list_create();
-	//pcb->indiceEtiquetas = dictionary_create();
 
 	return pcb;
 }
@@ -86,4 +85,54 @@ t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo)
 	stack_PCB_main(proceso->PCB);
 
 	return proceso;
+}
+
+void cambiarEstado(t_proceso* proceso, int estado) {
+	bool legalidad = true;
+	//MUTEXESTADOS(legalidad = matrizEstados[proceso->estado][estado]);
+	if (legalidad) {
+
+		if (estado == READY){
+			queue_push(colaReady, proceso);
+		}
+		else if (estado == EXIT){
+			queue_push(colaExit, proceso);
+		}
+
+		proceso->estado = estado;
+	}
+	else{
+		exit(EXIT_FAILURE);
+	}
+}
+
+void continuarProceso(t_proceso* proceso) {
+
+	//char* serialSleep = intToChar4(config.queantum_sleep);
+	int codAccion = accionContinuarProceso;
+
+	void* buffer = malloc(sizeof(codAccion));
+	memcpy(buffer, &codAccion, sizeof(codAccion)); //PRIMERO EL CODIGO
+
+	int bytesEnviados = send(proceso->CpuDuenio, buffer, sizeof(codAccion), 0);
+
+}
+
+void asignarCPU(t_proceso* proceso, int cpu) {
+	cambiarEstado(proceso, EXEC);
+	proceso->CpuDuenio = cpu;
+	//proceso->rafagas=0;
+	//proceso->sigusr1=false;
+	//MUTEXCLIENTES(clientes[cpu].proceso = proceso);
+	//MUTEXCLIENTES(clientes[cpu].pid = proceso->PCB->PID);
+	//MUTEXCLIENTES(proceso->socketCPU = clientes[cpu].socket);
+}
+
+void ejecutarProceso(t_proceso* proceso, int cpu) {
+
+	asignarCPU(proceso,cpu);
+	enviarPCBaCPU(proceso->PCB, cpu, accionObtenerPCB);
+	//	if (!isclosed(proceso->socketCPU)) {
+	continuarProceso(proceso);
+	//}
 }

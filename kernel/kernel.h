@@ -30,6 +30,8 @@
 #include <pthread.h>
 #include "gestionDeProcesos.h"
 
+const char* FIFO = "FIFO";
+const char* ROUND_ROBIN = "RR";
 
 //Estructuras y enum
 typedef struct configuracion {
@@ -41,6 +43,9 @@ typedef struct configuracion {
 	int PUERTO_KERNEL;
 	char* IP_MEMORIA;
 	char* IP_FS;
+	char* ALGORITMO;
+	int QUANTUM;
+	int QUANTUM_SLEEP;
 	int GRADO_MULTIPROG;
 	char** SEM_IDS;
 	char** SEM_INIT;

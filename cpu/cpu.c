@@ -491,11 +491,11 @@ void recibirOrdenes(char* accionRecibida)
 			lanzarOverflowExep = false;
 			obtenerPCB();
 			//A MODO DE PRUEBA NOMAS, QUITAR LUEGO
-			termina = false;
-			while(!termina)
-			{
-				pedirSentencia();
-			}
+//			termina = false;
+//			while(!termina)
+//			{
+//				pedirSentencia();
+//			}
 			break;
 
 		case accionContinuarProceso: //Obtener y parsear sentencias
@@ -552,6 +552,8 @@ void loggearFinDePrimitiva(char* primitiva) {
 }
 
 int main(void){
+
+	//TODO:signal(SIGUSR1,handler);
 
 	crearLog(string_from_format("cpu_%d", getpid()), "CPU", 1);
 	log_debug(debugLog, "Iniciando proceso CPU, PID: %d.", getpid());

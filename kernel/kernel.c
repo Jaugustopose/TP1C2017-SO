@@ -47,6 +47,20 @@ void cargarConfiguracion() {
 				"PUERTO_CONSOLA");
 		printf("PUERTO_CONSOLA: %d\n", config.PUERTO_CONSOLA);
 	}
+	if (config_has_property(configKernel, "ALGORITMO")) {
+			config.ALGORITMO = config_get_string_value(configKernel, "ALGORITMO");
+			printf("ALGORITMO: %s\n", config.ALGORITMO);
+		}
+	if (config_has_property(configKernel, "QUANTUM")) {
+			config.QUANTUM = config_get_int_value(configKernel,
+					"QUANTUM");
+			printf("QUANTUM: %d\n", config.QUANTUM);
+		}
+	if (config_has_property(configKernel, "QUANTUM_SLEEP")) {
+				config.QUANTUM_SLEEP = config_get_int_value(configKernel,
+						"QUANTUM_SLEEP");
+				printf("QUANTUM_SLEEP: %d\n", config.QUANTUM_SLEEP);
+			}
 	if (config_has_property(configKernel, "GRADO_MULTIPROG")) {
 		config.GRADO_MULTIPROG = config_get_int_value(configKernel,
 				"GRADO_MULTIPROG");
@@ -92,6 +106,9 @@ void inicializarContexto() {
 	crearCompartidas();
 
 	colaCPU = queue_create();
+	colaNew = queue_create();
+	colaReady = queue_create();
+	colaExit = queue_create();
 }
 
 int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
@@ -329,7 +346,7 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 		///////////FIN DE DESERIALIZADOR///////////////
 		identificadorProceso++;
 		t_proceso* proceso = crearProceso(identificadorProceso, consola, (char*) buff);
-		list_add(listaDeProcesos, &proceso); //Agregar un proceso a esa bendita lista
+		list_add(listaDeProcesos, proceso); //Agregar un proceso a esa bendita lista
 
 
 
@@ -339,19 +356,19 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 		int resultadoAccionInicializar = pedido_Inicializar_Programa(memoria,paginasASolicitar, proceso -> PCB->PID);
 		if (resultadoAccionInicializar == 0) {//Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
 
-			//queue_push(colaNew,&proceso); TODO: arreglar esto que no anda
+			queue_push(colaNew, proceso);
 			printf("Se procede a preparar solicitud almacenar para enviar\n");
 			proceso -> PCB->cantidadPaginas = paginasASolicitar;
 			int resultadoAccionAlmacenar = enviarSolicitudAlmacenarBytes(memoria, proceso, buff, tamanioScript);
 			if (resultadoAccionAlmacenar == 0) {
 				//queue_pop(colaNew);
-				//queue_push(colaReady, &proceso);
+				queue_push(colaReady, proceso);
 			}
 
 			//EnviarPCBaCPU
-			int cpu = queue_pop(colaCPU);
+			//int cpu = queue_pop(colaCPU);
 			proceso->PCB->cantidadPaginas = paginasASolicitar;
-			enviarPCBaCPU(proceso->PCB, cpu, accionObtenerPCB);
+			//enviarPCBaCPU(proceso->PCB, cpu, accionObtenerPCB);
 		}
 	}else{
 		printf("El proceso no pudo ingresar a la cola de New ya que excede el grado de multiprogramacion\n");
@@ -470,9 +487,44 @@ void destruirSemaforos() {
 
 void planificar()
 {
-//	int codAccion = accionContinuarProceso;
-//	int cpu = (int)queue_pop(colaCPU);
-//	send(cpu, &codAccion, sizeof(codAccion), 0);
+	if(strcmp(config.ALGORITMO, FIFO) == 0){
+		planificarFIFO();
+	}
+	else if(strcmp(config.ALGORITMO, ROUND_ROBIN) == 0)
+	{
+		planificarRR();
+	}else
+	{
+		//TODO:MANEJAR ERROR DE HABER INGRESADO CUALQUIER COSA EN EL CONFIG
+	}
+
+}
+
+void planificarRR()
+{
+
+}
+void planificarFIFO()
+{
+
+
+	while (!queue_is_empty(colaReady) && !queue_is_empty(colaCPU)) {
+
+			//limpiarColaListos();
+			//limpiarColaCPU();
+//
+//		int codAccion = (int)accionContinuarProceso;
+//		int cpu = (int)queue_pop(colaCPU);
+//		void* buffer = malloc(sizeof(codAccion));
+//		memcpy(buffer, &codAccion, sizeof(codAccion)); //PRIMERO EL CODIGO
+//		send(cpu, buffer, sizeof(codAccion), 0);
+
+			// Si no se vaciaron las listas entonces los primeros de ambas listas son validos
+			if (!queue_is_empty(colaReady) && !queue_is_empty(colaCPU)){
+				ejecutarProceso((t_proceso*) queue_pop(colaReady),(int) queue_pop(colaCPU));
+			}
+	}
+
 }
 
 /************************************** MAIN ****************************************************************/
@@ -574,6 +626,7 @@ int main(void) {
 	}
 	return 0;
 }
+
 
 // RECORDATORIO PARA ENVIAR ALGO A TODOS LOS CLIENTES SEA QUIEN SEA (POR LAS DUDAS)
 
