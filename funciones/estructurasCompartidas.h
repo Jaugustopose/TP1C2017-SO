@@ -95,6 +95,7 @@ typedef struct {
 	int32_t CpuDuenio;
 	int32_t estado;
 	t_PCB* PCB;
+	int32_t rafagas;
 }t_proceso;
 
 typedef struct{

@@ -26,11 +26,10 @@ void enviarLargoMensajeASerializar(int sock, int largo, char* mensaje){
 
 void recibirQuantumSleep(){
 
-	char* quantum = malloc(sizeof(int));
-	recv(kernel, quantum, sizeof(int), 0);
-	quantumSleep = char4ToInt(quantum);
+	int quantum;
+	int bytes = recv(kernel, &quantum, sizeof(int), 0);
+	quantumSleep = quantum;
 
-	free(quantum);
 }
 
 bool finalizarEjecucion(){
@@ -450,6 +449,12 @@ void parsear(char* sentencia)
 	//Le paso sentencia, set de primitivas de CPU y set de primitivas de kernel
 	analizadorLinea(sentencia, &funciones, &funcionesKernel);
 
+
+	int codAccion = accionFinInstruccion;
+	void* buffer = malloc(sizeof(int));
+	memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
+	send(kernel, buffer, sizeof(codAccion), 0);
+
 	//TODO:DESCOMENTAR LUEGO
 	//	char* accionEnviar = (char*)accionFinInstruccion;
 	//	send(kernel, accionEnviar, 1, 0);
@@ -463,13 +468,13 @@ void parsear(char* sentencia)
 void pedirSentencia()
 {
 	//Recibe del nucleo el quantum
-	//recibirQuantumSleep();
+	recibirQuantumSleep();
 
 	if(!finalizarEjecucion()){
 
 			int tamanio;
 			//Espera este tiempo antes de empezar con la proxima sentencia
-			//usleep(quantumSleep*1000);
+			usleep(quantumSleep*1000);
 			sentenciaPedida = string_new();
 			obtenerSentencia(&tamanio);
 

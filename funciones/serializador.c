@@ -225,7 +225,7 @@ void* serializar_PCB(t_PCB* pcb, int sock, int32_t codigoAccion) {
 
 	void* buffer = malloc(desplazamiento + sizeof(codigoAccion) + sizeof(tamanioEnBytes));
 	memcpy(buffer, &codigoAccion, sizeof(codigoAccion)); //PRIMERO EL CODIGO
-	memcpy(buffer + sizeof(tamanioEnBytes), &tamanioEnBytes, sizeof(tamanioEnBytes)); //SEGUNDO EL TAMAÑO DE LA DATA
+	memcpy(buffer + sizeof(codigoAccion), &tamanioEnBytes, sizeof(tamanioEnBytes)); //SEGUNDO EL TAMAÑO DE LA DATA
 	memcpy(buffer + sizeof(tamanioEnBytes) + sizeof(codigoAccion), pcbSerializado, sizeof(codigoAccion)+ sizeof(tamanioEnBytes) + desplazamiento); // TERCERO LA DATA
 
 	int bytesEnviados = send(sock, buffer, sizeof(codigoAccion) + desplazamiento + sizeof(tamanioEnBytes), 0);

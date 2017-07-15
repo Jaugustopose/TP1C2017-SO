@@ -106,22 +106,94 @@ void cambiarEstado(t_proceso* proceso, int estado) {
 	}
 }
 
+t_proceso* obtenerProceso(int cliente){
+
+	t_proceso* criterioProceso(t_proceso* proceso)
+	{
+		if(proceso->CpuDuenio == cliente)
+		{
+			return 1;
+		}else
+		{
+			return 0;
+		}
+	}
+
+	t_proceso* proceso = list_find(listaDeProcesos, (void*)criterioProceso);
+	if (proceso == NULL){
+		return NULL;
+	}
+	return proceso;
+}
+
+void rafagaProceso(int cliente){
+
+	t_proceso* proceso = obtenerProceso(cliente);
+	proceso->rafagas++;
+	planificarExpulsion(proceso);
+}
+
 void continuarProceso(t_proceso* proceso) {
 
 	//char* serialSleep = intToChar4(config.queantum_sleep);
 	int codAccion = accionContinuarProceso;
+	int quantum = config.QUANTUM_SLEEP;
+	void* buffer = malloc(2*sizeof(int));
+	memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
+	memcpy(buffer + sizeof(codAccion), &quantum, sizeof(quantum)); //QUANTUM_sleep
 
-	void* buffer = malloc(sizeof(codAccion));
-	memcpy(buffer, &codAccion, sizeof(codAccion)); //PRIMERO EL CODIGO
+    send(proceso->CpuDuenio, buffer, sizeof(codAccion) + sizeof(quantum), 0);
 
-	int bytesEnviados = send(proceso->CpuDuenio, buffer, sizeof(codAccion), 0);
+}
+
+bool terminoQuantum(t_proceso* proceso) {
+	// mutexProcesos SAFE
+	return (proceso->rafagas >= config.QUANTUM_SLEEP);
+}
+
+void desasignarCPU(t_proceso* proceso) {
+//	if (!proceso->sigusr1){
+//		queue_push(colaCPU, (void*)proceso->CpuDuenio);
+//	}
+//	clientes[proceso->cpu].proceso = NULL;
+//	clientes[proceso->cpu].pid = -1;
+//	proceso->cpu = SIN_ASIGNAR;
+}
+
+void expulsarProceso(t_proceso* proceso) {
+	// mutexProcesos SAFE
+//	enviarHeader(proceso->socketCPU, HeaderDesalojarProceso);
+//	char* serialPcb = leerLargoYMensaje(proceso->socketCPU);
+//
+//	t_PCB* pcb = malloc(sizeof(t_PCB));
+//	deserializar_PCB(pcb,serialPcb);
+//
+//	actualizarPCB(proceso,pcb);
+//
+//	if (!proceso->abortado && proceso->estado==EXEC){
+//		cambiarEstado(proceso, READY);
+//	}
+//	free(serialPcb);
+//	desasignarCPU(proceso);
+}
+
+void planificarExpulsion(t_proceso* proceso) {
+	// mutexProcesos SAFE
+	// mutexPlanificacion SAFE
+	if (proceso->estado == EXEC && terminoQuantum(proceso))
+	{
+			expulsarProceso(proceso);
+	}
+	else{
+			continuarProceso(proceso);
+	}
 
 }
 
 void asignarCPU(t_proceso* proceso, int cpu) {
 	cambiarEstado(proceso, EXEC);
 	proceso->CpuDuenio = cpu;
-	//proceso->rafagas=0;
+	proceso->rafagas = 0;
 	//proceso->sigusr1=false;
 	//MUTEXCLIENTES(clientes[cpu].proceso = proceso);
 	//MUTEXCLIENTES(clientes[cpu].pid = proceso->PCB->PID);

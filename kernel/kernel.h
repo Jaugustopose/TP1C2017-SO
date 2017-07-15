@@ -29,9 +29,12 @@
 #include "cliente-servidor.h"
 #include <pthread.h>
 #include "gestionDeProcesos.h"
+#include <sys/inotify.h>
+#define EVENT_SIZE  ( sizeof (struct inotify_event) )
+#define EVENT_BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
 
-const char* FIFO = "FIFO";
-const char* ROUND_ROBIN = "RR";
+const char* FIFO;
+const char* ROUND_ROBIN;
 
 //Estructuras y enum
 typedef struct configuracion {
@@ -72,6 +75,7 @@ fd_set master; // Conjunto maestro de file descriptor (Donde me voy a ir guardan
 fd_set read_fds; // Conjunto temporal de file descriptors para pasarle al select()
 fd_set bolsaConsolas; // Bolsa de consolas
 fd_set bolsaCpus; //Bolsa de bolsaCpus
+fd_set configuracionCambio;
 struct sockaddr_in direccionServidor; // Información sobre mi dirección
 struct sockaddr_in direccionCliente; // Información sobre la dirección del cliente
 int sockServ; // Socket de nueva conexion aceptada
@@ -86,6 +90,7 @@ int tamanioPag;
 //int identificadorProceso = 0;
 int identificadorProceso;
 int memoria; //NECESITO GUARDAR EL FD DE MEMORIA ACA PARA LLAMARLO SIEMPRE QUE QUIERA
+int cambiosConfiguracion;
 
 t_list* listaDeProcesos;
 t_queue* colaNew;

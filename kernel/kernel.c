@@ -104,6 +104,7 @@ void inicializarContexto() {
 	tablaCompartidas = dictionary_create();
 	crearSemaforos();
 	crearCompartidas();
+	iniciarVigilanciaConfiguracion();
 
 	colaCPU = queue_create();
 	colaNew = queue_create();
@@ -376,6 +377,9 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 
 }
 
+
+
+
 void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 
 	switch (idMensaje) {
@@ -383,6 +387,11 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 	case accionSignal:
 
 		break;
+
+	case accionFinInstruccion:
+		//TODO:MUTEX
+		rafagaProceso(fdCliente);
+	break;
 
 	case accionAsignarValorCompartida:
 			obtenerAsignarCompartida();
@@ -527,9 +536,55 @@ void planificarFIFO()
 
 }
 
+
+/********************************************INOTIFY*******************************************/
+void recargarConfiguracion() {
+	t_config* configNuevo;
+	char* pat = string_new();
+	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
+	string_append(&pat, getcwd(cwd, sizeof(cwd)));
+	if (string_contains(pat, "/Debug")){
+			string_append(&pat,"/kernel.cfg");
+	}else{
+		string_append(&pat, "/Debug/kernel.cfg");
+	}
+	configNuevo = config_create(pat);
+	free(pat);
+
+	if (config_has_property(configNuevo, "QUANTUM_SLEEP")) {
+			config.QUANTUM_SLEEP = config_get_int_value(configNuevo, "QUANTUM_SLEEP");
+	}
+
+
+	config_destroy(configNuevo);
+}
+void iniciarVigilanciaConfiguracion(){
+	cambiosConfiguracion = inotify_init();
+	inotify_add_watch(cambiosConfiguracion,".",IN_CLOSE_WRITE);
+}
+void procesarCambiosConfiguracion(){
+	char buffer[EVENT_BUF_LEN];
+	int length = read(cambiosConfiguracion, buffer, EVENT_BUF_LEN);
+	int e = 0;
+	while (e < length) {
+		struct inotify_event *event =
+				(struct inotify_event *) &buffer[e];
+		if (event->len) {
+			if (event->mask & IN_CLOSE_WRITE) {
+				if (strcmp(event->name, "kernel.cfg") == 0) {
+					recargarConfiguracion();
+				}
+			}
+		}
+		e += EVENT_SIZE + event->len;
+	}
+}
 /************************************** MAIN ****************************************************************/
 
 int main(void) {
+
+	FIFO = "FIFO";
+	ROUND_ROBIN = "RR";
 	identificadorProceso = 0;
 	yes = 1;
 
@@ -560,7 +615,8 @@ int main(void) {
 
 	//Añadir listener al conjunto maestro
 	FD_SET(sockServ, &master);
-
+	FD_SET(cambiosConfiguracion, &master);
+	FD_SET(cambiosConfiguracion, &configuracionCambio);
 	//Mantener actualizado cual es el maxSock
 	maxFd = sockServ;
 
@@ -603,7 +659,13 @@ int main(void) {
 					if ((cantBytes = recv(fdCliente, &idMensaje, sizeof(int32_t), 0))
 							<= 0) {
 
-						conexion_de_cliente_finalizada();
+						if (FD_ISSET(fdCliente, &configuracionCambio)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO INOTIFY
+							procesarCambiosConfiguracion();
+							printf("Nuevo QUANTUM_SLEEP: %d\n", config.QUANTUM_SLEEP);
+						}else
+						{
+							conexion_de_cliente_finalizada();
+						}
 
 					} else {
 
