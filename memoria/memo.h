@@ -50,6 +50,9 @@ config_t config;
 char* memoria;
 int tamanioMemoria;
 int tamanioTablaPagina;
+int cantMarcosOcupaTablaPaginas;
+t_list** overflow;
+int CANTIDAD_DE_MARCOS;
 int stack_size;//lo recibe del kernel
 //t_list* listaProcesosActivos;
 
@@ -74,6 +77,14 @@ void cargarConfigFile();
 void crearMemoria();
 void inicializarMemoria();
 void inicializarTablaDeFrames();
+int buscarMarco(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida);
+unsigned int calcularPosicion(int pid, int num_pagina);
+void inicializarOverflow(int cantidad_de_marcos);
+void agregarSiguienteEnOverflow(int pos_inicial, int nro_frame);
+int buscarEnOverflow(int indice, int pid, int pagina, tablaPagina_t* tablaPaginasInvertida);
+void borrarDeOverflow(int pos_inicial, int frame);
+int esMarcoCorrecto(int pos_candidata, int pid, int pagina, tablaPagina_t* tablaPaginasInvertida);
+bool estaElMarcoReservado(int marcoBuscado, int cantPaginasSolicitadas, int marcosSolicitados[][2]);
 
 
 #endif /* MEMO_H_ */

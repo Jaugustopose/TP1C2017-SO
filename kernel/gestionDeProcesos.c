@@ -74,11 +74,14 @@ void stack_PCB_main(t_PCB* pcb){
 
 t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo)
 {
+
+	printf("Crear proceso - init\n");
 	t_proceso* proceso = malloc(sizeof(t_PCB));
 	proceso->PCB = crearPCB();
 	proceso->PCB->PID = pid;
 	proceso->ConsolaDuenio = consolaDuenio;
 	proceso->CpuDuenio = -1;
+	printf("Crear proceso - end\n");
 
 	transformarCodigoToMetadata(proceso->PCB, codigo);
 

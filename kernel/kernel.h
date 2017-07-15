@@ -30,6 +30,7 @@
 #include <pthread.h>
 #include "gestionDeProcesos.h"
 #include <sys/inotify.h>
+#include "CapaMemoria.h"
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
 #define EVENT_BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
 
