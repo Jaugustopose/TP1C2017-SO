@@ -33,6 +33,7 @@
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
 #define EVENT_BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
 
+
 const char* FIFO;
 const char* ROUND_ROBIN;
 
@@ -100,9 +101,6 @@ t_queue* colaExit;
 t_queue* colaCPU;
 t_dictionary* tablaCompartidas;
 t_dictionary* tablaSemaforos;
-
-
-
 
 //Prototipos
 int redondear(float numero);

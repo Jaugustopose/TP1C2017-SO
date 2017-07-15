@@ -1,7 +1,5 @@
 #include "kernel.h"
 
-//#include <sys/select.h>
-
 /********************************** INICIALIZACIONES *****************************************************/
 
 void cargarConfiguracion() {
@@ -98,6 +96,15 @@ void enviar_stack_size(int sock)
 	send(sock, buffer, sizeof(int32_t)*2, 0);
 }
 
+int obtener_tamanio_pagina(int memoria) {
+	int valorRecibido;
+	int idMensaje = 6;
+	send(memoria, &idMensaje, sizeof(int32_t), 0);
+	recv(memoria, &valorRecibido, sizeof(int32_t), 0);
+
+	return valorRecibido;
+}
+
 void inicializarContexto() {
 	listaDeProcesos = list_create();
 	tablaSemaforos = dictionary_create();
@@ -130,8 +137,6 @@ int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
 
 	return resultAccion;
 }
-
-
 
 int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffer, int tamanioTotal) {
 	printf("tamanioTotal = %d\n", tamanioTotal);
@@ -210,15 +215,6 @@ void comprobarSockets(int maxSock, fd_set* read_fds) {
 		perror("select");
 		exit(1);
 	}
-}
-
-int obtener_tamanio_pagina(int memoria) {
-	int valorRecibido;
-	int idMensaje = 6;
-	send(memoria, &idMensaje, sizeof(int32_t), 0);
-	recv(memoria, &valorRecibido, sizeof(int32_t), 0);
-
-	return valorRecibido;
 }
 
 int redondear(float numero) {
@@ -328,6 +324,7 @@ void conexion_de_cliente_finalizada() {
 	}
 	close(fdCliente); // Si se perdio la conexion, la cierro.
 }
+
 void enviarPCBaCPU(t_PCB* pcb, int cpu, int32_t accion)
 {
 	serializar_PCB(pcb, cpu, accion);
@@ -389,8 +386,6 @@ void sigusr1(int cpu){
 	}
 	//clientes[cpu].atentido=false;
 }
-
-
 
 void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 
@@ -510,6 +505,8 @@ void destruirSemaforos() {
 	dictionary_destroy_and_destroy_elements(tablaSemaforos, destruirSemaforo);
 }
 
+/*********************************PLANIFICACION***********************************************************/
+
 void planificar()
 {
 	if(strcmp(config.ALGORITMO, FIFO) == 0){
@@ -529,6 +526,7 @@ void planificarRR()
 {
 
 }
+
 void planificarFIFO()
 {
 
@@ -552,7 +550,6 @@ void planificarFIFO()
 
 }
 
-
 /********************************************INOTIFY*******************************************/
 void recargarConfiguracion() {
 	t_config* configNuevo;
@@ -574,10 +571,12 @@ void recargarConfiguracion() {
 
 	config_destroy(configNuevo);
 }
+
 void iniciarVigilanciaConfiguracion(){
 	cambiosConfiguracion = inotify_init();
 	inotify_add_watch(cambiosConfiguracion,".",IN_CLOSE_WRITE);
 }
+
 void procesarCambiosConfiguracion(){
 	char buffer[EVENT_BUF_LEN];
 	int length = read(cambiosConfiguracion, buffer, EVENT_BUF_LEN);
@@ -595,6 +594,8 @@ void procesarCambiosConfiguracion(){
 		e += EVENT_SIZE + event->len;
 	}
 }
+
+
 /************************************** MAIN ****************************************************************/
 
 int main(void) {
@@ -603,10 +604,7 @@ int main(void) {
 	ROUND_ROBIN = "RR";
 	identificadorProceso = 0;
 	yes = 1;
-
-	//Cargar configuracion
 	cargarConfiguracion();
-
 	inicializarContexto();
 
 	//Crear socket. Dejar reutilizable. Crear direccion del servidor. Bind. Listen.
@@ -617,17 +615,17 @@ int main(void) {
 	listen_w(sockServ);
 
 	//Conectar con memoria
-		int memoria = socket(AF_INET, SOCK_STREAM, 0);
-		struct sockaddr_in direccionServ;
-			direccionServ.sin_family = AF_INET;
-			direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red
-			direccionServ.sin_addr.s_addr = inet_addr("127.0.0.1");
-			memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
+	int memoria = socket(AF_INET, SOCK_STREAM, 0);
+	struct sockaddr_in direccionServ;
+	direccionServ.sin_family = AF_INET;
+	direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red
+	direccionServ.sin_addr.s_addr = inet_addr("127.0.0.1");
+	memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
 //		crearDireccionServidor(9030);
 //		conectar_con_server(memoria, &direccionServidor);
-			connect(memoria, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
-		tamanioPag = obtener_tamanio_pagina(memoria);
-		enviar_stack_size(memoria);
+	connect(memoria, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
+	tamanioPag = obtener_tamanio_pagina(memoria);
+	enviar_stack_size(memoria);
 
 	//Añadir listener al conjunto maestro
 	FD_SET(sockServ, &master);
@@ -655,13 +653,12 @@ int main(void) {
 
 					// gestionar nuevas conexiones
 					addrlen = sizeof(direccionCliente);
-					if ((sockClie = accept(sockServ,
-							(struct sockaddr*) &direccionCliente, &addrlen))
+					if ((sockClie = accept(sockServ,(struct sockaddr*) &direccionCliente, &addrlen))
 							== -1) {
-						perror("accept");
+							perror("accept");
 					} else {
 						printf("Server: nueva conexion de %s en socket %d\n",
-								inet_ntoa(direccionCliente.sin_addr), sockClie);
+						inet_ntoa(direccionCliente.sin_addr), sockClie);
 
 						FD_SET(sockClie, &master); // añadir al conjunto maestro
 						Colocar_en_respectivo_fdset();
@@ -698,8 +695,6 @@ int main(void) {
 			}
 		}
 
-
-		//TODO:Hay que desarrollar la planificacion, pero por ahora es lo basico
 		planificar();
 	}
 	return 0;
