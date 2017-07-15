@@ -32,6 +32,16 @@ void cargarConfigFile() {
 		config.marco_size = config_get_int_value(configMemo, "MARCO_SIZE");
 		printf("config.MARCO_SIZE: %d\n", config.marco_size);
 	}
+	if(config_has_property(configMemo,"ENTRADAS_CACHE")){
+		config.entradas_cache = config_get_int_value(configMemo,"ENTRADAS_CACHE");
+		printf("config.ENTRADAS_CACHE: %d\n", config.entradas_cache);
+	}
+	if(config_has_property(configMemo, "CACHE_X_PROC")){
+		config.cache_x_proc = config_get_int_value(configMemo, "CACHE_X_PROC");
+		printf("config.CACHE_X_PROC: %d\n", config.cache_x_proc);
+
+	}
+
 	if (config_has_property(configMemo, "RETARDO_MEMORIA")) {
 		config.retardo_memoria = config_get_int_value(configMemo,
 				"RETARDO_MEMORIA");
@@ -398,6 +408,8 @@ void atenderHilo(paramHiloDedicado* parametros) {
 			char* bytesSolicitados;
 			int resultAccion;
 			int pidAFinalizar;
+			int indicePidEnCache;
+			entradaCache_t* entradaCache;
 
 			switch (codAccion) {
 
@@ -478,8 +490,41 @@ void atenderHilo(paramHiloDedicado* parametros) {
 				break;
 
 			case solicitarBytesAccion:
-				recv(parametros->socketClie, &pedidoBytes, sizeof(pedidoBytes),
-						0);
+
+
+
+				recv(parametros->socketClie, &pedidoBytes, sizeof(pedidoBytes), 0);
+
+				//VERIFICO SI EXISTE DATA EN CACHE
+
+				if((indicePidEnCache = obtener_Indice_Antiguedad_En_Cache(pedidoBytes.pid)) != -1){ // Tengo al proceso en cache.
+					entradaCache = list_get(entradasOcupadasCache,indicePidEnCache);
+					if(entradaCache->nroPagina == pedidoBytes.nroPagina){ // También tengo a la página en cache.
+
+						//Hago lo que tenga que hacer con la cache cuando tiene la data.
+
+					}else{ // Tengo al proceso pero no a la página solicitada. Reviso si alcanzo el máximo de entradas a cache para aplicar LRU local o global.
+
+						if(proceso_Alcanzo_Max_Entradas_Cache(pedidoBytes.pid)){
+
+							//Uso LRU sobre una de sus entradas previas.
+
+						}else{
+
+							//Uso LRU sobre entrada mas antigua (última de la lista entradasOcupadasCache)
+
+						}
+
+
+					}
+
+				}else {
+
+					// Si list_size(entradasLibresCache)>0 , me traigo la página solicitada desde memoria y creo nodo para entradasOcupadasCache.
+					// Si list_size(entradasLibresCache)=0 , uso LRU sobre entrada mas antigua (última de la lista entradasOcupadasCache).
+				}
+
+
 				printf(
 						"Recibida solicitud de %d bytes para el pid %d en su página %d\n con un offset de %d\n",
 						pedidoBytes.tamanio, pedidoBytes.pid,
@@ -497,6 +542,8 @@ void atenderHilo(paramHiloDedicado* parametros) {
 				send(parametros->socketClie, bytesSolicitados,
 						pedidoBytes.tamanio + sizeof(resultAccion), 0);
 				free(bytesSolicitados);
+
+				//guardar en cache
 				break;
 
 			case finalizarProgramaAccion:
@@ -534,6 +581,70 @@ void atenderHilo(paramHiloDedicado* parametros) {
 			printf("Fin atención acción\n");
 		}
 	}
+}
+
+void flushMemoriaCache(){
+	memset(cache, '\0', tamanioCache); //TODO: Esto solo o la limpio de otra forma?
+}
+
+int32_t entradas_Proceso_En_Cache(int32_t unPid)
+{
+	int32_t i = 0;
+	int32_t cantidadEntradasProceso = 0;
+	entradaCache_t* unaEntrada;
+
+	for(i=0;i<list_size(entradasOcupadasCache);i++)
+	{
+		unaEntrada = list_get(entradasOcupadasCache,i);
+		if(unaEntrada->pid == unPid)
+			cantidadEntradasProceso ++;
+	}
+
+	return cantidadEntradasProceso;
+}
+
+bool proceso_Alcanzo_Max_Entradas_Cache(int32_t unPid) {
+
+	return (entradas_Proceso_En_Cache(unPid) >= (config.cache_x_proc));
+}
+
+int32_t obtener_Indice_Antiguedad_En_Cache(int32_t unPid) {  // Donde 0 es el mas viejo y list_size(entradasOcupadasCache) el mas nuevo.
+
+	int32_t i;
+	entradaCache_t* unaEntrada;
+
+	for(i=0;i<list_size(entradasOcupadasCache);i++)
+	{
+		unaEntrada = list_get(entradasOcupadasCache,i);
+		if((unaEntrada->pid) == unPid)
+			return i;
+	}
+
+	return -1; // Significa que no esta en cache
+}
+
+
+
+void inicializar_Lista_Entradas_Libres_Cache(t_list* entradasLibresCache){
+	int i;
+	for(i=0;i<config.entradas_cache;i++){
+		entradaCache_t* unaEntrada;
+		unaEntrada-> pid = -1;
+		unaEntrada-> nroPagina = -1;
+		unaEntrada-> contenido = cache + i*config.marco_size;
+		list_add(entradasLibresCache, unaEntrada);
+	}
+}
+
+void inicializarCache(){
+	tamanioCache = (config.marco_size * config.entradas_cache);
+	cache = malloc(tamanioCache);
+
+	entradasLibresCache = list_create();
+	entradasOcupadasCache = list_create();
+
+	inicializar_Lista_Entradas_Libres_Cache(entradasLibresCache);
+
 }
 
 int main(void) {

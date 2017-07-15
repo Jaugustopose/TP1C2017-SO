@@ -29,6 +29,8 @@ typedef struct configMemo {
 	int puerto;
 	int marcos;
 	int marco_size;
+	int entradas_cache;
+	int cache_x_proc;
 	int retardo_memoria;
 } config_t;
 
@@ -51,6 +53,10 @@ char* memoria;
 int tamanioMemoria;
 int tamanioTablaPagina;
 int stack_size;//lo recibe del kernel
+char* cache;
+int tamanioCache;
+t_list* entradasLibresCache;
+t_list* entradasOcupadasCache;
 //t_list* listaProcesosActivos;
 
 enum accionConsolaMemoria {
@@ -68,6 +74,13 @@ typedef struct parametrosHiloDedicado{
 	int socketClie;
 	tablaPagina_t* tablaPaginasInvertida;
 }paramHiloDedicado;
+
+typedef struct administrativaCache {
+	int pid;
+	int nroPagina;
+	void* contenido;
+
+}entradaCache_t;
 
 //Prototipos
 void cargarConfigFile();
