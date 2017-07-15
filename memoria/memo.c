@@ -49,6 +49,77 @@ void cargarConfigFile() {
 	}
 }
 
+/* Inicialización vector overflow. Cada posición tiene una lista enlazada que guarda números de frames.
+ * Se llenará a medida que haya colisiones correspondientes a esa posición del vector. */
+void inicializarOverflow(int cantidad_de_marcos) {
+	overflow = malloc(sizeof(t_list*) * cantidad_de_marcos);
+	int i;
+	for (i = 0; i < cantidad_de_marcos; ++i) { /* Una lista por frame */
+		overflow[i] = list_create();
+	}
+}
+
+/* Función Hash */
+unsigned int calcularPosicion(int pid, int num_pagina) {
+	char str1[20];
+	char str2[20];
+	int ultimo_marco = config.marcos - 1;
+	sprintf(str1, "%d", pid);
+	sprintf(str2, "%d", num_pagina);
+	strcat(str1, str2);
+	//Función módulo mas corrimiento por la cant. de marcos que ocupa la tabla de pag invertida
+	unsigned int indice = atoi(str1) % config.marcos + cantMarcosOcupaTablaPaginas;
+
+	/*Si al sumar los marcos que ocupa la tabla de páginas invertida me excedo,
+	 * recalculo la posición
+	 */
+	if (indice > ultimo_marco) {
+		indice = indice - ultimo_marco + cantMarcosOcupaTablaPaginas;
+	}
+	return indice;
+}
+
+/* En caso de colisión, busca el siguiente frame en el vector de overflow.
+ * Retorna el número de frame donde se encuentra la página. */
+int32_t buscarEnOverflow(int32_t indice, int32_t pid, int32_t pagina, tablaPagina_t* tablaPaginasInvertida) {
+	int32_t i = 0;
+	int32_t frame = -10;
+	for (i = 0; i < list_size(overflow[indice]); i++) {
+		if (esMarcoCorrecto((int32_t)list_get(overflow[indice], i), pid, pagina, tablaPaginasInvertida)) {
+			frame = (int32_t)list_get(overflow[indice], i);
+		}
+	}
+	return frame;
+}
+
+/* Si en la posición candidata de la tabla de páginas invertida se encuentran el pid y páginas recibidos
+ * por parámetro, se trata del marco correcto */
+int esMarcoCorrecto(int pos_candidata, int pid, int pagina, tablaPagina_t* tablaPaginasInvertida) {
+
+	return tablaPaginasInvertida[pos_candidata].pid == pid && tablaPaginasInvertida[pos_candidata].nroPagina == pagina;
+
+}
+
+/* Agrega una entrada a la lista enlazada correspondiente a una posición del vector de overflow */
+void agregarSiguienteEnOverflow(int pos_inicial, int nro_frame) {
+	list_add(overflow[pos_inicial], nro_frame);
+}
+
+/* Elimina un frame de la lista enlazada correspondiente a una determinada posición del vector de overflow  */
+void borrarDeOverflow(int posicion, int frame) {
+	int i = 0;
+	int index_frame;
+
+	for (i = 0; i < list_size(overflow[posicion]); i++) {
+		if (frame == (int) list_get(overflow[posicion], i)) {
+			index_frame = i;
+			i = list_size(overflow[posicion]);
+		}
+	}
+
+	list_remove(overflow[posicion], index_frame);
+}
+
 void enviar_mensajes(int cliente, unsigned int length) {
 	while (1) {
 		char mensaje[length];
@@ -146,16 +217,18 @@ int finalizarPrograma(int pid, tablaPagina_t* tablaPaginasInvertida) {
 	return retorno;
 }
 
-int solicitarAsignacionPaginas(int pid, int cantPaginas,
-		tablaPagina_t* tablaPaginasInvertida) {
+int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPaginasInvertida) {
 	int i;
-	int nroPag = -1;
-	int j = 0;
-	int marcosLibres[cantPaginas];
+	int nroPag = -1, nroPagUltimo = -1;
+	int cantidadPosicionesEncontradas=0;
+	//Matriz de marcos libres: Primera columna corresponde al marco candidato que corresponderia según función de hash
+	//						   Segunda columna corresponde al verdadero marco libre que se encontró libre en el reintento.
+	int marcosLibres[cantPaginas][2];
 
-	//Inicializamos array marcosLibres (podría no hacerse. Es por el warning de "unused")
+	//Inicializamos matriz marcosLibres
 	for (i = 0; i < cantPaginas; i++) {
-		marcosLibres[i] = -1;
+		marcosLibres[i][0] = -1;
+		marcosLibres[i][1] = -1;
 	}
 
 	//TODO Esta sección está hecha para averiguar los nros de página que debemos
@@ -167,39 +240,72 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas,
 
 	//Recorremos la tabla y obtenemos el último nro de página asignado al proceso
 	for (i = 0; i < config.marcos; ++i) {
-		if (tablaPaginasInvertida[i].pid == pid
-				&& tablaPaginasInvertida[i].nroPagina > nroPag) {
-			nroPag = tablaPaginasInvertida[i].nroPagina;
+		if (tablaPaginasInvertida[i].pid == pid && tablaPaginasInvertida[i].nroPagina > nroPagUltimo){
+			nroPagUltimo = tablaPaginasInvertida[i].nroPagina;
 		}
 	}
+	printf("Último nro de página encontrado para pid %d es: %d\n", pid, nroPagUltimo);
 	//Fin búsqueda nro de página del pid
-
+	nroPag = nroPagUltimo;
 	//TODO SEMAFORO DESDE ACÁ
 	//Recorro la memoria hasta que se termine o la cantidad de marcos libres encontrados satisfaga el pedido
-	//Se carga el array marcosLibres con las posiciones libres de tablaPaginasInvertida
-	for (i = 0; i < config.marcos && j < cantPaginas; ++i) {
+	for (i = 0; cantidadPosicionesEncontradas < cantPaginas; ++i) {
+		nroPag++;
+		int marco_candidato = calcularPosicion(pid, nroPag);
+
 		//Si el pid es menor a -1 significa que está libre (por la inicialización)
-		if (tablaPaginasInvertida[i].pid < -1) {
-			marcosLibres[j] = i;
-			j++;
+		if (tablaPaginasInvertida[marco_candidato].pid < -1 && !estaElMarcoReservado(marco_candidato, cantPaginas, marcosLibres)) {
+			marcosLibres[cantidadPosicionesEncontradas][0] = marco_candidato;
+			cantidadPosicionesEncontradas++;
+		} else {
+			//Iterar por la memoria avanzando de a uno (+1) hasta encontrar frame libre
+			int marco = marco_candidato + 1;
+			//Rehash
+			while((marco > marco_candidato && marco < config.marcos) || marco < marco_candidato){
+
+				if (tablaPaginasInvertida[marco].pid < -1 && !estaElMarcoReservado(marco, cantPaginas, marcosLibres)) {
+					marcosLibres[cantidadPosicionesEncontradas][0] = marco_candidato;
+					marcosLibres[cantidadPosicionesEncontradas][1] = marco;
+					cantidadPosicionesEncontradas++;
+					break;
+				}
+				//Antes de incrementar el marco nos fijamos que no estemos en el final de la memoria
+				//y tengamos que empezar desde el principio
+				if (marco < config.marcos - 1) {
+					marco++;
+				} else {
+					marco = cantMarcosOcupaTablaPaginas;
+				}
+			}
+
+			//Si salió porque dio la vuelta y volvió al marco_candidato -> No hay más lugar en memoria
+			if ( marco == marco_candidato) {
+				return -11;
+			}
 		}
 	}
 
-	//¿Se puede satisfacer el pedido?
-	if (j < cantPaginas) {
-		perror(
-				"El número de páginas solicitadas supera el número de disponibles");
-		return -11;
-	} else {
-		/* Los marcos libres que encontré previamente y guardé en el array marcosLibres
-		 * los uso para asignar al pid en tablaPaginasInvertida
-		 */
-		for (i = 0; i < cantPaginas; i++) {
-			tablaPaginasInvertida[marcosLibres[i]].pid = pid;
-			tablaPaginasInvertida[marcosLibres[i]].nroPagina = ++nroPag; //incrementa el nroPag y luego asigna
+	/*
+	 * Los marcos libres que encontramos previamente y guardamos en la matriz marcosLibres
+	 * los usamos para asignar al pid en tablaPaginasInvertida. Guardamos en su respectivo
+	 * Overflow a los que hayan colisionado
+	 */
+	for (i = 0; i < cantPaginas; i++) {
+		//Si la segunda columna es -1 significa que se el marco es el devuelto por la función hash
+		//Si no, el marco utilizado es el encontrado en el recorrido hecho luego de la colisión
+		nroPagUltimo++;
+		if ( marcosLibres[i][1] == -1) {
+			tablaPaginasInvertida[ marcosLibres[i][0] ].pid = pid;
+			tablaPaginasInvertida[ marcosLibres[i][0] ].nroPagina = nroPagUltimo;
+		} else {
+			tablaPaginasInvertida[ marcosLibres[i][1] ].pid = pid;
+			tablaPaginasInvertida[ marcosLibres[i][1] ].nroPagina = nroPagUltimo;
+			agregarSiguienteEnOverflow(marcosLibres[i][0], marcosLibres[i][1]);
 		}
 	}
+
 	//TODO SEMAFORO HASTA ACÁ
+	printf("Paginas asignadas con éxito\n");
 
 	return EXIT_SUCCESS;
 
@@ -215,8 +321,7 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas,
  * codResult = int
  * bytesSolicitados = char*
  */
-char* solicitarBytes(int pid, int nroPagina, int offset, int tamanio,
-		tablaPagina_t* tablaPaginasInvertida) {
+char* solicitarBytes(int pid, int nroPagina, int offset, int tamanio, tablaPagina_t* tablaPaginasInvertida) {
 	int codResult;
 	char* respuesta = malloc(tamanio + sizeof(codResult));
 	char* bytesSolicitados = malloc(tamanio);
@@ -244,14 +349,14 @@ char* solicitarBytes(int pid, int nroPagina, int offset, int tamanio,
 }
 
 int buscarMarco(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida) {
-	int i;
-	for (i = 0; i < config.marcos; i++) {
-		if (tablaPaginasInvertida[i].pid == pid
-				&& tablaPaginasInvertida[i].nroPagina == nroPagina) {
-			return i;
-		}
+
+	int marco_candidato = calcularPosicion(pid, nroPagina);
+	if (esMarcoCorrecto(marco_candidato, pid, nroPagina, tablaPaginasInvertida)){
+		return marco_candidato;
+	} else {
+		return buscarEnOverflow(marco_candidato, pid, nroPagina, tablaPaginasInvertida);
 	}
-	return -10;
+
 }
 
 /**
@@ -269,70 +374,122 @@ int buscarMarco(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida) {
  * 			  0: Éxito
  * 			-12: El pedido excede le tamaño de página
  */
-int almacenarBytes(int pid, int nroPagina, int offset, int tamanio,
-		void* buffer, tablaPagina_t* tablaPaginasInvertida) {
+int almacenarBytes(int pid, int nroPagina, int offset, int tamanio, void* buffer, tablaPagina_t* tablaPaginasInvertida) {
 	//TODO SEMÁFORO DESDE ACÁ
 	printf("Inicia almacenarBytes\n");
-	int marcoPagina = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
-	printf("Marco encontrado: %d\n", marcoPagina);
 	if ((offset + tamanio) > config.marco_size) {
-		perror("El pedido excede el tamaño de la página");
-		return -12;
+			printf("El pedido excede el tamaño de la página\n");
+			return -12;
 	} else {
-		char* destino = memoria + marcoPagina * config.marco_size + offset;
-		memcpy(destino, buffer, tamanio);
-		printf("El destino quedó almacenado: %s\n", destino);
+		int marcoPagina = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
+		printf("Marco candidato: %d\n", marcoPagina);
+		if (marcoPagina > -1) {
+			char* destino = memoria + marcoPagina * config.marco_size + offset;
+			memcpy(destino, buffer, tamanio);
+			printf("El destino quedó almacenado: %s\n", destino);
+		} else {
+			printf("Marco no encontrado para pid y #pagina especificados\n");
+			return -10;
+		}
 	}
 	//TODO SEMÁFORO HASTA ACÁ
 
 	return EXIT_SUCCESS;
 }
 
-int inicializarPrograma(int pid, int cantPaginasSolicitadas,
-		tablaPagina_t* tablaPaginasInvertida) {
+int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tablaPaginasInvertida) {
 
 	int cantRealPaginasSolicitadas = cantPaginasSolicitadas + stack_size;
 
 	int i;
-	int j = 0;
-	int marcosLibres[cantRealPaginasSolicitadas];
+	int cantPosicionesEncontradas = 0;
+	//Matriz de marcos libres: Primera columna corresponde al marco candidato que corresponderia según función de hash
+	//						   Segunda columna corresponde al verdadero marco libre que se encontró libre en el reintento.
+	int marcosLibres[cantRealPaginasSolicitadas][2];
 
-	//Inicializamos array marcosLibres (podría no hacerse. Es por el warning de "unused")
+	//Inicializamos matriz marcosLibres
 	for (i = 0; i < cantRealPaginasSolicitadas; i++) {
-		marcosLibres[i] = -1;
+		marcosLibres[i][0] = -1;
+		marcosLibres[i][1] = -1;
 	}
 
 	//TODO SEMAFORO DESDE ACÁ
 	//Recorro la memoria hasta que se termine o la cantidad de marcos libres encontrados satisfaga el pedido
-	for (i = 0; i < config.marcos && j < cantRealPaginasSolicitadas; ++i) {
+	for (i = 0; cantPosicionesEncontradas < cantRealPaginasSolicitadas; ++i) {
+
+		int marco_candidato = calcularPosicion(pid, i);
+
 		//Si el pid es menor a -1 significa que está libre (por la inicialización)
-		if (tablaPaginasInvertida[i].pid < -1) {
-			marcosLibres[j] = i;
-			j++;
+		if (tablaPaginasInvertida[marco_candidato].pid < -1 && !estaElMarcoReservado(marco_candidato, cantRealPaginasSolicitadas, marcosLibres)) {
+			marcosLibres[cantPosicionesEncontradas][0] = marco_candidato;
+			cantPosicionesEncontradas++;
+		} else {
+			//Iterar por la memoria avanzando de a uno (+1) hasta encontrar frame libre
+			int marco = marco_candidato + 1;
+			//Rehash
+			while((marco > marco_candidato && marco < config.marcos) || marco < marco_candidato){
+
+				if (tablaPaginasInvertida[marco].pid < -1 && !estaElMarcoReservado(marco, cantRealPaginasSolicitadas, marcosLibres)) {
+					marcosLibres[cantPosicionesEncontradas][0] = marco_candidato;
+					marcosLibres[cantPosicionesEncontradas][1] = marco;
+					cantPosicionesEncontradas++;
+					break;
+				}
+				//Antes de incrementar el marco nos fijamos que no estemos en el final de la memoria
+				//y tengamos que empezar desde el principio
+				if (marco < config.marcos - 1) {
+					marco++;
+				} else {
+					marco = cantMarcosOcupaTablaPaginas;
+				}
+			}
+
+			//Si salió porque dio la vuelta y volvió al marco_candidato -> No hay más lugar en memoria
+			if ( marco == marco_candidato) {
+				return -11;
+			}
 		}
 	}
 
-	//¿Se puede satisfacer el pedido?
-	if (j < cantRealPaginasSolicitadas) {
-		perror(
-				"El número de páginas solicitadas supera el número de disponibles");
-		return -11;
-	} else {
-		/* Los marcos libres que encontré previamente y guardé en el array marcosLibres
-		 * los uso para asignar al pid en tablaPaginasInvertida
-		 */
-		for (i = 0; i < cantRealPaginasSolicitadas; i++) {
-			tablaPaginasInvertida[marcosLibres[i]].pid = pid;
-			tablaPaginasInvertida[marcosLibres[i]].nroPagina = i;
+	/*
+	 * Los marcos libres que encontramos previamente y guardamos en la matriz marcosLibres
+	 * los usamos para asignar al pid en tablaPaginasInvertida. Guardamos en su respectivo
+	 * Overflow a los que hayan colisionado
+	 */
+	char* buffer = malloc(config.marco_size);
+	memset(buffer, '\0', config.marco_size);
+	for (i = 0; i < cantRealPaginasSolicitadas; i++) {
+
+		//Si la segunda columna es -1 significa que se el marco es el devuelto por la función hash
+		//Si no, el marco utilizado es el encontrado en el recorrido hecho luego de la colisión
+		if ( marcosLibres[i][1] == -1) {
+			tablaPaginasInvertida[ marcosLibres[i][0] ].pid = pid;
+			tablaPaginasInvertida[ marcosLibres[i][0] ].nroPagina = i;
+			memcpy(memoria + marcosLibres[i][0] * config.marco_size, buffer, config.marco_size);
+		} else {
+			tablaPaginasInvertida[ marcosLibres[i][1] ].pid = pid;
+			tablaPaginasInvertida[ marcosLibres[i][1] ].nroPagina = i;
+			agregarSiguienteEnOverflow(marcosLibres[i][0], marcosLibres[i][1]);
+			memcpy(memoria + marcosLibres[i][1] * config.marco_size, buffer, config.marco_size);
 		}
 	}
+	free(buffer);
+
 	//TODO SEMAFORO HASTA ACÁ
 	printf("Paginas asignadas con éxito\n");
-	//Agregamos pid a listado de procesos activos
-//	list_add(listaProcesosActivos, &pid);
 
 	return EXIT_SUCCESS;
 
+}
+
+bool estaElMarcoReservado(int marcoBuscado, int cantPaginasSolicitadas, int marcosSolicitados[][2]) {
+	int i;
+	for (i=0; i < cantPaginasSolicitadas; i++){
+		if (marcosSolicitados[i][0] == marcoBuscado || marcosSolicitados[i][1] == marcoBuscado){
+			return true;
+		}
+	}
+	return false;
 }
 
 void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
@@ -652,11 +809,13 @@ int main(void) {
 	//Setea config_t config
 	cargarConfigFile();
 
+	/***********************************************************/
+
 	//Inicializacion tabla de páginas invertida
 	tablaPagina_t tablaPaginasInvertida[config.marcos];
 	tamanioTablaPagina = config.marcos * sizeof(tablaPagina_t);
 
-	int cantMarcosOcupaTablaPaginas;
+
 	if (tamanioTablaPagina % config.marco_size == 0) {
 		cantMarcosOcupaTablaPaginas = (tamanioTablaPagina / config.marco_size);
 	} else {
@@ -680,6 +839,13 @@ int main(void) {
 	printf("Tabla de páginas invertida inicializada\n");
 	//Fin inicialización tabla de páginas invertida
 
+	/***********************************************************/
+
+	//Inicialización Overflow Tabla Páginas
+	inicializarOverflow(config.marcos);
+
+	/***********************************************************/
+
 	//Inicialización memoria
 	tamanioMemoria = config.marco_size * config.marcos;
 	printf("Inicializando la memoria de %d bytes\n", tamanioMemoria);
@@ -689,9 +855,11 @@ int main(void) {
 	//Fin inicialización memoria
 	printf("Memoria inicializada\n");
 
+	/***********************************************************/
+
 	struct sockaddr_in direccionServidor; // Información sobre mi dirección
 	struct sockaddr_in direccionCliente; // Información sobre la dirección del cliente
-	int addrlen; // El tamaño de la direccion del cliente
+	socklen_t addrlen; // El tamaño de la direccion del cliente
 	int sockServ; // Socket de nueva conexion aceptada
 	int sockClie; // Socket a la escucha
 
@@ -721,8 +889,7 @@ int main(void) {
 			pthread_create(&hiloDedicado, NULL, (void*) atenderHilo,
 					(void*) parametros);
 
-			printf("Server: nueva conexion de %s en socket %d\n",
-					inet_ntoa(direccionCliente.sin_addr), sockClie);
+			printf("Server: nueva conexion de %s en socket %d\n", inet_ntoa(direccionCliente.sin_addr), sockClie);
 
 		}
 	}
