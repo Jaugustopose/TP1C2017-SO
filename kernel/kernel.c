@@ -377,6 +377,18 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 
 }
 
+void sigusr1(int cpu){
+	t_proceso* proceso = obtenerProceso(cpu);
+
+	if (proceso!=NULL){
+		//proceso->sigusr1=true;
+	}
+	else{
+		//quitarCliente(cpu);
+		//limpiarColaCPU();
+	}
+	//clientes[cpu].atentido=false;
+}
 
 
 
@@ -436,6 +448,10 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 	case accionLiberarHeap:
 		atenderLiberacionMemoriaDinamica();
 		break;
+
+	case accionQuantumInterrumpido:
+		sigusr1(fdCliente);
+	break;
 
 	}
 }

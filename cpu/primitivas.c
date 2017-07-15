@@ -337,7 +337,7 @@ void wait(t_nombre_semaforo identificador_semaforo)
 	loggearFinDePrimitiva("wait");
 }
 
-void signal(t_nombre_semaforo identificador_semaforo)
+void primitiva_signal(t_nombre_semaforo identificador_semaforo)
 {
 	int codigoAccion = accionSignal;
 	enviarTamanioYString(codigoAccion, kernel, identificador_semaforo);
@@ -416,7 +416,7 @@ void inicializarPrimitivas() {
 	funcionesKernel.AnSISOP_liberar = &liberar;
 	funcionesKernel.AnSISOP_moverCursor = &mover_cursor;
 	funcionesKernel.AnSISOP_reservar = &reservar;
-	funcionesKernel.AnSISOP_signal = &signal;
+	funcionesKernel.AnSISOP_signal = &primitiva_signal;
 	funcionesKernel.AnSISOP_wait = &wait;
 
 

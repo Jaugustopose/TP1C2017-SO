@@ -556,9 +556,42 @@ void loggearFinDePrimitiva(char* primitiva) {
 	log_debug(debugLog, "La primitiva |%s| finalizó OK.", primitiva);
 }
 
+void finalizar_todo() {
+
+	close(kernel);
+	close(memoria);
+
+	exit(EXIT_SUCCESS);
+}
+
+void handler(int sign) {
+	if (sign == SIGUSR1) {
+		printf("CHAAAAAU SIGUSR1!!!!\n");
+		log_debug(debugLog, "Me Boletearon!!");
+		if(!ejecutar){
+
+			//TODO: deberia avisarle a memoria?
+			int codAccion = accionQuantumInterrumpido;
+			void* buffer = malloc(sizeof(int));
+			memcpy(buffer, &codAccion, sizeof(codAccion));
+			send(kernel, buffer, sizeof(codAccion), 0);
+
+			finalizar_todo();
+
+		}else{
+			termina = true;
+
+			int codAccion = accionQuantumInterrumpido;
+			void* buffer = malloc(sizeof(int));
+			memcpy(buffer, &codAccion, sizeof(codAccion));
+			send(kernel, buffer, sizeof(codAccion), 0);
+		}
+	}
+}
+
 int main(void){
 
-	//TODO:signal(SIGUSR1,handler);
+	signal(SIGUSR1, handler); //el progama sabe que cuando se recibe SIGUSR1,se ejecuta handler
 
 	crearLog(string_from_format("cpu_%d", getpid()), "CPU", 1);
 	log_debug(debugLog, "Iniciando proceso CPU, PID: %d.", getpid());
