@@ -437,32 +437,58 @@ int sentenciaNoFinaliza(char* sentencia){
 		&& strcmp(sentencia,"\t\tend")!=0;
 }
 
+void finalizar_proceso(bool terminaNormalmente)
+{
+	if(terminaNormalmente)
+	{
+		log_debug(debugLog, ANSI_COLOR_GREEN "El proceso ansisop ejecutó su última instrucción." ANSI_COLOR_RESET);
+
+		int codAccion = accionFinProceso;
+		void* buffer = malloc(sizeof(int));
+		memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
+		send(kernel, buffer, sizeof(codAccion), 0);
+
+		ejecutar = false;
+		destruir_PCB(pcbNuevo);
+		pcbNuevo = NULL;
+
+	}else
+	{
+		log_info(debugLogger,"Finalizando proceso cpu...");
+
+		close(kernel);
+		close(memoria);
+
+		log_info(debugLogger,"CPU finalizó correctamente.");
+		destruirLogs();
+		exit(EXIT_SUCCESS);
+	}
+}
+
 /***********FUNCIONES DEL CIRCUITO DE PARSEO DE SENTENCIAS*****************************************/
 
 void parsear(char* sentencia)
 {
 	pcbNuevo->contadorPrograma++;
 
-	//TODO:Finalizar es responsabilidad de la nueva primitiva FINALIZAR.
-	//if(sentenciaNoFinaliza(sentencia)){
-
-	//Le paso sentencia, set de primitivas de CPU y set de primitivas de kernel
 	analizadorLinea(sentencia, &funciones, &funcionesKernel);
 
+	if(sentenciaNoFinaliza(sentencia)){
 
-	int codAccion = accionFinInstruccion;
-	void* buffer = malloc(sizeof(int));
-	memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
-	send(kernel, buffer, sizeof(codAccion), 0);
+		int codAccion = accionFinInstruccion;
+		void* buffer = malloc(sizeof(int));
+		memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
+		send(kernel, buffer, sizeof(codAccion), 0);
 
-	//TODO:DESCOMENTAR LUEGO
-	//	char* accionEnviar = (char*)accionFinInstruccion;
-	//	send(kernel, accionEnviar, 1, 0);
-	//	free(accionEnviar);
+	}
+	else
+	{
+		bool terminaNormalmente = true;
+		finalizar_proceso(terminaNormalmente);
+	}
 
-	//	}else{
-	//
-	//	}
+
+
 }
 
 void pedirSentencia()
@@ -524,8 +550,10 @@ void recibirOrdenes(char* accionRecibida)
 			break;
 
 		default:
-			exit(EXIT_FAILURE);
-		    break;
+			log_error(errorLog, "Llego cualquier cosa.");
+			log_error(errorLog, "Llego la accion numero |%d| y no hay una accion definida para eso.", accionRecibida);
+		     exit(EXIT_FAILURE);
+			break;
 	}
 
 }
@@ -576,7 +604,7 @@ void handler(int sign) {
 			memcpy(buffer, &codAccion, sizeof(codAccion));
 			send(kernel, buffer, sizeof(codAccion), 0);
 
-			finalizar_todo();
+			finalizar_proceso(false);
 
 		}else{
 			termina = true;
