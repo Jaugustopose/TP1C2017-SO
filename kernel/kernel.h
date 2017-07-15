@@ -30,7 +30,7 @@
 #include <pthread.h>
 #include "gestionDeProcesos.h"
 #include "CapaMemoria.h"
-
+#include "CapaFS.h"
 
 //Estructuras y enum
 typedef struct configuracion {
@@ -82,6 +82,7 @@ int tamanioPag;
 //int identificadorProceso = 0;
 int identificadorProceso;
 int memoria; //NECESITO GUARDAR EL FD DE MEMORIA ACA PARA LLAMARLO SIEMPRE QUE QUIERA
+int socketFS;
 
 t_list* listaDeProcesos;
 t_queue* colaNew;

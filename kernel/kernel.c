@@ -494,17 +494,26 @@ int main(void) {
 	listen_w(sockServ);
 
 	//Conectar con memoria
-		int memoria = socket(AF_INET, SOCK_STREAM, 0);
-		struct sockaddr_in direccionServ;
-			direccionServ.sin_family = AF_INET;
-			direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red
-			direccionServ.sin_addr.s_addr = inet_addr("127.0.0.1");
-			memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
-//		crearDireccionServidor(9030);
-//		conectar_con_server(memoria, &direccionServidor);
-			connect(memoria, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
-		tamanioPag = obtener_tamanio_pagina(memoria);
-		enviar_stack_size(memoria);
+	int memoria = socket(AF_INET, SOCK_STREAM, 0);
+	struct sockaddr_in direccionServ;
+	direccionServ.sin_family = AF_INET;
+	direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red
+	direccionServ.sin_addr.s_addr = inet_addr("127.0.0.1");
+	memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
+//	crearDireccionServidor(9030);
+//	conectar_con_server(memoria, &direccionServidor);
+	connect(memoria, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
+	tamanioPag = obtener_tamanio_pagina(memoria);
+	enviar_stack_size(memoria);
+
+	//Conectar con FS
+	socketFS = socket(AF_INET, SOCK_STREAM, 0);
+	struct sockaddr_in direccionServFS;
+	direccionServFS.sin_family = AF_INET;
+	direccionServFS.sin_port = htons(config.PUERTO_FS); // short, Ordenación de bytes de la red
+	direccionServFS.sin_addr.s_addr = inet_addr(config.IP_FS);
+	memset(&(direccionServFS.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
+	connect(memoria, (struct sockaddr*) &direccionServFS, sizeof(struct sockaddr));
 
 	//Añadir listener al conjunto maestro
 	FD_SET(sockServ, &master);
