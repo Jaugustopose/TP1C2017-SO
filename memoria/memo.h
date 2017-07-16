@@ -52,7 +52,7 @@ int tamanioMemoria;
 int tamanioTablaPagina;
 int cantMarcosOcupaTablaPaginas;
 t_list** overflow;
-int CANTIDAD_DE_MARCOS;
+int retardoMemoria;
 int stack_size;//lo recibe del kernel
 //t_list* listaProcesosActivos;
 

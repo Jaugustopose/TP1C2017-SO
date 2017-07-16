@@ -110,41 +110,6 @@ void borrarDeOverflow(int posicion, int frame) {
 	list_remove(overflow[posicion], index_frame);
 }
 
-void enviar_mensajes(int cliente, unsigned int length) {
-	while (1) {
-		char mensaje[length];
-		fgets(mensaje, sizeof mensaje, stdin);
-		send(cliente, mensaje, strlen(mensaje), 0);
-	}
-}
-
-int conectar_con_server(int cliente,
-		const struct sockaddr_in* direccionServidor) {
-	return connect(cliente, (void*) &*direccionServidor,
-			sizeof(*direccionServidor));
-}
-
-void recibir_mensajes_en_socket(int socket) {
-	char* buf = malloc(1000);
-	while (1) {
-		int bytesRecibidos = recv(socket, buf, 1000, 0);
-		if (bytesRecibidos < 0) {
-			perror("Ha ocurrido un error al recibir un mensaje");
-			exit(EXIT_FAILURE);
-		} else if (bytesRecibidos == 0) {
-			printf("Se terminó la conexión en el socket %d\n", socket);
-			close(socket);
-			exit(EXIT_FAILURE);
-		} else {
-			//Recibo mensaje e informo
-			buf[bytesRecibidos] = '\0';
-			printf("Recibí el mensaje de %i bytes: ", bytesRecibidos);
-			puts(buf);
-		}
-	}
-	free(buf);
-}
-
 void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	int i;
 	t_list* listaProcesosActivos = list_create();
@@ -355,8 +320,8 @@ char* solicitarBytes(int pid, int nroPagina, int offset, int tamanio, tablaPagin
 	} else {
 		printf("Tamaño solicitado: %d\n", tamanio);
 		codResult = EXIT_SUCCESS;
-		memcpy(bytesSolicitados, memoria + marco * config.marco_size + offset,
-				tamanio);
+		usleep(config.retardo_memoria * 1000);
+		memcpy(bytesSolicitados, memoria + marco * config.marco_size + offset, tamanio);
 	}
 	memcpy(respuesta, &codResult, sizeof(codResult));
 	memcpy(respuesta + sizeof(codResult), bytesSolicitados, tamanio);
@@ -401,6 +366,7 @@ int almacenarBytes(int pid, int nroPagina, int offset, int tamanio, void* buffer
 		printf("Marco candidato: %d\n", marcoPagina);
 		if (marcoPagina > -1) {
 			char* destino = memoria + marcoPagina * config.marco_size + offset;
+			usleep(config.retardo_memoria * 1000);
 			memcpy(destino, buffer, tamanio);
 			printf("El destino quedó almacenado: %s\n", destino);
 		} else {
@@ -511,22 +477,34 @@ bool estaElMarcoReservado(int marcoBuscado, int cantPaginasSolicitadas, int marc
 void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	printf("Escuchando nuevas solicitudes de consola en nuevo hilo\n");
 	while (1) {
-		printf("Ingrese una acción a realizar\n");
+		puts("Ingrese una acción a realizar\n");
 		puts("1: Configurar retardo memoria");
 		puts("2: Realizar dump de Memoria cache");
 		puts("3: Realizar dump de Estructuras de la Memoria");
 		puts("4: Realizar dump del contenido de la Memoria completa");
-		puts(
-				"5: Realizar dump del contenido de la Memoria para un proceso en particular");
+		puts("5: Realizar dump del contenido de la Memoria para un proceso en particular");
 		char accion[3];
 		if (fgets(accion, sizeof(accion), stdin) == NULL) {
-			printf("ERROR EN fgets !\n");
+			printf("ERROR AL LEER CONSOLA !\n");
 			return;
 		}
 		int codAccion = accion[0] - '0';
 		switch (codAccion) {
 		case retardo:
-			printf("Codificar retardo!\n");
+			puts("Ingrese el retardo deseado en milisegundos (Se toman 8 dígitos máximo)");
+			char input[10];
+			if (fgets(input, sizeof(input), stdin) == NULL) {
+				printf("ERROR AL LEER CONSOLA !\n");
+				break;
+			}
+			char *eptr;
+			int result = strtol(input, &eptr, 10);
+			if (result == 0) {
+				printf("Error con el valor ingresado\n");
+				break;
+			}
+			config.retardo_memoria = result;
+			printf("Retardo configurado en %d milisegundos\n", config.retardo_memoria);
 			break;
 		case dumpCache:
 			printf("Codificar dumpCache!\n");
@@ -549,6 +527,8 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 		case sizePid:
 			printf("Codificar sizePid!\n");
 			break;
+		default:
+			printf("No se reconece la acción %d!\n", codAccion);
 		}
 	}
 }
