@@ -144,10 +144,9 @@ void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 void realizarDumpContenidoMemoriaCompleta(tablaPagina_t* tablaPaginasInvertida) {
 	int i;
 	char* bufferPagina = malloc(config.marco_size);
-	printf("Se procede a imprimir por pantalla el contenido de cada marco:\n");
+	printf("Se procede a imprimir el contenido de cada marco:\n");
 	for (i = 0; i < config.marcos; i++) {
-		memcpy(bufferPagina, memoria + i * config.marco_size,
-				config.marco_size);
+		memcpy(bufferPagina, memoria + i * config.marco_size, config.marco_size);
 		printf("Marco: %d, pid: %d, pag: %d, contenido: %s\n", i,
 				tablaPaginasInvertida[i].pid,
 				tablaPaginasInvertida[i].nroPagina, bufferPagina);
@@ -474,8 +473,104 @@ bool estaElMarcoReservado(int marcoBuscado, int cantPaginasSolicitadas, int marc
 	return false;
 }
 
+void obtenerSizeMemoria(tablaPagina_t* tablaPaginasInvertida) {
+	int i;
+	int cantLibres = 0;
+	for (i = 0; i < config.marcos; i++) {
+		if (tablaPaginasInvertida[i].pid == -10) {
+			cantLibres++;
+		}
+	}
+	printf("Tamaño total de la memoria en frames: %d\n", config.marcos);
+	printf("Cantidad de frames ocupados: %d\n", config.marcos - cantLibres);
+	printf("Cantidad de frames libres: %d\n", cantLibres);
+}
+
+int configurarRetardoMemoria() {
+	puts("Ingrese el retardo deseado en milisegundos (Se toman 8 dígitos máximo)");
+	char input[10];
+	if (fgets(input, sizeof(input), stdin) == NULL) {
+		printf("ERROR AL LEER CONSOLA !\n");
+		return 1;
+	}
+	char* eptr;
+	int result = strtol(input, &eptr, 10);
+	if (result == 0) {
+		printf("Error con el valor ingresado\n");
+		result = 1;
+	}
+	return result;
+}
+
+void obtenerSizePid(tablaPagina_t* tablaPaginasInvertida) {
+	puts("Ingrese el número de PID");
+	char pidInput[1000];
+	if (fgets(pidInput, sizeof(pidInput), stdin) == NULL) {
+		printf("ERROR AL LEER CONSOLA !\n");
+		return;
+	}
+	char* eptr;
+	int pid = strtol(pidInput, &eptr, 10);
+	if (pid == 0) {
+		printf("Error con el valor ingresado\n");
+		return;
+	}
+	int i;
+	int cantMarcos = 0;
+	printf("Se busca pid %d\n", pid);
+	for (i = 0; i < config.marcos; i++) {
+		if (tablaPaginasInvertida[i].pid == pid) {
+			cantMarcos++;
+		}
+	}
+	if (cantMarcos == 0) {
+		printf("El pid %d no se encuentra cargado en memoria!\n", pid);
+	} else {
+		printf("El pid %d ocupa %d frames\n", pid, cantMarcos);
+	}
+}
+
+void realizarDumpContenidoProceso(tablaPagina_t* tablaPaginasInvertida) {
+	puts("Ingrese el número de PID");
+	char pidInput[100];
+	if (fgets(pidInput, sizeof(pidInput), stdin) == NULL) {
+		printf("ERROR AL LEER CONSOLA !\n");
+		return;
+	}
+	char* eptr;
+	int pid = strtol(pidInput, &eptr, 10);
+	if (pid == 0) {
+		printf("Error con el valor ingresado\n");
+		return;
+	}
+	char* bufferPagina = malloc(config.marco_size);
+	printf("Se procede a imprimir el contenido de cada marco del pid %d:\n", pid);
+	int marco;
+	int i = 0;
+	while (true) {
+		marco = buscarMarco(pid, i, tablaPaginasInvertida);
+		if (marco != -10) {
+			memcpy(bufferPagina, memoria + marco * config.marco_size, config.marco_size);
+			printf("pag: %d, marco: %d, contenido: %s\n", tablaPaginasInvertida[marco].nroPagina, marco, bufferPagina);
+		} else {
+			break;
+		}
+		i++;
+	}
+
+	if (i == 0) {
+		printf("El proceso de pid %d no se encuentra cargado en memoria\n", pid);
+		puts("");
+	}
+
+	free(bufferPagina);
+
+
+}
+
 void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	printf("Escuchando nuevas solicitudes de consola en nuevo hilo\n");
+	int result;
 	while (1) {
 		puts("Ingrese una acción a realizar\n");
 		puts("1: Configurar retardo memoria");
@@ -483,6 +578,9 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 		puts("3: Realizar dump de Estructuras de la Memoria");
 		puts("4: Realizar dump del contenido de la Memoria completa");
 		puts("5: Realizar dump del contenido de la Memoria para un proceso en particular");
+		puts("6: Realizar flush de la Memoria Cache");
+		puts("7: Size Memoria (frames, frames ocupados y frames libres)");
+		puts("8: Size Proceso");
 		char accion[3];
 		if (fgets(accion, sizeof(accion), stdin) == NULL) {
 			printf("ERROR AL LEER CONSOLA !\n");
@@ -491,16 +589,9 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 		int codAccion = accion[0] - '0';
 		switch (codAccion) {
 		case retardo:
-			puts("Ingrese el retardo deseado en milisegundos (Se toman 8 dígitos máximo)");
-			char input[10];
-			if (fgets(input, sizeof(input), stdin) == NULL) {
-				printf("ERROR AL LEER CONSOLA !\n");
-				break;
-			}
-			char *eptr;
-			int result = strtol(input, &eptr, 10);
-			if (result == 0) {
-				printf("Error con el valor ingresado\n");
+			result = configurarRetardoMemoria();
+			if (result == 1) {
+				//Error
 				break;
 			}
 			config.retardo_memoria = result;
@@ -516,16 +607,16 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 			realizarDumpContenidoMemoriaCompleta(tablaPaginasInvertida);
 			break;
 		case dumpMemoriaProceso:
-			printf("Codificar dumpMemoriaProceso!\n");
+			realizarDumpContenidoProceso(tablaPaginasInvertida);
 			break;
 		case flushCache:
 			printf("Codificar flushCache!\n");
 			break;
 		case sizeMemoria:
-			printf("Codificar sizeMemoria!\n");
+			obtenerSizeMemoria(tablaPaginasInvertida);
 			break;
 		case sizePid:
-			printf("Codificar sizePid!\n");
+			obtenerSizePid(tablaPaginasInvertida);
 			break;
 		default:
 			printf("No se reconece la acción %d!\n", codAccion);
