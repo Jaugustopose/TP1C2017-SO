@@ -89,7 +89,7 @@ t_puntero obtener_posicion_de(t_nombre_variable variable) {
 	if (posicionAbsoluta != (t_puntero)-1) {
 			posicionAbsoluta = (posicionRelativa->nroPagina*tamanioPaginas) + posicionRelativa->offset;
 	} else {
-		finalizarProcesoVariableInvalida();
+		finalizarProgramaVariableInvalida();
 	}
 
 	loggearFinDePrimitiva("obtener_posicion_de");

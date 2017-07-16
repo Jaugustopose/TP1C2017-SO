@@ -47,7 +47,7 @@ void overflowException(int mensajeMemoria){
 
 	if(lanzarOverflowExep){
 
-			finalizarProceso(false);
+			finalizar_programa(false);
 
 			lanzarOverflowExep=false;
 		}
@@ -58,7 +58,7 @@ void actualizarPC(t_PCB* pcb, t_puntero_instruccion pc) {
 	pcb->contadorPrograma = (int)pc;
 }
 
-void finalizarProcesoVariableInvalida(){
+void finalizarProgramaVariableInvalida(){
 
 	char* accionKernel = (char*)accionFinProceso;
 	send(kernel, accionKernel, sizeof(accionKernel), 0);
@@ -217,7 +217,7 @@ void desalojarProceso()
 	free(bufferSerialPCB);
 }
 
-void finalizarProceso(bool normalmente){
+void finalizar_programa(bool normalmente){
 
 	if(normalmente){
 			//Loguear mensaje

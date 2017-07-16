@@ -96,6 +96,9 @@ typedef struct {
 	int32_t estado;
 	t_PCB* PCB;
 	int32_t rafagas;
+	bool sigusr1;
+	bool abortado;
+	char* semaforo;
 }t_proceso;
 
 typedef struct{
