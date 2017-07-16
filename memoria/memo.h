@@ -85,6 +85,7 @@ int buscarEnOverflow(int indice, int pid, int pagina, tablaPagina_t* tablaPagina
 void borrarDeOverflow(int pos_inicial, int frame);
 int esMarcoCorrecto(int pos_candidata, int pid, int pagina, tablaPagina_t* tablaPaginasInvertida);
 bool estaElMarcoReservado(int marcoBuscado, int cantPaginasSolicitadas, int marcosSolicitados[][2]);
+int liberarPaginaPid(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida);
 
 
 #endif /* MEMO_H_ */
