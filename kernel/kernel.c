@@ -359,7 +359,7 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 
 }
 
-void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
+void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria, int socketCPU) {
 
 	switch (idMensaje) {
 
@@ -380,27 +380,27 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 		break;
 
 	case accionEscribir:
-
+		escribirArchivo();
 		break;
 
 	case accionMoverCursor:
-
+		//TODO: WTF!!!
 		break;
 
 	case accionAbrirArchivo:
-
+		abrirArchivo();
 		break;
 
 	case accionCrearArchivo:
-
+		//TODO: Esto no existe, para crear un archivo se debe abrir el archivo con permisos de creacion
 		break;
 
 	case accionBorrarArchivo:
-
+		borrarArchivo();
 		break;
 
 	case accionObtenerDatosArchivo:
-
+		leerArchivo();
 		break;
 
 	case accionReservarHeap:
@@ -570,7 +570,7 @@ int main(void) {
 						}
 						if (FD_ISSET(fdCliente, &bolsaCpus)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UN CPU
 
-							atender_accion_cpu(idMensaje, tamanioScript, memoria); //Argumentos que le paso muy probablemente cambien
+							atender_accion_cpu(idMensaje, tamanioScript, memoria, fdCliente); //Argumentos que le paso muy probablemente cambien
 						}
 					}
 				}

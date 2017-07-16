@@ -26,8 +26,8 @@ int agregarTablaGlobal(char* path){
 }
 
 void quitarTablaGlobal(FD_t* fileDescriptor){
-	globalFD_t fd = list_get(tablaGlobalArchivos,fileDescriptor->indiceTablaGlobal);
-	fd.cantProcesos--;
+	globalFD_t* fd = list_get(tablaGlobalArchivos,fileDescriptor->indiceTablaGlobal);
+	fd->cantProcesos--;
 }
 
 FD_t* agregarTablaProceso(int Pid, int indiceTablaGlobal, char* permisos){
@@ -61,33 +61,176 @@ void quitarTablaProceso(int Pid, FD_t* fileDescriptor){
 	}
 }
 
-void abrirArchivo(int Pid, char* path, char* permisos){
-	int indiceTablaGlobal = agregarTablaGlobal(path);
-	FD_t* fileDescriptor = agregarTablaProceso(Pid, indiceTablaGlobal, permisos);
-	//TODO: Enviar al FS la peticion de apertura de archivo
-	//TODO: Enviar filedescriptor al CPU
+void crearArchivo(int Pid, char* path, char* permisos, int socketCpu){
+	//Envio mensaje al FS
+	int codOperacion = accionCrearArchivo;
+	int pathSize = string_length(path);
+	// Tamanio paquete = codOperacion + pathSize + path
+	int packetSize = pathSize + sizeof(int)*2;
+	void *buffer = malloc(packetSize);
+	memcpy(buffer,&codOperacion,sizeof(int));
+	memcpy(buffer + sizeof(int),&pathSize,sizeof(int));
+	memcpy(buffer + sizeof(int)*2,path,pathSize);
+	send(socketFS, buffer, packetSize,0);
+	free(buffer);
+	//Recibo respuesta
+	int res;
+	recv(socketFS, &res, sizeof(res), 0);
+	if(res==0){
+		int indiceTablaGlobal = agregarTablaGlobal(path);
+		FD_t* fileDescriptor = agregarTablaProceso(Pid, indiceTablaGlobal, permisos);
+		//TODO: Enviar filedescriptor a CPU
+	}else{
+		//TODO: -1 no hay bloques libres -2 no se pudo crear el archivo
+	}
 }
 
-void leerArchivo(FD_t* fileDescriptor, int offset, int tamanio){
+void abrirArchivo(){
+	int Pid;
+	char* path;
+	char* permisos;
+	int socketCpu;
+	//TODO: Recibir informacion desde el CPU
+	//Envio mensaje al FS
+	int codOperacion = accionAbrirArchivo;
+	int pathSize = string_length(path);
+	// Tamanio paquete = codOperacion + pathSize + path
+	int packetSize = pathSize + sizeof(int)*2;
+	void *buffer = malloc(packetSize);
+	memcpy(buffer,&codOperacion,sizeof(int));
+	memcpy(buffer + sizeof(int),&pathSize,sizeof(int));
+	memcpy(buffer + sizeof(int)*2,path,pathSize);
+	send(socketFS, buffer, packetSize,0);
+	free(buffer);
+	//Recibo respuesta
+	int res;
+	recv(socketFS, &res, sizeof(res), 0);
+	//Analizar respuesta y enviar a CPU
+	if(res==0){
+		int indiceTablaGlobal = agregarTablaGlobal(path);
+		FD_t* fileDescriptor = agregarTablaProceso(Pid, indiceTablaGlobal, permisos);
+		//TODO: Enviar filedescriptor a CPU
+	}else{
+		if(res==-1 && string_contains(permisos, "c")){
+			crearArchivo(Pid, path, permisos, socketCpu);
+			return;
+		}else{
+			//TODO: Error Archivo no existe
+			return;
+		}
+		//TODO: Error el archivo esta corrupto
+	}
+}
+
+void leerArchivo(){
+	FD_t* fileDescriptor;
+	int offset;
+	int tamanio;
+	//TODO: Recibir informacion desde el CPU
 	if(string_contains(fileDescriptor->permisos,"r")==NULL){
 		//TODO Dar Error de permisos y terminar el proceso
 		return;
 	}
 	globalFD_t* globalFD = list_get(tablaGlobalArchivos, fileDescriptor->indiceTablaGlobal);
-	//TODO: Enviar peticion al FS y enviar respuesta a la CPU
+	//Envio mensaje al FS
+	int codOperacion = accionObtenerDatosArchivo;
+	int pathSize = string_length(globalFD->path);
+	// Tamanio paquete = codOperacion + pathSize + path + offset + tamanio
+	int packetSize = pathSize + sizeof(int)*4;
+	void *buffer = malloc(packetSize);
+	memcpy(buffer, &codOperacion, sizeof(int));
+	memcpy(buffer + sizeof(int), &pathSize, sizeof(int));
+	memcpy(buffer + sizeof(int)*2, globalFD->path, pathSize);
+	memcpy(buffer + sizeof(int)*2 + pathSize, &offset, sizeof(int));
+	memcpy(buffer + sizeof(int)*3 + pathSize, &tamanio, sizeof(int));
+	send(socketFS, buffer, packetSize,0);
+	free(buffer);
+	//Recibo respuesta
+	int res;
+	recv(socketFS, &res, sizeof(res), 0);
+	if(res==0){
+		char* datos = malloc(tamanio);
+		recv(socketFS, datos, tamanio, 0);
+		//TODO: Enviar respuesta a la CPU
+	}else{
+		//TODO: Dar error
+	}
 }
 
-void escribirArchivo(FD_t* fileDescriptor, int offset, int tamanio, char* datos){
+void escribirArchivo(){
+	FD_t* fileDescriptor;
+	int offset;
+	int tamanio;
+	char* datos;
+	//TODO: Recibir informacion desde el CPU
 	if(string_contains(fileDescriptor->permisos,"w")==NULL){
 		//TODO Dar Error de permisos y terminar el proceso
 		return;
 	}
 	globalFD_t* globalFD = list_get(tablaGlobalArchivos, fileDescriptor->indiceTablaGlobal);
+	//Envio mensaje al FS
+	int codOperacion = accionEscribir;
+	int pathSize = string_length(globalFD->path);
+	// Tamanio paquete = codOperacion + pathSize + path + offset + tamanio + datos
+	int packetSize = pathSize + sizeof(int)*4 + tamanio;
+	void *buffer = malloc(packetSize);
+	memcpy(buffer, &codOperacion, sizeof(int));
+	memcpy(buffer + sizeof(int), &pathSize, sizeof(int));
+	memcpy(buffer + sizeof(int)*2, globalFD->path, pathSize);
+	memcpy(buffer + sizeof(int)*2 + pathSize, &offset, sizeof(int));
+	memcpy(buffer + sizeof(int)*3 + pathSize, &tamanio, sizeof(int));
+	memcpy(buffer + sizeof(int)*4 + pathSize, datos, tamanio);
+	send(socketFS, buffer, packetSize,0);
+	free(buffer);
+	//Recibo respuesta
+	int res;
+	recv(socketFS, &res, sizeof(res), 0);
+	//Analizar respuesta y enviar a CPU
+	if(res==0){
+		//TODO: OK
+	}else{
+		//TODO: -1 error al escribir el archivo
+	}
 	//TODO: Enviar peticion al FS y enviar respuesta a la CPU
 }
 
-void cerrarArchivo(int Pid, FD_t* fileDescriptor){
+void cerrarArchivo(){
+	FD_t* fileDescriptor;
+	int Pid;
+	//TODO: Recibir informacion desde el CPU
 	quitarTablaGlobal(fileDescriptor);
 	quitarTablaProceso(Pid, fileDescriptor);
+}
 
+void borrarArchivo(){
+	FD_t* fileDescriptor;
+	int Pid;
+	//TODO: Recibir informacion desde el CPU
+	globalFD_t* globalFD = list_get(tablaGlobalArchivos, Pid);
+	if(globalFD->cantProcesos>1){
+		//Error: No se puede borrar el archivo porque alguien mas lo tienen abierto
+		//TODO: Enviar respuesta a CPU y terminar el proceso.
+	}else{
+		quitarTablaGlobal(fileDescriptor);
+		quitarTablaProceso(Pid, fileDescriptor);
+		//Envio mensaje al FS
+		int codOperacion = accionBorrarArchivo;
+		int pathSize = string_length(globalFD->path);
+		// Tamanio paquete = codOperacion + pathSize + path
+		int packetSize = pathSize + sizeof(int)*2;
+		void *buffer = malloc(packetSize);
+		memcpy(buffer,&codOperacion,sizeof(int));
+		memcpy(buffer + sizeof(int),&pathSize,sizeof(int));
+		memcpy(buffer + sizeof(int)*2,globalFD->path,pathSize);
+		send(socketFS, buffer, packetSize,0);
+		free(buffer);
+		//Recibo respuesta
+		int res;
+		recv(socketFS, &res, sizeof(res), 0);
+		if(res==0){
+			//OK
+		}else{
+			//TODO: Error al borrar el archivo
+		}
+	}
 }
