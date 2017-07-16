@@ -7,11 +7,13 @@ void primitivaSignal(int cliente, char* semaforoID)
 		if (!queue_is_empty(semaforo->colaSemaforo)) {
 
 			t_proceso* proceso = queue_pop(semaforo->colaSemaforo);
-			//TODO: IMPLEMENTAR! desbloquearProceso(proceso);
+		    desbloquearProceso(proceso);
 		}
 		else{
 			semaforo->valorSemaforo++;
 		}
+
+		//clientes[cliente].atentido=false;
 }
 
 void primitivaWait(int cliente, char* semaforoID)
@@ -20,10 +22,11 @@ void primitivaWait(int cliente, char* semaforoID)
 
 	if (semaforo->valorSemaforo > 0){
 		semaforo->valorSemaforo--;
-		}
-	else{
-		//TODO: IMPLEMENTAR! bloquearProcesoSem(cliente, semaforoID);
+	}else{
+		bloquearProcesoSem(cliente, semaforoID);
 	}
+
+	//clientes[cliente].atentido=false;
 }
 
 void imprimir()

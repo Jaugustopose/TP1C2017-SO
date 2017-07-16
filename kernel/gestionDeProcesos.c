@@ -141,7 +141,22 @@ void finalizarProceso(int cliente)
 			semaforo->colaSemaforo = queue_remove(semaforo->colaSemaforo, proceso->semaforo);
 		}
 }
+void bloquearProcesoSem(int cliente, char* semid) {
 
+	if (dictionary_has_key(tablaSemaforos, semid)) {
+
+		t_proceso* proceso = obtenerProceso(cliente);
+		bloquearProceso(proceso);
+		proceso->semaforo = string_duplicate(semid);
+
+		queue_push(((t_semaforo*) dictionary_get(tablaSemaforos, semid))->colaSemaforo,proceso);
+	}
+	else{
+		//TODO:LOGGEAR ERROR
+	}
+
+	//Imprimir colas, opcional: dictionary_iterator(tablaSemaforos,(void*) imprimirColasSemaforos);
+}
 
 void bloquearProceso(t_proceso* proceso) {
 	cambiarEstado(proceso,BLOCK);
