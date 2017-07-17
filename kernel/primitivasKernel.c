@@ -7,11 +7,13 @@ void primitivaSignal(int cliente, char* semaforoID)
 		if (!queue_is_empty(semaforo->colaSemaforo)) {
 
 			t_proceso* proceso = queue_pop(semaforo->colaSemaforo);
-			//TODO: IMPLEMENTAR! desbloquearProceso(proceso);
+		    desbloquearProceso(proceso);
 		}
 		else{
 			semaforo->valorSemaforo++;
 		}
+
+		//clientes[cliente].atentido=false;
 }
 
 void primitivaWait(int cliente, char* semaforoID)
@@ -20,20 +22,11 @@ void primitivaWait(int cliente, char* semaforoID)
 
 	if (semaforo->valorSemaforo > 0){
 		semaforo->valorSemaforo--;
-		}
-	else{
-		//TODO: IMPLEMENTAR! bloquearProcesoSem(cliente, semaforoID);
+	}else{
+		bloquearProcesoSem(cliente, semaforoID);
 	}
-}
 
-int primitivaDevolverCompartida()
-{
-
-}
-
-void primitivaAsignarCompartida()
-{
-
+	//clientes[cliente].atentido=false;
 }
 
 void imprimir()
@@ -110,6 +103,18 @@ void primitivaReservar(int espacioSolicitado)
 void primitivaLiberar(int puntero)
 {
 //TODO:IMPLEMENTAR MANEJO HEAP
+}
+
+void atenderSolicitudMemoriaDinamica()
+{
+	char* solicitudSerial = leerTamanioYMensaje(fdCliente);
+	int espacioRequerido = char4ToInt(solicitudSerial);
+}
+
+void atenderLiberacionMemoriaDinamica()
+{
+	char* solicitudSerial = leerTamanioYMensaje(fdCliente);
+	int espacioRequerido = char4ToInt(solicitudSerial);
 }
 
 void recibirPedidoMemoria(int tamanioSolicitud, int pidSolicitante)

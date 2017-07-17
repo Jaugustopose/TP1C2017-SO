@@ -207,6 +207,25 @@ int finalizarPrograma(int pid, tablaPagina_t* tablaPaginasInvertida) {
 	return retorno;
 }
 
+int liberarPaginaPid(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida) {
+
+	int resultAccion;
+
+	int marco = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
+	printf("Marco encontrado solicitarBytes: %d\n", marco);
+	if (marco == -10) {
+		printf("El nro de página %d para el pid %d no existe\n", pid, nroPagina);
+		resultAccion = marco;
+	} else {
+		//Liberamos Marco
+		tablaPaginasInvertida[marco].pid = -10;
+		tablaPaginasInvertida[marco].nroPagina = -1;
+		resultAccion = EXIT_SUCCESS;
+	}
+
+	return resultAccion;
+}
+
 int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPaginasInvertida) {
 	int i;
 	int nroPag = -1, nroPagUltimo = -1;
@@ -280,19 +299,26 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPag
 	 * los usamos para asignar al pid en tablaPaginasInvertida. Guardamos en su respectivo
 	 * Overflow a los que hayan colisionado
 	 */
+	char* buffer = malloc(config.marco_size);
+	memset(buffer, '\0', config.marco_size);
 	for (i = 0; i < cantPaginas; i++) {
 		//Si la segunda columna es -1 significa que se el marco es el devuelto por la función hash
 		//Si no, el marco utilizado es el encontrado en el recorrido hecho luego de la colisión
+		//También se limpia el contenido de cada marco cuando es asignado
 		nroPagUltimo++;
 		if ( marcosLibres[i][1] == -1) {
 			tablaPaginasInvertida[ marcosLibres[i][0] ].pid = pid;
 			tablaPaginasInvertida[ marcosLibres[i][0] ].nroPagina = nroPagUltimo;
+			memcpy(memoria + marcosLibres[i][0] * config.marco_size, buffer, config.marco_size);
 		} else {
 			tablaPaginasInvertida[ marcosLibres[i][1] ].pid = pid;
 			tablaPaginasInvertida[ marcosLibres[i][1] ].nroPagina = nroPagUltimo;
 			agregarSiguienteEnOverflow(marcosLibres[i][0], marcosLibres[i][1]);
+			memcpy(memoria + marcosLibres[i][1] * config.marco_size, buffer, config.marco_size);
 		}
 	}
+
+	free(buffer);
 
 	//TODO SEMAFORO HASTA ACÁ
 	printf("Paginas asignadas con éxito\n");
@@ -537,8 +563,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 			// error o conexión cerrada por el cliente
 			if (cantBytesRecibidos == 0) {
 				// conexión cerrada
-				printf("Server: socket %d termino la conexion\n",
-						parametros->socketClie);
+				printf("Server: socket %d termino la conexion\n", parametros->socketClie);
 				close(parametros->socketClie);
 				break;
 			} else {
@@ -555,6 +580,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 			char* bytesSolicitados;
 			int resultAccion;
 			int pidAFinalizar;
+			int pagALiberar;
 
 			switch (codAccion) {
 
@@ -635,8 +661,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 				break;
 
 			case solicitarBytesAccion:
-				recv(parametros->socketClie, &pedidoBytes, sizeof(pedidoBytes),
-						0);
+				recv(parametros->socketClie, &pedidoBytes, sizeof(pedidoBytes),0);
 				printf(
 						"Recibida solicitud de %d bytes para el pid %d en su página %d\n con un offset de %d\n",
 						pedidoBytes.tamanio, pedidoBytes.pid,
@@ -657,19 +682,16 @@ void atenderHilo(paramHiloDedicado* parametros) {
 				break;
 
 			case finalizarProgramaAccion:
-				recv(parametros->socketClie, &pidAFinalizar,
-						sizeof(pidAFinalizar), 0);
+				recv(parametros->socketClie, &pidAFinalizar, sizeof(pidAFinalizar), 0);
 				printf(
 						"Recibida solicitud para finalizar programa con pid = %d\n",
 						pidAFinalizar);
 				printf("Se procede a finalizar el programa\n");
-				resultAccion = finalizarPrograma(pidAFinalizar,
-						parametros->tablaPaginasInvertida);
+				resultAccion = finalizarPrograma(pidAFinalizar, parametros->tablaPaginasInvertida);
 				printf(
 						"Solicitud de finalizar programa terminó con resultado de acción: %d\n",
 						resultAccion);
-				send(parametros->socketClie, &resultAccion,
-						sizeof(resultAccion), 0);
+				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
 				break;
 
 			case obtenerTamanioPaginas:
@@ -680,6 +702,14 @@ void atenderHilo(paramHiloDedicado* parametros) {
 			case accionEnviarStackSize:
 				recv(parametros->socketClie, &stack_size, sizeof(int32_t), 0);
 				printf("Recibido tamanio dle stack = %d\n", stack_size);
+				break;
+
+			case liberarPaginaProcesoAccion:
+				recv(parametros->socketClie, &pidAFinalizar, sizeof(pidAFinalizar),0);
+				recv(parametros->socketClie, &pagALiberar, sizeof(pagALiberar),0);
+				printf("Recibida solicitud para liberar página %d del pid %d\n", pagALiberar, pidAFinalizar);
+				resultAccion = liberarPaginaPid(pidAFinalizar, pagALiberar, parametros->tablaPaginasInvertida);
+				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
 				break;
 
 			default:

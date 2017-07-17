@@ -24,6 +24,7 @@
 #include <parser/parser.h>
 #include <parser/metadata_program.h>
 #include <math.h>
+#include <signal.h>
 
 t_log *logger;
 t_log *debugLogger;

@@ -26,11 +26,10 @@ void enviarLargoMensajeASerializar(int sock, int largo, char* mensaje){
 
 void recibirQuantumSleep(){
 
-	char* quantum = malloc(sizeof(int));
-	recv(kernel, quantum, sizeof(int), 0);
-	quantumSleep = char4ToInt(quantum);
+	int quantum;
+	int bytes = recv(kernel, &quantum, sizeof(int), 0);
+	quantumSleep = quantum;
 
-	free(quantum);
 }
 
 bool finalizarEjecucion(){
@@ -48,7 +47,7 @@ void overflowException(int mensajeMemoria){
 
 	if(lanzarOverflowExep){
 
-			finalizarProceso(false);
+			finalizar_programa(false);
 
 			lanzarOverflowExep=false;
 		}
@@ -59,7 +58,7 @@ void actualizarPC(t_PCB* pcb, t_puntero_instruccion pc) {
 	pcb->contadorPrograma = (int)pc;
 }
 
-void finalizarProcesoVariableInvalida(){
+void finalizarProgramaVariableInvalida(){
 
 	char* accionKernel = (char*)accionFinProceso;
 	send(kernel, accionKernel, sizeof(accionKernel), 0);
@@ -218,7 +217,7 @@ void desalojarProceso()
 	free(bufferSerialPCB);
 }
 
-void finalizarProceso(bool normalmente){
+void finalizar_programa(bool normalmente){
 
 	if(normalmente){
 			//Loguear mensaje
@@ -438,38 +437,70 @@ int sentenciaNoFinaliza(char* sentencia){
 		&& strcmp(sentencia,"\t\tend")!=0;
 }
 
+void finalizar_proceso(bool terminaNormalmente)
+{
+	if(terminaNormalmente)
+	{
+		log_debug(debugLog, ANSI_COLOR_GREEN "El proceso ansisop ejecutó su última instrucción." ANSI_COLOR_RESET);
+
+		int codAccion = accionFinProceso;
+		void* buffer = malloc(sizeof(int));
+		memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
+		send(kernel, buffer, sizeof(codAccion), 0);
+
+		ejecutar = false;
+		destruir_PCB(pcbNuevo);
+		pcbNuevo = NULL;
+
+	}else
+	{
+		log_info(debugLogger,"Finalizando proceso cpu...");
+
+		close(kernel);
+		close(memoria);
+
+		log_info(debugLogger,"CPU finalizó correctamente.");
+		destruirLogs();
+		exit(EXIT_SUCCESS);
+	}
+}
+
 /***********FUNCIONES DEL CIRCUITO DE PARSEO DE SENTENCIAS*****************************************/
 
 void parsear(char* sentencia)
 {
 	pcbNuevo->contadorPrograma++;
 
-	//TODO:Finalizar es responsabilidad de la nueva primitiva FINALIZAR.
-	//if(sentenciaNoFinaliza(sentencia)){
-
-	//Le paso sentencia, set de primitivas de CPU y set de primitivas de kernel
 	analizadorLinea(sentencia, &funciones, &funcionesKernel);
 
-	//TODO:DESCOMENTAR LUEGO
-	//	char* accionEnviar = (char*)accionFinInstruccion;
-	//	send(kernel, accionEnviar, 1, 0);
-	//	free(accionEnviar);
+	if(sentenciaNoFinaliza(sentencia)){
 
-	//	}else{
-	//
-	//	}
+		int codAccion = accionFinInstruccion;
+		void* buffer = malloc(sizeof(int));
+		memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
+		send(kernel, buffer, sizeof(codAccion), 0);
+
+	}
+	else
+	{
+		bool terminaNormalmente = true;
+		finalizar_proceso(terminaNormalmente);
+	}
+
+
+
 }
 
 void pedirSentencia()
 {
 	//Recibe del nucleo el quantum
-	//recibirQuantumSleep();
+	recibirQuantumSleep();
 
 	if(!finalizarEjecucion()){
 
 			int tamanio;
 			//Espera este tiempo antes de empezar con la proxima sentencia
-			//usleep(quantumSleep*1000);
+			usleep(quantumSleep*1000);
 			sentenciaPedida = string_new();
 			obtenerSentencia(&tamanio);
 
@@ -491,11 +522,11 @@ void recibirOrdenes(char* accionRecibida)
 			lanzarOverflowExep = false;
 			obtenerPCB();
 			//A MODO DE PRUEBA NOMAS, QUITAR LUEGO
-			termina = false;
-			while(!termina)
-			{
-				pedirSentencia();
-			}
+//			termina = false;
+//			while(!termina)
+//			{
+//				pedirSentencia();
+//			}
 			break;
 
 		case accionContinuarProceso: //Obtener y parsear sentencias
@@ -519,8 +550,10 @@ void recibirOrdenes(char* accionRecibida)
 			break;
 
 		default:
-			exit(EXIT_FAILURE);
-		    break;
+			log_error(errorLog, "Llego cualquier cosa.");
+			log_error(errorLog, "Llego la accion numero |%d| y no hay una accion definida para eso.", accionRecibida);
+		     exit(EXIT_FAILURE);
+			break;
 	}
 
 }
@@ -551,7 +584,42 @@ void loggearFinDePrimitiva(char* primitiva) {
 	log_debug(debugLog, "La primitiva |%s| finalizó OK.", primitiva);
 }
 
+void finalizar_todo() {
+
+	close(kernel);
+	close(memoria);
+
+	exit(EXIT_SUCCESS);
+}
+
+void handler(int sign) {
+	if (sign == SIGUSR1) {
+		printf("CHAAAAAU SIGUSR1!!!!\n");
+		log_debug(debugLog, "Me Boletearon!!");
+		if(!ejecutar){
+
+			//TODO: deberia avisarle a memoria?
+			int codAccion = accionQuantumInterrumpido;
+			void* buffer = malloc(sizeof(int));
+			memcpy(buffer, &codAccion, sizeof(codAccion));
+			send(kernel, buffer, sizeof(codAccion), 0);
+
+			finalizar_proceso(false);
+
+		}else{
+			termina = true;
+
+			int codAccion = accionQuantumInterrumpido;
+			void* buffer = malloc(sizeof(int));
+			memcpy(buffer, &codAccion, sizeof(codAccion));
+			send(kernel, buffer, sizeof(codAccion), 0);
+		}
+	}
+}
+
 int main(void){
+
+	signal(SIGUSR1, handler); //el progama sabe que cuando se recibe SIGUSR1,se ejecuta handler
 
 	crearLog(string_from_format("cpu_%d", getpid()), "CPU", 1);
 	log_debug(debugLog, "Iniciando proceso CPU, PID: %d.", getpid());

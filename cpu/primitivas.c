@@ -89,7 +89,7 @@ t_puntero obtener_posicion_de(t_nombre_variable variable) {
 	if (posicionAbsoluta != (t_puntero)-1) {
 			posicionAbsoluta = (posicionRelativa->nroPagina*tamanioPaginas) + posicionRelativa->offset;
 	} else {
-		finalizarProcesoVariableInvalida();
+		finalizarProgramaVariableInvalida();
 	}
 
 	loggearFinDePrimitiva("obtener_posicion_de");
@@ -242,6 +242,8 @@ t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableComp
 
 	recv(kernel, &valorAsignado,sizeof(int), 0);
 
+	loggearFinDePrimitiva("asignar_valor_compartida");
+
 	if(valorAsignado == *valor){
 		return valorAsignado;
 	}
@@ -250,8 +252,6 @@ t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableComp
 		//TODO:ERROR!
 		return 0;
 	}
-
-	loggearFinDePrimitiva("asignar_valor_compartida");
 
 	return valorAsignado;
 }
@@ -262,7 +262,8 @@ void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 	t_elemento_stack* newHead = stack_elemento_crear();
 
 	//dondeRetornar
-	newHead->posRetorno = pcbNuevo->contadorPrograma;
+	int posicion = pcbNuevo->contadorPrograma;
+	newHead->posRetorno = ++posicion;
 
 	// Si el stack tiene pos 0, size=1, si tiene 0 y 1, size=2,... Da la posicion del lugar nuevo.
 	newHead->pos = stack_tamanio(stack);
@@ -336,7 +337,7 @@ void wait(t_nombre_semaforo identificador_semaforo)
 	loggearFinDePrimitiva("wait");
 }
 
-void signal(t_nombre_semaforo identificador_semaforo)
+void primitiva_signal(t_nombre_semaforo identificador_semaforo)
 {
 	int codigoAccion = accionSignal;
 	enviarTamanioYString(codigoAccion, kernel, identificador_semaforo);
@@ -347,7 +348,7 @@ t_puntero reservar(t_valor_variable espacio)
 {
 	int codigoAccion = accionReservarHeap;
 	char* espacioSerial = intToChar4(espacio);
-	send(kernel, espacioSerial, sizeof(int), 0);
+	enviarTamanioYSerial(codigoAccion, kernel, sizeof(int), espacioSerial);
 
 	//TODO:recv del puntero
 
@@ -358,7 +359,7 @@ void liberar(t_puntero puntero)
 {
 	int codigoAccion = accionLiberarHeap;
 	char* punteroSerial = intToChar4(puntero);
-	send(kernel, punteroSerial, sizeof(int), 0);
+	enviarTamanioYSerial(codigoAccion, kernel, sizeof(int), punteroSerial);
 
 	loggearFinDePrimitiva("liberar");
 }
@@ -415,7 +416,7 @@ void inicializarPrimitivas() {
 	funcionesKernel.AnSISOP_liberar = &liberar;
 	funcionesKernel.AnSISOP_moverCursor = &mover_cursor;
 	funcionesKernel.AnSISOP_reservar = &reservar;
-	funcionesKernel.AnSISOP_signal = &signal;
+	funcionesKernel.AnSISOP_signal = &primitiva_signal;
 	funcionesKernel.AnSISOP_wait = &wait;
 
 

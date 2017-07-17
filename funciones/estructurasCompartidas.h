@@ -39,7 +39,8 @@ enum tipoMensaje {
 	accionObtenerDatosArchivo = 29,
 	accionReservarHeap = 30,
 	accionLiberarHeap = 31,
-	accionEnviarStackSize = 32
+	accionEnviarStackSize = 32,
+	liberarPaginaProcesoAccion = 33
 
 };
 
@@ -95,6 +96,10 @@ typedef struct {
 	int32_t CpuDuenio;
 	int32_t estado;
 	t_PCB* PCB;
+	int32_t rafagas;
+	bool sigusr1;
+	bool abortado;
+	char* semaforo;
 }t_proceso;
 
 typedef struct{
