@@ -23,7 +23,6 @@ t_queue* queue_remove(t_queue* queue, void* toRemove){
 }
 
 void transformarCodigoToMetadata(t_PCB* pcb, char* cod)
-
 {
 	t_metadata_program* metadata = metadata_desde_literal(cod);
 	pcb->contadorPrograma = metadata->instruccion_inicio;
@@ -52,7 +51,9 @@ t_PCB* crearPCB()
 	pcb->PID=0;
 	pcb->contadorPrograma = 0;
 	pcb->cantidadPaginas = 0;
-
+	pcb->exitCode = -1;
+	pcb->etiquetasSize = 0;
+	pcb->indiceEtiquetas = NULL;
 	pcb->stackPointer = stack_crear();
 	pcb->indiceCodigo = list_create();
 
@@ -93,6 +94,7 @@ t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo)
 	proceso->sigusr1 = false;
 	proceso->abortado = false;
 	proceso->estado = NEW;
+	proceso->semaforo = NULL;
 	printf("Crear proceso - end\n");
 
 	transformarCodigoToMetadata(proceso->PCB, codigo);
@@ -182,7 +184,7 @@ void continuarProceso(t_proceso* proceso) {
 	memcpy(buffer + sizeof(codAccion), &quantum, sizeof(quantum)); //QUANTUM_sleep
 
     send(proceso->CpuDuenio, buffer, sizeof(codAccion) + sizeof(quantum), 0);
-
+    free(buffer);
 }
 
 bool terminoQuantum(t_proceso* proceso) {

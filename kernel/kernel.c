@@ -95,6 +95,8 @@ void enviar_stack_size(int sock)
 
 	send(sock, buffer, sizeof(int32_t)*2, 0);
 
+	//VERIFICAR
+	free(buffer);
 }
 
 int obtener_tamanio_pagina(int memoria) {
@@ -206,6 +208,9 @@ int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffe
 		recv(memoria, &resultAccion, sizeof(resultAccion), 0);
 		printf("almacenarBytes resultó con código de acción: %d\n", resultAccion);
 	}
+
+	//VERIFICAR
+	free(bufferParaAlmacenarEnMemoria);
 
 	return resultAccion;
 
@@ -338,15 +343,15 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 		recv(consola, &tamanioScript, sizeof(int32_t), 0);
 		printf("Tamaño del script: %d\n", tamanioScript);
 
-		char* buff = malloc(tamanioScript);
+		char* buff = malloc(tamanioScript + 1);
 		//char* cadena = malloc(tamanio*sizeof(char));
 		recv(fdCliente, buff, tamanioScript, 0);
 		//memcpy(cadena,buff,tamanio * sizeof(char));
-		printf("el valor de cadena es: %s\n", buff);
+		printf("el valor de cadena es: %.*s\n", tamanioScript, buff);
 		///////////FIN DE DESERIALIZADOR///////////////
 		identificadorProceso++;
-		t_proceso* proceso = crearProceso(identificadorProceso, consola, (char*) buff);
-		//free(buff);
+		t_proceso* proceso = crearProceso(identificadorProceso, consola, (char*)buff);
+
 		list_add(listaDeProcesos, proceso); //Agregar un proceso a esa bendita lista
 
 
@@ -367,10 +372,15 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 			}
 
 			proceso->PCB->cantidadPaginas = paginasASolicitar;
+
+			//VERIFICAR
+			free(buff);
+
 		}
 	}else{
 		printf("El proceso no pudo ingresar a la cola de New ya que excede el grado de multiprogramacion\n");
 	}
+
 
 }
 
