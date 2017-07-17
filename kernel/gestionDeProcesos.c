@@ -118,13 +118,14 @@ t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo)
 	proceso->CpuDuenio = -1;
 	proceso->sigusr1 = false;
 	proceso->abortado = false;
+	proceso->estado = NEW;
 	printf("Crear proceso - end\n");
 
 	transformarCodigoToMetadata(proceso->PCB, codigo);
 
 	stack_PCB_main(proceso->PCB);
 
-	cambiarEstado(proceso, READY);
+	//cambiarEstado(proceso, READY);
 
 	return proceso;
 }
@@ -141,6 +142,7 @@ void finalizarProceso(int cliente)
 			semaforo->colaSemaforo = queue_remove(semaforo->colaSemaforo, proceso->semaforo);
 		}
 }
+
 void bloquearProcesoSem(int cliente, char* semid) {
 
 	if (dictionary_has_key(tablaSemaforos, semid)) {
@@ -189,8 +191,6 @@ void cambiarEstado(t_proceso* proceso, int estado) {
 	}
 }
 
-
-
 void rafagaProceso(int cliente){
 
 	t_proceso* proceso = obtenerProceso(cliente);
@@ -213,7 +213,7 @@ void continuarProceso(t_proceso* proceso) {
 
 bool terminoQuantum(t_proceso* proceso) {
 	// mutexProcesos SAFE
-	return (proceso->rafagas >= config.QUANTUM_SLEEP);
+	return (proceso->rafagas >= config.QUANTUM);
 }
 
 void desasignarCPU(t_proceso* proceso) {
@@ -249,12 +249,21 @@ void expulsarProceso(t_proceso* proceso) {
 
 void planificarExpulsion(t_proceso* proceso) {
 
-	if (proceso->estado == EXEC && terminoQuantum(proceso))
+	if(proceso->estado == BLOCK) {
+	    expulsarProceso(proceso);
+	   return;
+	 }
+
+	if(proceso->estado == EXEC && (terminoQuantum(proceso)|| proceso->abortado))
 	{
 			expulsarProceso(proceso);
 	}
 	else{
 			continuarProceso(proceso);
+	}
+	if(proceso->abortado)
+	{
+		//TODO: LIBERAR RECURSOS, FINALIZAR PROCESO Y CONSOLA ASOCIADA
 	}
 
 }
@@ -276,4 +285,16 @@ void ejecutarProceso(t_proceso* proceso, int cpu) {
 	//	if (!isclosed(proceso->socketCPU)) {
 	continuarProceso(proceso);
 	//}
+}
+
+void recibirFinalizacion(int cliente) {
+	t_proceso* proceso = obtenerProceso(cliente);
+	if (proceso != NULL) {
+		if (!proceso->abortado)
+		{
+			finalizarProceso(cliente);
+		}
+		desasignarCPU(proceso);
+		//clientes[cliente].atentido = false;
+	}
 }

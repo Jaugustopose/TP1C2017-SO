@@ -246,11 +246,12 @@ void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProces
 	//Encontrar cada proceso con proceso.ConsolaDuenio = fileDescriptor
 	//Cambiarle el exit code a -6 (finalizo por desconexion de consola)
 	//Llevo el proceso con exit code = 6 a la cola de exit
-	for (fdCliente = 0; fdCliente < list_size(listaConProcesos); fdCliente++) {
-		t_proceso* proceso = list_get(listaConProcesos, fdCliente);
+	int fdClienteCont;
+	for (fdClienteCont = 0; fdClienteCont < list_size(listaConProcesos); fdClienteCont++) {
+		t_proceso* proceso = list_get(listaConProcesos, fdClienteCont);
 		if (proceso -> ConsolaDuenio == fileDescriptor) {
 			proceso -> PCB->exitCode = -6;
-			queue_push(colaExit,&proceso);
+			queue_push(colaExit, proceso);
 		}
 
 	}
@@ -259,16 +260,16 @@ void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProces
 
 				return (-6 == p->PCB->exitCode);
 			}
-	list_remove_by_condition(listaConProcesos,exit_code_de_proceso);
+	list_remove_by_condition(listaConProcesos, (void*)exit_code_de_proceso);
 }
 
 void liberar_procesos_de_cpu(int fileDescriptor, t_list* listaConProcesos) {
 
 	//Encontrar cada proceso con proceso.CpuDuenio = filedescriptor
 	//Y cambiarle el CpuDuenio a -1 (el menos 1 significa que no tiene cpu asignado)
-
-	for (fdCliente = 0; fdCliente < list_size(listaConProcesos); fdCliente++) {
-		t_proceso* proceso = list_get(listaConProcesos, fdCliente);
+	int fdClienteCont;
+	for (fdClienteCont = 0; fdClienteCont < list_size(listaConProcesos); fdClienteCont++) {
+		t_proceso* proceso = list_get(listaConProcesos, fdClienteCont);
 		if (proceso -> CpuDuenio == fileDescriptor) {
 			proceso -> CpuDuenio = -1;
 		}
@@ -359,8 +360,9 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 			proceso -> PCB->cantidadPaginas = paginasASolicitar;
 			int resultadoAccionAlmacenar = enviarSolicitudAlmacenarBytes(memoria, proceso, buff, tamanioScript);
 			if (resultadoAccionAlmacenar == 0) {
-				//queue_pop(colaNew);
-				queue_push(colaReady, proceso);
+				proceso = (t_proceso*)queue_pop(colaNew);
+				cambiarEstado(proceso, READY);
+				//queue_push(colaReady, proceso);
 			}
 
 			//EnviarPCBaCPU
@@ -400,17 +402,21 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 		rafagaProceso(fdCliente);
 	break;
 
+	case accionFinProceso:
+		recibirFinalizacion(fdCliente);
+	break;
+
 	case accionAsignarValorCompartida:
-			obtenerAsignarCompartida();
-		break;
+		obtenerAsignarCompartida();
+	break;
 
 	case accionObtenerValorCompartida:
-			obtenerValorCompartida();
-		break;
+		obtenerValorCompartida();
+	break;
 
 	case accionWait:
 
-		break;
+	break;
 
 	case accionEscribir:
 

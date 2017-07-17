@@ -86,7 +86,6 @@ typedef struct {
 	t_stack* stackPointer;
 	char* indiceEtiquetas;
 	int etiquetasSize;
-	//t_dictionary* indiceEtiquetas;
 	int exitCode;
 }t_PCB;
 
