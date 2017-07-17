@@ -414,6 +414,10 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 		recibirFinalizacion(fdCliente);
 	break;
 
+	case accionQuantumInterrumpido:
+			//sigurs
+		break;
+
 	case accionAsignarValorCompartida:
 		obtenerAsignarCompartida();
 	break;

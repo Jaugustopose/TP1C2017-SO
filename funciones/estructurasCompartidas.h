@@ -21,6 +21,7 @@ enum tipoMensaje {
 	accionObtenerPCB = 9,
 	accionFinInstruccion = 10,
 	accionFinProceso = 11,
+	accionDesalojarProceso = 12,
 	accionObtenerValorCompartida = 14,
 	accionAsignarValorCompartida = 15,
 	accionQuantumInterrumpido = 16,

@@ -211,7 +211,7 @@ void desalojarProceso()
 	//Envio PCB al kernel
 	int bytes = bytes_PCB(pcbNuevo);
 	char* bufferSerialPCB = malloc(bytes);
-	serializar_PCB(&pcbNuevo, kernel, accionFinProceso);
+	serializar_PCB(&pcbNuevo, kernel, accionDesalojarProceso);
 	enviarLargoMensajeASerializar(kernel, bytes, bufferSerialPCB);
 
 	free(bufferSerialPCB);
@@ -535,7 +535,7 @@ void recibirOrdenes(char* accionRecibida)
 				pedirSentencia();
 			}
 			break;
-		case accionFinProceso: //Envio PCB al Kernel
+		case accionDesalojarProceso: //Envio PCB al Kernel
 
 			desalojarProceso();
 
