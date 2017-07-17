@@ -1,4 +1,5 @@
 #include "memo.h"
+#include <time.h>
 
 void cargarConfigFile() {
 	char* pat = string_new();
@@ -111,14 +112,20 @@ void borrarDeOverflow(int posicion, int frame) {
 }
 
 void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
+	time_t tm = time(NULL);
+	char fechaFormateada[20];
+	strftime(fechaFormateada, 20, "%Y%m%d_%H%M%S", localtime(&tm));
 	int i;
 	t_list* listaProcesosActivos = list_create();
-
+	char* path = string_from_format("output/dumpEstructuras_%s.txt", fechaFormateada);
+	FILE* dumpFile = txt_open_for_append(path);
 	puts("TABLA DE PÁGINAS INVERTIDA");
 	printf("%*s||%*s||%*s\n", 9, "Marco  ", 9, "PID   ", 12, "Nro Página");
+	fprintf(dumpFile, "%*s||%*s||%*s\n", 9, "Marco ", 9, "PID   ", 12, "Nro Página" );
+
 	for (i = 0; i < config.marcos; i++) {
-		printf("%*d||%*d||%*d\n", 9, i, 9, tablaPaginasInvertida[i].pid, 12,
-				tablaPaginasInvertida[i].nroPagina);
+		printf("%*d||%*d||%*d\n", 9, i, 9, tablaPaginasInvertida[i].pid, 12, tablaPaginasInvertida[i].nroPagina);
+		fprintf(dumpFile, "%*d||%*d||%*d\n", 9, i, 9, tablaPaginasInvertida[i].pid, 12, tablaPaginasInvertida[i].nroPagina);
 		//Función privada dentro de este scope (para el closure del find)
 		int _soy_pid_buscado(void *p) {
 			return p == tablaPaginasInvertida[i].pid;
@@ -130,15 +137,19 @@ void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 
 	}
 	puts("LISTADO DE PROCESOS ACTIVOS");
+	fprintf(dumpFile, "LISTADO DE PROCESOS ACTIVOS");
 	for (i = 0; i < list_size(listaProcesosActivos); i++) {
 		int pid = (int) list_get(listaProcesosActivos, i);
 		//No imprimimos los nros de pid correspondientes a estructuras administrativas (-1) ni libres (-10)
 		if (pid >= 0) {
 			printf("PID: %d\n", pid);
+			fprintf(dumpFile, "PID: %d\n", pid);
 		}
 	}
 	puts("");
+	fprintf(dumpFile, "\n");
 	list_destroy(listaProcesosActivos);
+	fclose(dumpFile);
 }
 
 void realizarDumpContenidoMemoriaCompleta(tablaPagina_t* tablaPaginasInvertida) {
