@@ -696,7 +696,7 @@ int main(void) {
 						}
 						if (FD_ISSET(fdCliente, &bolsaCpus)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UN CPU
 
-							atender_accion_cpu(idMensaje, tamanioScript, memoria, fdCliente); //Argumentos que le paso muy probablemente cambien
+							atender_accion_cpu(idMensaje, tamanioScript, memoria); //Argumentos que le paso muy probablemente cambien
 						}
 					}
 				}
