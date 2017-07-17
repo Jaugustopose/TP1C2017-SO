@@ -94,6 +94,7 @@ void enviar_stack_size(int sock)
 	memcpy(buffer + sizeof(codigoAccion), &stackSize, sizeof(codigoAccion));
 
 	send(sock, buffer, sizeof(int32_t)*2, 0);
+
 }
 
 int obtener_tamanio_pagina(int memoria) {
@@ -345,6 +346,7 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 		///////////FIN DE DESERIALIZADOR///////////////
 		identificadorProceso++;
 		t_proceso* proceso = crearProceso(identificadorProceso, consola, (char*) buff);
+		//free(buff);
 		list_add(listaDeProcesos, proceso); //Agregar un proceso a esa bendita lista
 
 
@@ -362,13 +364,9 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 			if (resultadoAccionAlmacenar == 0) {
 				proceso = (t_proceso*)queue_pop(colaNew);
 				cambiarEstado(proceso, READY);
-				//queue_push(colaReady, proceso);
 			}
 
-			//EnviarPCBaCPU
-			//int cpu = queue_pop(colaCPU);
 			proceso->PCB->cantidadPaginas = paginasASolicitar;
-			//enviarPCBaCPU(proceso->PCB, cpu, accionObtenerPCB);
 		}
 	}else{
 		printf("El proceso no pudo ingresar a la cola de New ya que excede el grado de multiprogramacion\n");
