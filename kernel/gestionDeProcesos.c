@@ -208,19 +208,31 @@ void actualizarPCB(t_proceso* proceso, t_PCB* PCB) { //
 }
 
 void expulsarProceso(t_proceso* proceso) {
-	//enviarHeader(proceso->socketCPU, HeaderDesalojarProceso);
-	//char* serialPcb = leerLargoYMensaje(proceso->CpuDuenio);
+
+	int codAccion = accionDesalojarProceso;
+	void* buffer = malloc(sizeof(int));
+	memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
+
+	send(proceso->CpuDuenio, buffer, sizeof(codAccion), 0);
+
+	int tamanio;
+	recv(proceso->CpuDuenio, &codAccion, sizeof(codAccion), 0);
+    recv(proceso->CpuDuenio, &tamanio, sizeof(tamanio), 0);
+    void* pcbSerializado = malloc(tamanio);
+    recv(proceso->CpuDuenio, pcbSerializado, tamanio, 0);
 
 	t_PCB* pcb = malloc(sizeof(t_PCB));
-//	deserializar_PCB(pcb, serialPcb);
+
+	deserializar_PCB(pcb, pcbSerializado);
 
 	actualizarPCB(proceso, pcb);
 
-	if (!proceso->abortado && proceso->estado == EXEC){
-		cambiarEstado(proceso, READY);
-	}
-//	free(serialPcb);
+		if (!proceso->abortado && proceso->estado == EXEC){
+			cambiarEstado(proceso, READY);
+		}
 	desasignarCPU(proceso);
+
+	free(pcbSerializado);
 }
 
 void planificarExpulsion(t_proceso* proceso) {

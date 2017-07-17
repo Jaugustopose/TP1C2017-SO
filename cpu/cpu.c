@@ -209,12 +209,7 @@ void desalojarProceso()
 	ejecutar = false;
 
 	//Envio PCB al kernel
-	int bytes = bytes_PCB(pcbNuevo);
-	char* bufferSerialPCB = malloc(bytes);
-	serializar_PCB(&pcbNuevo, kernel, accionDesalojarProceso);
-	enviarLargoMensajeASerializar(kernel, bytes, bufferSerialPCB);
-
-	free(bufferSerialPCB);
+	serializar_PCB(pcbNuevo, kernel, accionDesalojarProceso);
 }
 
 void finalizar_programa(bool normalmente){
