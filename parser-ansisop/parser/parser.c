@@ -113,7 +113,8 @@ void analizadorLinea(char* const instruccion, AnSISOP_funciones *AnSISOP_funcion
 		AnSISOP_funciones_kernel->AnSISOP_wait( _string_trim(linea + strlen(TEXT_WAIT)) );
 	} else if( _esAbrirArchivo(linea) ){
 		char **operation = string_split(linea + strlen(TEXT_OPEN_FILE), " ");
-		AnSISOP_funciones_kernel->AnSISOP_abrir(_string_trim(operation[1]), _interpretarBanderas(operation[0]));
+		t_descriptor_archivo fdAbierto = AnSISOP_funciones_kernel->AnSISOP_abrir(_string_trim(operation[2]), _interpretarBanderas(operation[1]));
+		AnSISOP_funciones->AnSISOP_asignar(_obtenerPosicion(operation[0], AnSISOP_funciones), fdAbierto);
 		free(operation);
 	} else if( _esBorrarArchivo(linea) ){
 		AnSISOP_funciones_kernel->AnSISOP_borrar(
@@ -127,7 +128,7 @@ void analizadorLinea(char* const instruccion, AnSISOP_funciones *AnSISOP_funcion
 		char **operation = string_split(linea + strlen(TEXT_READ_FILE), " ");
 		AnSISOP_funciones_kernel->AnSISOP_leer(
 				(t_descriptor_archivo) _operar(operation[0], AnSISOP_funciones),
-				_obtenerPosicion(operation[1], AnSISOP_funciones),
+				(t_puntero) _operar(operation[1], AnSISOP_funciones),
 				_operar(operation[2], AnSISOP_funciones)
 		);
 		free(operation);
@@ -184,7 +185,7 @@ void analizadorLinea(char* const instruccion, AnSISOP_funciones *AnSISOP_funcion
 }
 
 char* _obtenerString(char *operacionPuntero, bool (*deberiaFrenar)(char, int), AnSISOP_funciones *AnSISOP_funciones) {
-	t_puntero posicionInicial = _obtenerPosicion(_string_trim(operacionPuntero), AnSISOP_funciones);
+	t_puntero posicionInicial = _operar(_string_trim(operacionPuntero), AnSISOP_funciones);
 	int offset = 0;
 	char* texto = string_new();
 	for (;;){
