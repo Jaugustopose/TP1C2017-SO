@@ -15,6 +15,28 @@ t_pidHeap* getPID(int pid)
   return entrada;
 }
 
+t_pidHeap* getPagina(t_pidHeap* pidElement, int nroPag)
+{
+  bool porPagina(t_paginaHeap* entradaTabla, int nroPag){
+				return entradaTabla->nro == nroPag;
+   }
+
+  t_paginaHeap* entrada = list_find(pidElement->paginas, (void*)porPagina);
+
+  return entrada;
+}
+
+t_bloque* getBloque(t_paginaHeap* pagina, int indice)
+{
+  bool porBloque(t_bloque* entradaTabla, int indice){
+				return entradaTabla->indice == indice;
+   }
+
+  t_paginaHeap* entrada = list_find(pagina->bloques, (void*)porBloque);
+
+  return entrada;
+}
+
 //OJO:Paginas que arrancan a numerarse en 0
 int getLastNroPag(int pid)
 {
@@ -77,6 +99,7 @@ void solicitarPagina(int pid)
 
 }
 
+
 t_paginaHeap* getPaginaConEspacio(t_pidHeap* pidElement, int pid, int espacio)
 {
 	bool porPagina(t_paginaHeap* entradaTabla, int pid){
@@ -86,6 +109,7 @@ t_paginaHeap* getPaginaConEspacio(t_pidHeap* pidElement, int pid, int espacio)
   t_paginaHeap* pagina = list_find(pidElement->paginas, (void*)porPagina);
   return pagina;
 }
+
 
 t_bloque* getBloqueConEspacio(t_paginaHeap* pagina, int espacio)
 {
@@ -195,11 +219,85 @@ t_puntero alocarMemoria(int espacioSolicitado, int pid)
 	}
 }
 
-//LLega con la cantidad de paginas de codigo?
+void bloquesDestroyer(t_bloque* bloque) {
+    free(bloque);
+}
+
+void paginasDestroyer(t_paginaHeap* pagina)
+{
+	free(pagina);
+}
+
+void liberarPaginaEstructura(t_paginaHeap* paginaALiberar, t_pidHeap* pidElement)
+{
+	int nroPagAEliminar = paginaALiberar->nro;
+
+	bool paginaBuscada(t_paginaHeap* pagina){
+		return pagina->nro == nroPagAEliminar;
+	}
+
+	list_destroy_and_destroy_elements(paginaALiberar->bloques, (void*)bloquesDestroyer);
+	list_remove_and_destroy_by_condition(pidElement->paginas, (void*)paginaBuscada, (void*)paginasDestroyer);
+}
+
+bool bloquesTodosFree(t_paginaHeap* pagina)
+{
+	bool estaLibre_bloque(t_bloque* bloque)
+	{
+		return bloque->metadata->isFree == true;
+	}
+
+  return list_all_satisfy(pagina->bloques, (void*)estaLibre_bloque);
+}
+
+int calcularIndiceBloque(t_paginaHeap* pagina, int offset)
+{
+	int bytes = 0;
+	int indice = 0;
+	void calculaIndice(t_bloque* bloque)
+	{
+		if(bytes <= offset)
+		{
+			bytes = bytes +( 5 + bloque->metadata->size);
+			indice++;
+		}
+	}
+
+	list_iterate(pagina->bloques, (void*)calculaIndice);
+	return indice;
+}
+
 void liberarMemoria(t_puntero puntero, int pid)
 {
-	int nroPagina = (int)(puntero/tamanioPag);
-	int pidLiberar = pid;
+   int nroPagina = (int)(puntero/tamanioPag);
+   int pidLiberar = pid;
+   int offset = puntero - (nroPagina * tamanioPag);
+
+   t_pidHeap* pidElement = getPID(pid);
+   t_paginaHeap* pagina = getPagina(pidElement, nroPagina);
+
+   int indice = calcularIndiceBloque(pagina, offset);
+
+   t_bloque* bloque = getBloque(pagina, indice);
+   bloque->metadata->isFree = true;
+
+	if(bloquesTodosFree(pagina))
+	{
+		liberarPagina(pagina);
+		liberarPaginaEstructura(pagina, pidElement);
+	}
+}
+
+void liberarBloque()
+{
+
+}
+//LLega con la cantidad de paginas de codigo?
+void liberarPagina(t_paginaHeap* pagina)
+{
+	int pidLiberar = pagina->pid;
+	int nroPagina = pagina->nro;
+
 
 	void* buffer = malloc(sizeof(int)*3);
 
@@ -215,8 +313,5 @@ void liberarMemoria(t_puntero puntero, int pid)
 	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), 0);
 	int overflow = char4ToInt(stackOverflow);
 	free(stackOverflow);
-
-
-
 
 }
