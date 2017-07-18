@@ -194,3 +194,29 @@ t_puntero alocarMemoria(int espacioSolicitado, int pid)
 		return -1;
 	}
 }
+
+//LLega con la cantidad de paginas de codigo?
+void liberarMemoria(t_puntero puntero, int pid)
+{
+	int nroPagina = (int)(puntero/tamanioPag);
+	int pidLiberar = pid;
+
+	void* buffer = malloc(sizeof(int)*3);
+
+	int codAccion = liberarPaginaProcesoAccion;
+
+	memcpy(buffer, &codAccion, sizeof(codAccion));
+	memcpy(buffer + sizeof(codAccion), &pidLiberar, sizeof(pidLiberar));
+	memcpy(buffer + sizeof(nroPagina), &nroPagina, sizeof(nroPagina));
+
+	send(memoria, buffer, sizeof(int)*3, 0);
+
+	char* stackOverflow = malloc(sizeof(int));
+	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), 0);
+	int overflow = char4ToInt(stackOverflow);
+	free(stackOverflow);
+
+
+
+
+}
