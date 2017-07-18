@@ -347,10 +347,17 @@ void primitiva_signal(t_nombre_semaforo identificador_semaforo)
 t_puntero reservar(t_valor_variable espacio)
 {
 	int codigoAccion = accionReservarHeap;
-	char* espacioSerial = intToChar4(espacio);
-	enviarTamanioYSerial(codigoAccion, kernel, sizeof(int), espacioSerial);
+	int pid = pcbNuevo->PID;
 
-	//TODO:recv del puntero
+	void* buffer = malloc(sizeof(int32_t)*2);
+	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
+	memcpy(buffer + sizeof(codigoAccion), &pid, sizeof(pid));
+
+	send(kernel, buffer, sizeof(int32_t)*2, 0);
+
+	int puntero;
+	recv(kernel, &puntero, sizeof(int), 0);
+
 
 	loggearFinDePrimitiva("reservar");
 }

@@ -23,16 +23,18 @@
 #include <math.h>
 #include "kernel.h"
 
-t_list* tablaPaginasHeap; //elementos: pidHeap
-int pidCondicion;
-int solicitudCondicion;
-int numeroDePaginaCondicion;
-
+t_list* listaPidHEAP; //elementos: pidHeap
 
 typedef struct heapMetadata{
  int size;
  _Bool isFree;
 }heapMetadata;
+
+typedef struct bloque
+{
+ heapMetadata* metadata;
+ int indice;
+}t_bloque;
 
 typedef struct pagina{
   int pid;
