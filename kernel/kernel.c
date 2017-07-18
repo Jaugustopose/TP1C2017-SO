@@ -115,6 +115,7 @@ void inicializarContexto() {
 	crearSemaforos();
 	crearCompartidas();
 	iniciarVigilanciaConfiguracion();
+	listaPidHEAP = list_create();
 
 	colaCPU = queue_create();
 	colaNew = queue_create();

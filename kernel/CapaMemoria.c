@@ -15,6 +15,20 @@ t_pidHeap* getPID(int pid)
   return entrada;
 }
 
+//OJO:Paginas que arrancan a numerarse en 0
+int getLastNroPag(int pid)
+{
+	t_pidHeap* elementoPid = getPID(pid);
+	int numeroNuevo = 0;
+
+	if(elementoPid != NULL)
+	{
+		numeroNuevo = list_size(elementoPid->paginas);
+	}
+
+	return numeroNuevo;
+}
+
 void solicitarPagina(int pid)
 {
 	void* buffer = malloc(sizeof(int) + sizeof(pedidoSolicitudPaginas_t));
@@ -33,6 +47,31 @@ void solicitarPagina(int pid)
 	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), 0);
 	int overflow = char4ToInt(stackOverflow);
 	free(stackOverflow);
+
+	t_paginaHeap* paginaNueva = malloc(sizeof(t_paginaHeap));
+	paginaNueva->pid = pid;
+	paginaNueva->nro = getLastNroPag(pid);
+	paginaNueva->tamDisponible = tamanioPag - 5;
+	paginaNueva->bloques = list_create();
+
+	t_bloque* bloqueInicial = malloc(sizeof(t_bloque));
+	bloqueInicial->metadata = malloc(sizeof(heapMetadata));
+    bloqueInicial->metadata->isFree = true;
+    bloqueInicial->metadata->size = tamanioPag - 5;
+
+    list_add(paginaNueva->bloques, bloqueInicial);
+
+    t_pidHeap* pidElemento = getPID(pid);
+
+    if(pidElemento == NULL)
+    {
+    	//Creo el elemento pid porque es la primera alocacion del proceso
+    	pidElemento = malloc(sizeof(t_pidHeap));
+    	pidElemento->pid = pid;
+    	pidElemento->paginas = list_create();
+    }
+
+    list_add(pidElemento->paginas, paginaNueva);
 
 }
 
@@ -56,6 +95,7 @@ t_bloque* getBloqueConEspacio(t_paginaHeap* pagina, int espacio)
  return bloque;
 }
 
+//OJO: Bloques que arrancan a numerarse en CERO
 t_puntero alocar(int pid, int espacio)
 {
 	t_pidHeap* elementoPID = getPID(pid);
