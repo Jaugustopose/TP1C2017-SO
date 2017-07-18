@@ -25,13 +25,13 @@
 
 typedef struct configMemo {
 	char* ip_kernel;
-	int puerto_kernel;
-	int puerto;
-	int marcos;
-	int marco_size;
-	int entradas_cache;
-	int cache_x_proc;
-	int retardo_memoria;
+	int32_t puerto_kernel;
+	int32_t puerto;
+	int32_t marcos;
+	int32_t marco_size;
+	int32_t entradas_cache;
+	int32_t cache_x_proc;
+	int32_t retardo_memoria;
 } config_t;
 
 /**
@@ -84,6 +84,13 @@ typedef struct administrativaCache {
 	void* contenido;
 
 }entradaCache_t;
+
+static void entrada_destroyer(entradaCache_t *self) {
+    free(self->contenido);
+    free(self);
+}
+
+
 
 //Prototipos
 void cargarConfigFile();
