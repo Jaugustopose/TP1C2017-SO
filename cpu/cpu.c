@@ -625,8 +625,8 @@ int main(void){
 	inicializarContexto();
 	conectarConKernel();
     conectarConMemoria();
-    //tamanioPaginas = obtenerTamanioPagina(memoria);
-   tamanioPaginas = 32;
+    tamanioPaginas = obtenerTamanioPagina(memoria);
+   //tamanioPaginas = 32;
   //PARA PRUEBAS SOLO:pedirSentencia();
    esperarProgramas();
    // destruirLogs();

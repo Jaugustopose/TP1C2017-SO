@@ -348,12 +348,14 @@ t_puntero reservar(t_valor_variable espacio)
 {
 	int codigoAccion = accionReservarHeap;
 	int pid = pcbNuevo->PID;
+	int espacioParaAlocar = espacio;
 
-	void* buffer = malloc(sizeof(int32_t)*2);
+	void* buffer = malloc(sizeof(int32_t)*3);
 	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
 	memcpy(buffer + sizeof(codigoAccion), &pid, sizeof(pid));
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(int), &espacioParaAlocar, sizeof(pid));
 
-	send(kernel, buffer, sizeof(int32_t)*2, 0);
+	send(kernel, buffer, sizeof(int32_t)*3, 0);
 
 	int puntero;
 	recv(kernel, &puntero, sizeof(int), 0);

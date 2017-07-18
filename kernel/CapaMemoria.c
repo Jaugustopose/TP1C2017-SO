@@ -69,6 +69,8 @@ void solicitarPagina(int pid)
     	pidElemento = malloc(sizeof(t_pidHeap));
     	pidElemento->pid = pid;
     	pidElemento->paginas = list_create();
+
+    	list_add(listaPidHEAP, pidElemento);
     }
 
     list_add(pidElemento->paginas, paginaNueva);

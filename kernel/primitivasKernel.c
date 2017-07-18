@@ -110,8 +110,8 @@ void atenderSolicitudMemoriaDinamica()
 	int espacioSolicitado;
 	int pid;
 
-	recv(fdCliente, &espacioSolicitado, sizeof(int),0);
 	recv(fdCliente, &pid, sizeof(int),0);
+	recv(fdCliente, &espacioSolicitado, sizeof(int),0);
 
 	int puntero = alocarMemoria(espacioSolicitado, pid);
 
