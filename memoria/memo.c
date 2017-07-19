@@ -1,4 +1,5 @@
 #include "memo.h"
+#include <time.h>
 
 void cargarConfigFile() {
 	char* pat = string_new();
@@ -120,50 +121,22 @@ void borrarDeOverflow(int posicion, int frame) {
 	list_remove(overflow[posicion], index_frame);
 }
 
-void enviar_mensajes(int cliente, unsigned int length) {
-	while (1) {
-		char mensaje[length];
-		fgets(mensaje, sizeof mensaje, stdin);
-		send(cliente, mensaje, strlen(mensaje), 0);
-	}
-}
-
-int conectar_con_server(int cliente,
-		const struct sockaddr_in* direccionServidor) {
-	return connect(cliente, (void*) &*direccionServidor,
-			sizeof(*direccionServidor));
-}
-
-void recibir_mensajes_en_socket(int socket) {
-	char* buf = malloc(1000);
-	while (1) {
-		int bytesRecibidos = recv(socket, buf, 1000, 0);
-		if (bytesRecibidos < 0) {
-			perror("Ha ocurrido un error al recibir un mensaje");
-			exit(EXIT_FAILURE);
-		} else if (bytesRecibidos == 0) {
-			printf("Se terminó la conexión en el socket %d\n", socket);
-			close(socket);
-			exit(EXIT_FAILURE);
-		} else {
-			//Recibo mensaje e informo
-			buf[bytesRecibidos] = '\0';
-			printf("Recibí el mensaje de %i bytes: ", bytesRecibidos);
-			puts(buf);
-		}
-	}
-	free(buf);
-}
-
 void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
+	time_t tm = time(NULL);
+	char fechaFormateada[20];
+	strftime(fechaFormateada, 20, "%Y%m%d_%H%M%S", localtime(&tm));
 	int i;
+	char* path = string_from_format("output/dumpEstructuras_%s.txt", fechaFormateada);
+	FILE* dumpFile = txt_open_for_append(path);
 	t_list* listaProcesosActivos = list_create();
-
 	puts("TABLA DE PÁGINAS INVERTIDA");
-	printf("%*s||%*s||%*s\n", 9, "Marco  ", 9, "PID   ", 12, "Nro Página");
+	fprintf(dumpFile, "TABLA DE PÁGINAS INVERTIDA\n");
+	printf("||%*s||%*s||%*s||\n", 9, "Marco  ", 9, "PID   ", 13, "Nro Página");
+	fprintf(dumpFile, "||%*s||%*s||%*s||\n", 9, "Marco  ", 9, "PID   ", 13, "Nro Página");
+	fprintf(dumpFile, "||==================================||\n");
 	for (i = 0; i < config.marcos; i++) {
-		printf("%*d||%*d||%*d\n", 9, i, 9, tablaPaginasInvertida[i].pid, 12,
-				tablaPaginasInvertida[i].nroPagina);
+		printf("||%*d||%*d||%*d||\n", 9, i, 9, tablaPaginasInvertida[i].pid, 12, tablaPaginasInvertida[i].nroPagina);
+		fprintf(dumpFile, "||%*d||%*d||%*d||\n", 9, i, 9, tablaPaginasInvertida[i].pid, 12, tablaPaginasInvertida[i].nroPagina);
 		//Función privada dentro de este scope (para el closure del find)
 		int _soy_pid_buscado(void *p) {
 			return p == tablaPaginasInvertida[i].pid;
@@ -174,29 +147,92 @@ void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 		}
 
 	}
+	printf("======================================\n\n");
+	fprintf(dumpFile, "======================================\n\n");
 	puts("LISTADO DE PROCESOS ACTIVOS");
+	fprintf(dumpFile, "LISTADO DE PROCESOS ACTIVOS");
 	for (i = 0; i < list_size(listaProcesosActivos); i++) {
 		int pid = (int) list_get(listaProcesosActivos, i);
 		//No imprimimos los nros de pid correspondientes a estructuras administrativas (-1) ni libres (-10)
 		if (pid >= 0) {
 			printf("PID: %d\n", pid);
+			fprintf(dumpFile, "PID: %d\n", pid);
 		}
 	}
 	puts("");
+	fprintf(dumpFile, "\n");
 	list_destroy(listaProcesosActivos);
+	fclose(dumpFile);
 }
 
 void realizarDumpContenidoMemoriaCompleta(tablaPagina_t* tablaPaginasInvertida) {
+
+	time_t tm = time(NULL);
+	char fechaFormateada[20];
+	strftime(fechaFormateada, 20, "%Y%m%d_%H%M%S", localtime(&tm));
+	char* path = string_from_format("output/dumpContenidoMemoria_%s.txt", fechaFormateada);
+	FILE* dumpFile = txt_open_for_append(path);
+
 	int i;
 	char* bufferPagina = malloc(config.marco_size);
-	printf("Se procede a imprimir por pantalla el contenido de cada marco:\n");
+	printf("Se procede a imprimir el contenido de cada marco:\n");
+	fprintf(dumpFile, "Se procede a imprimir el contenido de cada marco:\n");
 	for (i = 0; i < config.marcos; i++) {
-		memcpy(bufferPagina, memoria + i * config.marco_size,
-				config.marco_size);
+		memcpy(bufferPagina, memoria + i * config.marco_size, config.marco_size);
 		printf("Marco: %d, pid: %d, pag: %d, contenido: %s\n", i,
 				tablaPaginasInvertida[i].pid,
 				tablaPaginasInvertida[i].nroPagina, bufferPagina);
+		fprintf(dumpFile, "Marco: %d, pid: %d, pag: %d, contenido: %s\n",
+				i,
+				tablaPaginasInvertida[i].pid,
+				tablaPaginasInvertida[i].nroPagina, bufferPagina);
 	}
+	fclose(dumpFile);
+	free(bufferPagina);
+}
+
+void realizarDumpContenidoProceso(tablaPagina_t* tablaPaginasInvertida) {
+
+	puts("Ingrese el número de PID");
+	char pidInput[100];
+	if (fgets(pidInput, sizeof(pidInput), stdin) == NULL) {
+		printf("ERROR AL LEER CONSOLA !\n");
+		return;
+	}
+	char* eptr;
+	int pid = strtol(pidInput, &eptr, 10);
+	if (pid == 0) {
+		printf("Error con el valor ingresado\n");
+		return;
+	}
+	time_t tm = time(NULL);
+	char fechaFormateada[20];
+	strftime(fechaFormateada, 20, "%Y%m%d_%H%M%S", localtime(&tm));
+	char* path = string_from_format("output/dumpContenidoPID%d_%s.txt", pid, fechaFormateada);
+	FILE* dumpFile = txt_open_for_append(path);
+
+	char* bufferPagina = malloc(config.marco_size);
+	printf("Se procede a imprimir el contenido de cada marco del pid %d:\n", pid);
+	fprintf(dumpFile, "Se procede a imprimir el contenido de cada marco del pid %d:\n", pid);
+	int marco;
+	int i = 0;
+	while (true) {
+		marco = buscarMarco(pid, i, tablaPaginasInvertida);
+		if (marco != -10) {
+			memcpy(bufferPagina, memoria + marco * config.marco_size, config.marco_size);
+			printf("pag: %d, marco: %d, contenido: %s\n", tablaPaginasInvertida[marco].nroPagina, marco, bufferPagina);
+			fprintf(dumpFile, "pag: %d, marco: %d, contenido: %s\n", tablaPaginasInvertida[marco].nroPagina, marco, bufferPagina);
+		} else {
+			break;
+		}
+		i++;
+	}
+
+	if (i == 0) {
+		printf("El proceso de pid %d no se encuentra cargado en memoria\n\n", pid);
+		fprintf(dumpFile, "El proceso de pid %d no se encuentra cargado en memoria\n\n", pid);
+	}
+	fclose(dumpFile);
 	free(bufferPagina);
 }
 
@@ -215,6 +251,25 @@ int finalizarPrograma(int pid, tablaPagina_t* tablaPaginasInvertida) {
 	}
 
 	return retorno;
+}
+
+int liberarPaginaPid(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida) {
+
+	int resultAccion;
+
+	int marco = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
+	printf("Marco encontrado solicitarBytes: %d\n", marco);
+	if (marco == -10) {
+		printf("El nro de página %d para el pid %d no existe\n", pid, nroPagina);
+		resultAccion = marco;
+	} else {
+		//Liberamos Marco
+		tablaPaginasInvertida[marco].pid = -10;
+		tablaPaginasInvertida[marco].nroPagina = -1;
+		resultAccion = EXIT_SUCCESS;
+	}
+
+	return resultAccion;
 }
 
 int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPaginasInvertida) {
@@ -290,19 +345,26 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPag
 	 * los usamos para asignar al pid en tablaPaginasInvertida. Guardamos en su respectivo
 	 * Overflow a los que hayan colisionado
 	 */
+	char* buffer = malloc(config.marco_size);
+	memset(buffer, '\0', config.marco_size);
 	for (i = 0; i < cantPaginas; i++) {
 		//Si la segunda columna es -1 significa que se el marco es el devuelto por la función hash
 		//Si no, el marco utilizado es el encontrado en el recorrido hecho luego de la colisión
+		//También se limpia el contenido de cada marco cuando es asignado
 		nroPagUltimo++;
 		if ( marcosLibres[i][1] == -1) {
 			tablaPaginasInvertida[ marcosLibres[i][0] ].pid = pid;
 			tablaPaginasInvertida[ marcosLibres[i][0] ].nroPagina = nroPagUltimo;
+			memcpy(memoria + marcosLibres[i][0] * config.marco_size, buffer, config.marco_size);
 		} else {
 			tablaPaginasInvertida[ marcosLibres[i][1] ].pid = pid;
 			tablaPaginasInvertida[ marcosLibres[i][1] ].nroPagina = nroPagUltimo;
 			agregarSiguienteEnOverflow(marcosLibres[i][0], marcosLibres[i][1]);
+			memcpy(memoria + marcosLibres[i][1] * config.marco_size, buffer, config.marco_size);
 		}
 	}
+
+	free(buffer);
 
 	//TODO SEMAFORO HASTA ACÁ
 	printf("Paginas asignadas con éxito\n");
@@ -339,8 +401,8 @@ char* solicitarBytes(int pid, int nroPagina, int offset, int tamanio, tablaPagin
 	} else {
 		printf("Tamaño solicitado: %d\n", tamanio);
 		codResult = EXIT_SUCCESS;
-		memcpy(bytesSolicitados, memoria + marco * config.marco_size + offset,
-				tamanio);
+		usleep(config.retardo_memoria * 1000);
+		memcpy(bytesSolicitados, memoria + marco * config.marco_size + offset, tamanio);
 	}
 	memcpy(respuesta, &codResult, sizeof(codResult));
 	memcpy(respuesta + sizeof(codResult), bytesSolicitados, tamanio);
@@ -385,6 +447,7 @@ int almacenarBytes(int pid, int nroPagina, int offset, int tamanio, void* buffer
 		printf("Marco candidato: %d\n", marcoPagina);
 		if (marcoPagina > -1) {
 			char* destino = memoria + marcoPagina * config.marco_size + offset;
+			usleep(config.retardo_memoria * 1000);
 			memcpy(destino, buffer, tamanio);
 			printf("El destino quedó almacenado: %s\n", destino);
 		} else {
@@ -492,25 +555,91 @@ bool estaElMarcoReservado(int marcoBuscado, int cantPaginasSolicitadas, int marc
 	return false;
 }
 
+void obtenerSizeMemoria(tablaPagina_t* tablaPaginasInvertida) {
+	int i;
+	int cantLibres = 0;
+	for (i = 0; i < config.marcos; i++) {
+		if (tablaPaginasInvertida[i].pid == -10) {
+			cantLibres++;
+		}
+	}
+	printf("Tamaño total de la memoria en frames: %d\n", config.marcos);
+	printf("Cantidad de frames ocupados: %d\n", config.marcos - cantLibres);
+	printf("Cantidad de frames libres: %d\n", cantLibres);
+}
+
+int configurarRetardoMemoria() {
+	puts("Ingrese el retardo deseado en milisegundos (Se toman 8 dígitos máximo)");
+	char input[10];
+	if (fgets(input, sizeof(input), stdin) == NULL) {
+		printf("ERROR AL LEER CONSOLA !\n");
+		return 1;
+	}
+	char* eptr;
+	int result = strtol(input, &eptr, 10);
+	if (result == 0) {
+		printf("Error con el valor ingresado\n");
+		result = 1;
+	}
+	return result;
+}
+
+void obtenerSizePid(tablaPagina_t* tablaPaginasInvertida) {
+	puts("Ingrese el número de PID");
+	char pidInput[1000];
+	if (fgets(pidInput, sizeof(pidInput), stdin) == NULL) {
+		printf("ERROR AL LEER CONSOLA !\n");
+		return;
+	}
+	char* eptr;
+	int pid = strtol(pidInput, &eptr, 10);
+	if (pid == 0) {
+		printf("Error con el valor ingresado\n");
+		return;
+	}
+	int i;
+	int cantMarcos = 0;
+	printf("Se busca pid %d\n", pid);
+	for (i = 0; i < config.marcos; i++) {
+		if (tablaPaginasInvertida[i].pid == pid) {
+			cantMarcos++;
+		}
+	}
+	if (cantMarcos == 0) {
+		printf("El pid %d no se encuentra cargado en memoria!\n", pid);
+	} else {
+		printf("El pid %d ocupa %d frames\n", pid, cantMarcos);
+	}
+}
+
 void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	printf("Escuchando nuevas solicitudes de consola en nuevo hilo\n");
+	int result;
 	while (1) {
-		printf("Ingrese una acción a realizar\n");
+		puts("Ingrese una acción a realizar\n");
 		puts("1: Configurar retardo memoria");
 		puts("2: Realizar dump de Memoria cache");
 		puts("3: Realizar dump de Estructuras de la Memoria");
 		puts("4: Realizar dump del contenido de la Memoria completa");
-		puts(
-				"5: Realizar dump del contenido de la Memoria para un proceso en particular");
+		puts("5: Realizar dump del contenido de la Memoria para un proceso en particular");
+		puts("6: Realizar flush de la Memoria Cache");
+		puts("7: Size Memoria (frames, frames ocupados y frames libres)");
+		puts("8: Size Proceso");
 		char accion[3];
 		if (fgets(accion, sizeof(accion), stdin) == NULL) {
-			printf("ERROR EN fgets !\n");
+			printf("ERROR AL LEER CONSOLA !\n");
 			return;
 		}
 		int codAccion = accion[0] - '0';
 		switch (codAccion) {
 		case retardo:
-			printf("Codificar retardo!\n");
+			result = configurarRetardoMemoria();
+			if (result == 1) {
+				//Error
+				break;
+			}
+			config.retardo_memoria = result;
+			printf("Retardo configurado en %d milisegundos\n", config.retardo_memoria);
 			break;
 		case dumpCache:
 			printf("Codificar dumpCache!\n");
@@ -522,17 +651,19 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 			realizarDumpContenidoMemoriaCompleta(tablaPaginasInvertida);
 			break;
 		case dumpMemoriaProceso:
-			printf("Codificar dumpMemoriaProceso!\n");
+			realizarDumpContenidoProceso(tablaPaginasInvertida);
 			break;
 		case flushCache:
 			printf("Codificar flushCache!\n");
 			break;
 		case sizeMemoria:
-			printf("Codificar sizeMemoria!\n");
+			obtenerSizeMemoria(tablaPaginasInvertida);
 			break;
 		case sizePid:
-			printf("Codificar sizePid!\n");
+			obtenerSizePid(tablaPaginasInvertida);
 			break;
+		default:
+			printf("No se reconece la acción %d!\n", codAccion);
 		}
 	}
 }
@@ -569,8 +700,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 			// error o conexión cerrada por el cliente
 			if (cantBytesRecibidos == 0) {
 				// conexión cerrada
-				printf("Server: socket %d termino la conexion\n",
-						parametros->socketClie);
+				printf("Server: socket %d termino la conexion\n", parametros->socketClie);
 				close(parametros->socketClie);
 				break;
 			} else {
@@ -585,9 +715,11 @@ void atenderHilo(paramHiloDedicado* parametros) {
 			pedidoAlmacenarBytesMemoria_t pedidoAlmacenarBytes;
 			//					char* bytesAEscribir;
 			char* bytesSolicitados;
+
 			int32_t resultAccion;
 			int32_t pidAFinalizar;
 			int32_t indicePidEnCache;
+			int32_t pagALiberar;
 			entradaCache_t* entradaCache;
 			entradaCache_t* entradaCacheAntigua;
 			entradaCache_t* entradaLibre;
@@ -667,7 +799,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 						pedidoAlmacenarBytes.buffer,
 						parametros->tablaPaginasInvertida);
 
-				// Actualizar memoria caché.
+
 
 
 
@@ -804,19 +936,16 @@ void atenderHilo(paramHiloDedicado* parametros) {
 				break;
 
 			case finalizarProgramaAccion:
-				recv(parametros->socketClie, &pidAFinalizar,
-						sizeof(pidAFinalizar), 0);
+				recv(parametros->socketClie, &pidAFinalizar, sizeof(pidAFinalizar), 0);
 				printf(
 						"Recibida solicitud para finalizar programa con pid = %d\n",
 						pidAFinalizar);
 				printf("Se procede a finalizar el programa\n");
-				resultAccion = finalizarPrograma(pidAFinalizar,
-						parametros->tablaPaginasInvertida);
+				resultAccion = finalizarPrograma(pidAFinalizar, parametros->tablaPaginasInvertida);
 				printf(
 						"Solicitud de finalizar programa terminó con resultado de acción: %d\n",
 						resultAccion);
-				send(parametros->socketClie, &resultAccion,
-						sizeof(resultAccion), 0);
+				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
 				break;
 
 			case obtenerTamanioPaginas:
@@ -827,6 +956,14 @@ void atenderHilo(paramHiloDedicado* parametros) {
 			case accionEnviarStackSize:
 				recv(parametros->socketClie, &stack_size, sizeof(int32_t), 0);
 				printf("Recibido tamanio dle stack = %d\n", stack_size);
+				break;
+
+			case liberarPaginaProcesoAccion:
+				recv(parametros->socketClie, &pidAFinalizar, sizeof(pidAFinalizar),0);
+				recv(parametros->socketClie, &pagALiberar, sizeof(pagALiberar),0);
+				printf("Recibida solicitud para liberar página %d del pid %d\n", pagALiberar, pidAFinalizar);
+				resultAccion = liberarPaginaPid(pidAFinalizar, pagALiberar, parametros->tablaPaginasInvertida);
+				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
 				break;
 
 			default:
