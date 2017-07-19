@@ -121,6 +121,23 @@ void borrarDeOverflow(int posicion, int frame) {
 	list_remove(overflow[posicion], index_frame);
 }
 
+void realizarDumpMemoriaCache(){
+	time_t tm = time(NULL);
+	char fechaFormateada[20];
+	strftime(fechaFormateada,20,"%Y%m%d_%H%M%S", localtime(&tm));
+	char* path = string_from_format("output/dumpMemoriaCache_%s.txt",fechaFormateada);
+	FILE* dumpFile = txt_open_for_append(path);
+	puts("CONTENIDO MEMORIA CACHÉ:\n\n");
+	fprintf(dumpFile,"CONTENIDO MEMORIA CACHÉ:\n\n");
+	printf("Se procede a imprimir el contenido de la memoria caché:\n");
+		fprintf(dumpFile, "Se procede a imprimir el contenido de la memoria caché:\n");
+		printf("%s", cache);
+		fprintf(dumpFile, cache);
+		fclose(dumpFile);
+	}
+
+
+
 void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	time_t tm = time(NULL);
 	char fechaFormateada[20];
