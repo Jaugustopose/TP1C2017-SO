@@ -69,17 +69,19 @@ void solicitarPagina(int pid)
 	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), 0);
 	int overflow = char4ToInt(stackOverflow);
 	free(stackOverflow);
+	free(buffer);
 
-	t_paginaHeap* paginaNueva = malloc(sizeof(t_paginaHeap));
+	t_paginaHeap *paginaNueva = malloc(sizeof(t_paginaHeap));
 	paginaNueva->pid = pid;
 	paginaNueva->nro = getLastNroPag(pid);
 	paginaNueva->tamDisponible = tamanioPag - 5;
 	paginaNueva->bloques = list_create();
 
-	t_bloque* bloqueInicial = malloc(sizeof(t_bloque));
-	bloqueInicial->metadata = malloc(sizeof(heapMetadata));
-    bloqueInicial->metadata->isFree = true;
-    bloqueInicial->metadata->size = tamanioPag - 5;
+	t_bloque *bloqueInicial = malloc(sizeof(t_bloque));
+	//bloqueInicial->metadata = malloc(sizeof(t_heapMetadata));
+    bloqueInicial->isFree = true;
+    bloqueInicial->size = tamanioPag - 5;
+    bloqueInicial->indice = 0;
 
     list_add(paginaNueva->bloques, bloqueInicial);
 
@@ -88,7 +90,7 @@ void solicitarPagina(int pid)
     if(pidElemento == NULL)
     {
     	//Creo el elemento pid porque es la primera alocacion del proceso
-    	t_pidHeap* pidNuevo = malloc(sizeof(t_pidHeap));
+    	t_pidHeap *pidNuevo = malloc(sizeof(t_pidHeap));
     	pidNuevo->pid = pid;
     	pidNuevo->paginas = list_create();
 
@@ -104,22 +106,22 @@ void solicitarPagina(int pid)
 
 t_paginaHeap* getPaginaConEspacio(t_pidHeap* pidElement, int pid, int espacio)
 {
-	bool porPIDYTamanio(t_paginaHeap* entradaTabla){
-		return ((entradaTabla->pid == pid) && (entradaTabla->tamDisponible >= espacio));
+	bool porPIDYTamanio(t_paginaHeap* entrada){
+		return (entrada->pid == pidElement->pid) && (entrada->tamDisponible >= espacio);
 	}
 
-  t_paginaHeap* pagina = list_find(pidElement->paginas, (void*)porPIDYTamanio);
+  t_paginaHeap* pagina = list_find(pidElement->paginas, (void*) porPIDYTamanio);
   return pagina;
 }
 
 
 t_bloque* getBloqueConEspacio(t_paginaHeap* pagina, int espacio)
 {
-	bool porBloque(t_bloque* entradaTabla, int pid){
-		return entradaTabla->metadata->isFree && (entradaTabla->metadata->size >= espacio);
+	bool porBloque(t_bloque* entradaTabla){
+		return entradaTabla->isFree && (entradaTabla->size >= espacio);
 	}
 
-	t_bloque* bloque = list_find(pagina->bloques, (void*)porBloque);
+ t_bloque* bloque = list_find(pagina->bloques, (void*) porBloque);
  return bloque;
 }
 
@@ -127,41 +129,41 @@ t_bloque* getBloqueConEspacio(t_paginaHeap* pagina, int espacio)
 t_puntero alocar(int pid, int espacio)
 {
 	t_pidHeap* elementoPID = getPID(pid);
-	t_paginaHeap* pagina = getPaginaConEspacio(elementoPID, elementoPID->pid, espacio);
-	t_bloque* bloque = getBloqueConEspacio(pagina, espacio);
+	t_paginaHeap* elementoPagina = getPaginaConEspacio(elementoPID, pid, espacio);
+	t_bloque* bloque = getBloqueConEspacio(elementoPagina, espacio);
 
 	t_bloque* bloqueNuevo = malloc(sizeof(t_bloque));
 	bloqueNuevo->indice = bloque->indice;
-	bloqueNuevo->metadata = malloc(sizeof(heapMetadata));
-	bloqueNuevo->metadata->size = espacio;
-	bloqueNuevo->metadata->isFree = false;
+//	bloqueNuevo->metadata = malloc(sizeof(t_heapMetadata));
+	bloqueNuevo->size = espacio;
+	bloqueNuevo->isFree = false;
 
-	t_bloque* bloqueViejo = list_remove(pagina->bloques, bloque->indice);
-	bloqueViejo->indice = list_size(pagina->bloques) - 1;
-	bloqueViejo->metadata->isFree = true;
-	bloqueViejo->metadata->size = bloqueViejo->metadata->size - espacio;
+	t_bloque* bloqueViejo = list_remove(elementoPagina->bloques, bloque->indice);
+	bloqueViejo->indice = list_size(elementoPagina->bloques) + 1;
+	bloqueViejo->isFree = true;
+	bloqueViejo->size = bloqueViejo->size - espacio;
 
-	list_add_in_index(pagina->bloques, bloqueNuevo->indice, bloqueNuevo);
-	list_add(pagina->bloques, bloqueViejo);
+	list_add_in_index(elementoPagina->bloques, bloqueNuevo->indice, bloqueNuevo);
+	list_add(elementoPagina->bloques, bloqueViejo);
 
-	pagina->tamDisponible = pagina->tamDisponible - espacio;
+	elementoPagina->tamDisponible = elementoPagina->tamDisponible - espacio;
 
 	int posicion = 5;
-	int tope = bloque->indice;
+	int tope = bloqueNuevo->indice;
 
 	void calcularPosicion(t_bloque* bloque)
 	{
 		if(bloque->indice < tope)
 		{
-			posicion = posicion + bloque->metadata->size + 5;
+			posicion = posicion + bloque->size + 5;
 		}
 	}
 
-	list_iterate(pagina->bloques,(void*)calcularPosicion);
+	list_iterate(elementoPagina->bloques,(void*)calcularPosicion);
 
 	//Devuelve una posicion absoluta tomando en cuenta PAGINAS DE STACK, de HEAP y OFFSET de bloques.
 	//Es resonsabilidad de las primitivas de CPU sumarle las paginas de codigo.
-	t_puntero puntero = ((config.STACK_SIZE + pagina->nro) * tamanioPag) + posicion;
+	t_puntero puntero = ((config.STACK_SIZE + elementoPagina->nro) * tamanioPag) + posicion;
 
 	return puntero;
 
@@ -176,14 +178,15 @@ t_puntero alocarMemoria(int espacioSolicitado, int pid)
 		if(elementoPID != NULL)
 		{
 
-			t_paginaHeap* pagina = getPaginaConEspacio(elementoPID, elementoPID->pid, espacioSolicitado);
+			t_paginaHeap* pagina  = getPaginaConEspacio(elementoPID, pid, espacioSolicitado);
 			if(pagina != NULL)
 			{
 
 				t_bloque* bloque = getBloqueConEspacio(pagina, espacioSolicitado);
 				if(bloque != NULL)
 				{
-					return alocar(pid, espacioSolicitado);
+					int pun = alocar(pid, espacioSolicitado);
+					return pun;
 
 				}else
 				{
@@ -204,7 +207,8 @@ t_puntero alocarMemoria(int espacioSolicitado, int pid)
 			}else
 			{
 				solicitarPagina(pid);
-				return alocar(pid, espacioSolicitado);
+				int valor = alocar(pid, espacioSolicitado);
+				return valor;
 			}
 
 		}else
@@ -245,7 +249,7 @@ bool bloquesTodosFree(t_paginaHeap* pagina)
 {
 	bool estaLibre_bloque(t_bloque* bloque)
 	{
-		return bloque->metadata->isFree == true;
+		return bloque->isFree == true;
 	}
 
   return list_all_satisfy(pagina->bloques, (void*)estaLibre_bloque);
@@ -259,7 +263,7 @@ int calcularIndiceBloque(t_paginaHeap* pagina, int offset)
 	{
 		if(bytes <= offset)
 		{
-			bytes = bytes +( 5 + bloque->metadata->size);
+			bytes = bytes +( 5 + bloque->size);
 			indice++;
 		}
 	}
@@ -280,7 +284,7 @@ void liberarMemoria(t_puntero puntero, int pid)
    int indice = calcularIndiceBloque(pagina, offset);
 
    t_bloque* bloque = getBloque(pagina, indice);
-   bloque->metadata->isFree = true;
+   bloque->isFree = true;
 
 	if(bloquesTodosFree(pagina))
 	{
