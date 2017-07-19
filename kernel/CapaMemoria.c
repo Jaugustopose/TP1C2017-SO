@@ -1,228 +1,322 @@
 #include "CapaMemoria.h"
 
-bool peticion_valida(int tamanio) {
-	return (tamanioPag - 10) <= tamanio;
+bool solicitudValida(int espacioSolicitado)
+{
+	return (espacioSolicitado <= (tamanioPag - 10));
 }
 
-int tamanioDisponibleDeLaPagina(int tamanioDispActual, int espacioPedido) {
-	return (tamanioDispActual - 10 - espacioPedido);
+t_pidHeap* getPID(int pid)
+{
+  bool porPID(t_pidHeap* entradaTabla){
+				return entradaTabla->pid == pid;
+   }
+
+  t_pidHeap* entrada = list_find(listaPidHEAP, (void*)porPID);
+  return entrada;
 }
 
-bool existePid(t_pidHeap* elem) {
-	return (elem->pid == pidCondicion);
+t_pidHeap* getPagina(t_pidHeap* pidElement, int nroPag)
+{
+  bool porPagina(t_paginaHeap* entradaTabla, int nroPag){
+				return entradaTabla->nro == nroPag;
+   }
+
+  t_paginaHeap* entrada = list_find(pidElement->paginas, (void*)porPagina);
+
+  return entrada;
 }
 
-bool paginaDisponible(t_paginaHeap* elem) {
-	return (elem->tamDisponible <= solicitudCondicion);
+t_bloque* getBloque(t_paginaHeap* pagina, int indice)
+{
+  bool porBloque(t_bloque* entradaTabla, int indice){
+				return entradaTabla->indice == indice;
+   }
+
+  t_paginaHeap* entrada = list_find(pagina->bloques, (void*)porBloque);
+
+  return entrada;
 }
 
-bool existeBloque(t_paginaHeap* elem) {
-	return list_size(elem->bloques) > 0 ? true : false;
-}
+//OJO:Paginas que arrancan a numerarse en 0
+int getLastNroPag(int pid)
+{
+	t_pidHeap* elementoPid = getPID(pid);
+	int numeroNuevo = 0;
 
-void solicitarPaginaHeap() {
-	//Envia Solicitud de paginas HEAP
-	int offset = 0;
-	int codigoAccion = solicitarPaginasAccion;
-	char* bufferMemoria = malloc(
-			sizeof(codigoAccion) + sizeof(pedidoSolicitudPaginas_t));
-
-	pedidoSolicitudPaginas_t pedido;
-	pedido.pid = pidCondicion;
-	pedido.cantidadPaginas = 1;
-
-	memcpy(bufferMemoria, &codigoAccion, sizeof(codigoAccion));
-	offset += sizeof(codigoAccion);
-	memcpy(bufferMemoria + offset, &pedido, sizeof(pedidoSolicitudPaginas_t));
-	offset += sizeof(pedidoSolicitudPaginas_t);
-
-	send(memoria, bufferMemoria, offset, 0);
-
-	char* resultadoBuffer = malloc(sizeof(int));
-	recv(memoria, resultadoBuffer, sizeof(int), 0);
-	int* resultado;
-	deserializar_int(&resultado, resultadoBuffer);
-
-	//interpretar resultado
-
-	free(bufferMemoria);
-	free(resultadoBuffer);
-
-}
-
-void crearPaginaHeap() {
-	t_pidHeap* pidHeap = list_find(tablaPaginasHeap, (void*) existePid);
-}
-
-bool bloqueConTamanioDisponible(heapMetadata* metadata, int espacio) {
-
-	return (metadata->isFree && (metadata->size >= (espacio + 5)));
-}
-
-bool bloqueDisponible(heapMetadata* bloque) {
-	return (bloque->isFree && (bloque->size >= solicitudCondicion));
-}
-
-heapMetadata* proximoBloqueDisponible(t_paginaHeap* pagina) {
-	return list_find(pagina->bloques, (void*) bloqueDisponible);
-}
-
-void alocar_espacio() {
-	t_pidHeap* pidHeap = list_find(tablaPaginasHeap, (void*) existePid);
-	t_paginaHeap* paginaHeap = list_find(pidHeap->paginas,
-			(void*) paginaDisponible);
-
-	int cantElementosLista = list_size(paginaHeap->bloques);
-	heapMetadata* ultimoBloque = list_get(paginaHeap->bloques,
-			cantElementosLista);
-
-	//Busca en todas las paginas el proximo bloque libre con espacio disponible
-	//heapMetadata* bloque = list_find(pidHeap->paginas,(void*)proximoBloqueDisponible);
-
-	if (bloqueConTamanioDisponible(ultimoBloque, solicitudCondicion)) {
-		int libreAnterior = ultimoBloque->size;
-		int nuevoEspacioLibre = libreAnterior - solicitudCondicion;
-
-		//Actualizo el ultimo bloque
-		ultimoBloque->isFree = false;
-		ultimoBloque->size = solicitudCondicion;
-
-		//Agrego un nuevo bloque a la ultima pagina
-		heapMetadata* nuevoBloque = malloc(sizeof(heapMetadata));
-		nuevoBloque->isFree = true;
-		nuevoBloque->size = nuevoEspacioLibre;
-		list_add(paginaHeap->bloques, nuevoBloque);
-
-	} else {
-		solicitarPaginaHeap();
+	if(elementoPid != NULL)
+	{
+		numeroNuevo = list_size(elementoPid->paginas);
 	}
 
+	return numeroNuevo;
 }
 
-void crearPidHeap(int pid) {
-	t_pidHeap* elemento = malloc(sizeof(t_pidHeap));
-	elemento->pid = pid;
-	elemento->paginas = list_create();
+void solicitarPagina(int pid)
+{
+	void* buffer = malloc(sizeof(int) + sizeof(pedidoSolicitudPaginas_t));
 
-	t_paginaHeap* pagina = malloc(sizeof(t_paginaHeap));
-	pagina->bloques = list_create();
-	pagina->tamDisponible = tamanioPag;
+	int codAccion = solicitarPaginasAccion;
+	pedidoSolicitudPaginas_t solicitud;
+	solicitud.pid = pid;
+	solicitud.cantidadPaginas = 1;
 
-	heapMetadata* bloque = malloc(sizeof(uint32_t) + sizeof(_Bool));
-	bloque->size = tamanioPag - 5;
-	bloque->isFree = true;
+	memcpy(buffer, &codAccion, sizeof(codAccion));
+	memcpy(buffer + sizeof(codAccion), &solicitud, sizeof(pedidoSolicitudPaginas_t));
 
-	list_add(pagina->bloques, bloque);
-	list_add(elemento->paginas, pagina);
-	list_add(tablaPaginasHeap, elemento);
+	send(memoria, buffer, sizeof(codAccion) + sizeof(pedidoSolicitudPaginas_t), 0);
+
+	char* stackOverflow = malloc(sizeof(int));
+	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), 0);
+	int overflow = char4ToInt(stackOverflow);
+	free(stackOverflow);
+	free(buffer);
+
+	t_paginaHeap *paginaNueva = malloc(sizeof(t_paginaHeap));
+	paginaNueva->pid = pid;
+	paginaNueva->nro = getLastNroPag(pid);
+	paginaNueva->tamDisponible = tamanioPag - 5;
+	paginaNueva->bloques = list_create();
+
+	t_bloque *bloqueInicial = malloc(sizeof(t_bloque));
+	//bloqueInicial->metadata = malloc(sizeof(t_heapMetadata));
+    bloqueInicial->isFree = true;
+    bloqueInicial->size = tamanioPag - 5;
+    bloqueInicial->indice = 0;
+
+    list_add(paginaNueva->bloques, bloqueInicial);
+
+    t_pidHeap* pidElemento = getPID(pid);
+
+    if(pidElemento == NULL)
+    {
+    	//Creo el elemento pid porque es la primera alocacion del proceso
+    	t_pidHeap *pidNuevo = malloc(sizeof(t_pidHeap));
+    	pidNuevo->pid = pid;
+    	pidNuevo->paginas = list_create();
+
+    	list_add(pidNuevo->paginas, paginaNueva);
+    	list_add(listaPidHEAP, pidNuevo);
+    }else
+    {
+    	list_add(pidElemento->paginas, paginaNueva);
+    }
+
 }
 
-void destructorBloque(heapMetadata* bloque) {
-	free(bloque);
-}
 
-void desfragmentar(t_list* bloques) {
-//PODRIA DEFRAGMENTAR ANTES DE CADA GUARDADO EN EL HEAP
-	int desde = 0;
-	int cantBloquesContiguos = 0;
-	int i = 0;
-	int size = 0;
-	int indice = 0;
-	bool hayUnoMas;
-	heapMetadata* bloqueDisponible;
-	heapMetadata* bloque;
-
-	while (i < list_size(bloques) && hayUnoMas) {
-		bloque = list_get(bloques, i);
-		if (bloque->isFree) {
-			if (desde != 0) {
-				desde = i;
-				bloqueDisponible = bloque;
-			}
-			cantBloquesContiguos++;
-			size += bloque->size;
-			hayUnoMas = true;
-		} else {
-			hayUnoMas = false;
-		}
-		i++;
+t_paginaHeap* getPaginaConEspacio(t_pidHeap* pidElement, int pid, int espacio)
+{
+	bool porPIDYTamanio(t_paginaHeap* entrada){
+		return (entrada->pid == pidElement->pid) && (entrada->tamDisponible >= espacio);
 	}
 
-	indice = desde;
-	for (j = 0; j < cantBloquesContiguos; j++) {
+  t_paginaHeap* pagina = list_find(pidElement->paginas, (void*) porPIDYTamanio);
+  return pagina;
+}
 
-		list_remove_and_destroy_element(bloques, indice, (void*)destructorBloque);
 
-		indice++;
+t_bloque* getBloqueConEspacio(t_paginaHeap* pagina, int espacio)
+{
+	bool porBloque(t_bloque* entradaTabla){
+		return entradaTabla->isFree && (entradaTabla->size >= espacio);
 	}
-	heapMetadata* bloqueNuevo = malloc(sizeof(heapMetadata));
+
+ t_bloque* bloque = list_find(pagina->bloques, (void*) porBloque);
+ return bloque;
+}
+
+//OJO: Bloques que arrancan a numerarse en CERO
+t_puntero alocar(int pid, int espacio)
+{
+	t_pidHeap* elementoPID = getPID(pid);
+	t_paginaHeap* elementoPagina = getPaginaConEspacio(elementoPID, pid, espacio);
+	t_bloque* bloque = getBloqueConEspacio(elementoPagina, espacio);
+
+	t_bloque* bloqueNuevo = malloc(sizeof(t_bloque));
+	bloqueNuevo->indice = bloque->indice;
+//	bloqueNuevo->metadata = malloc(sizeof(t_heapMetadata));
+	bloqueNuevo->size = espacio;
 	bloqueNuevo->isFree = false;
-	bloqueNuevo->size = size;
-	list_add_in_index(bloques, desde, bloqueNuevo);
+
+	t_bloque* bloqueViejo = list_remove(elementoPagina->bloques, bloque->indice);
+	bloqueViejo->indice = list_size(elementoPagina->bloques) + 1;
+	bloqueViejo->isFree = true;
+	bloqueViejo->size = bloqueViejo->size - espacio;
+
+	list_add_in_index(elementoPagina->bloques, bloqueNuevo->indice, bloqueNuevo);
+	list_add(elementoPagina->bloques, bloqueViejo);
+
+	elementoPagina->tamDisponible = elementoPagina->tamDisponible - espacio;
+
+	int posicion = 5;
+	int tope = bloqueNuevo->indice;
+
+	void calcularPosicion(t_bloque* bloque)
+	{
+		if(bloque->indice < tope)
+		{
+			posicion = posicion + bloque->size + 5;
+		}
+	}
+
+	list_iterate(elementoPagina->bloques,(void*)calcularPosicion);
+
+	//Devuelve una posicion absoluta tomando en cuenta PAGINAS DE STACK, de HEAP y OFFSET de bloques.
+	//Es resonsabilidad de las primitivas de CPU sumarle las paginas de codigo.
+	t_puntero puntero = ((config.STACK_SIZE + elementoPagina->nro) * tamanioPag) + posicion;
+
+	return puntero;
 
 }
 
-void buscarPIDHeap(int pid, int solicitud) {
-	pidCondicion = pid;
-	solicitudCondicion = solicitud;
-	t_pidHeap* elemento = list_find(tablaPaginasHeap, (void*) existePid);
+t_puntero alocarMemoria(int espacioSolicitado, int pid)
+{
+	if(solicitudValida(espacioSolicitado))
+	{
 
-	if (elemento == NULL) {
-		solicitarPaginaHeap();
-		crearPidHeap(pid);
-		alocar_espacio();
-	} else {
+		t_pidHeap* elementoPID = getPID(pid);
+		if(elementoPID != NULL)
+		{
 
-		t_paginaHeap* pagina = list_find(elemento->paginas,
-				(void*) paginaDisponible);
+			t_paginaHeap* pagina  = getPaginaConEspacio(elementoPID, pid, espacioSolicitado);
+			if(pagina != NULL)
+			{
 
-		if (pagina == NULL) {
-			solicitarPaginaHeap();
-//TODO:crear nueva pagina
-		} else {
+				t_bloque* bloque = getBloqueConEspacio(pagina, espacioSolicitado);
+				if(bloque != NULL)
+				{
+					int pun = alocar(pid, espacioSolicitado);
+					return pun;
 
-//heapMetadata* bloqueDisponible = proximoBloqueDisponible(pagina);
-			int posicion;
-			int j = 0;
-			bool encontrado = false;
-			heapMetadata* bloqueDisponible;
-
-			while (j < list_size(pagina->bloques) && !encontrado) {
-				bloqueDisponible = list_get(pagina->bloques, j);
-				if (bloqueDisponible->isFree
-						&& (bloqueDisponible->size >= solicitudCondicion)) {
-					posicion = list_get(pagina->bloques, j);
-					encontrado = true;
-				}
-				j++;
-			}
-
-			if (bloqueDisponible == NULL) {
-				solicitarPaginaHeap();
-//TODO:crear nueva pagina
-			} else {
-//Encontro un bloque donde alocar espacio
-				int tamanioNoUsado = bloqueDisponible->size
-						- solicitudCondicion;
-
-				bloqueDisponible->isFree = false;
-				bloqueDisponible->size = solicitudCondicion;
-
-//Si queda espacio libre, crea el bloque de espacio libre
-				if (tamanioNoUsado != 0) {
-					heapMetadata* bloqueRestante = malloc(sizeof(heapMetadata));
-					bloqueRestante->isFree = true;
-					bloqueRestante->size = tamanioNoUsado;
-
-					list_add_in_index(pagina->bloques, posicion + 1,
-							bloqueDisponible);
+				}else
+				{
+					//es posible desfragmentar?
+					if(true)
+					{
+						//Es posible desfragmentar
+						//TODO:desfragmentar()
+						return alocar(pid, espacioSolicitado);
+					}else
+					{
+						//NO ES POSIBLE DESFRAGMENTAR
+						solicitarPagina(pid);
+						return alocar(pid, espacioSolicitado);
+					}
 				}
 
-//Actualiza el tamaño disponible de la pagina
-				pagina->tamDisponible -= tamanioNoUsado;
+			}else
+			{
+				solicitarPagina(pid);
+				int valor = alocar(pid, espacioSolicitado);
+				return valor;
 			}
+
+		}else
+		{
+			solicitarPagina(pid);
+			return alocar(pid, espacioSolicitado);
 		}
-
-		alocar_espacio();
 	}
+	else
+	{
+		//RECHAZO: Solicitud invalida
+		return -1;
+	}
+}
+
+void bloquesDestroyer(t_bloque* bloque) {
+    free(bloque);
+}
+
+void paginasDestroyer(t_paginaHeap* pagina)
+{
+	free(pagina);
+}
+
+void liberarPaginaEstructura(t_paginaHeap* paginaALiberar, t_pidHeap* pidElement)
+{
+	int nroPagAEliminar = paginaALiberar->nro;
+
+	bool paginaBuscada(t_paginaHeap* pagina){
+		return pagina->nro == nroPagAEliminar;
+	}
+
+	list_destroy_and_destroy_elements(paginaALiberar->bloques, (void*)bloquesDestroyer);
+	list_remove_and_destroy_by_condition(pidElement->paginas, (void*)paginaBuscada, (void*)paginasDestroyer);
+}
+
+bool bloquesTodosFree(t_paginaHeap* pagina)
+{
+	bool estaLibre_bloque(t_bloque* bloque)
+	{
+		return bloque->isFree == true;
+	}
+
+  return list_all_satisfy(pagina->bloques, (void*)estaLibre_bloque);
+}
+
+int calcularIndiceBloque(t_paginaHeap* pagina, int offset)
+{
+	int bytes = 0;
+	int indice = 0;
+	void calculaIndice(t_bloque* bloque)
+	{
+		if(bytes <= offset)
+		{
+			bytes = bytes +( 5 + bloque->size);
+			indice++;
+		}
+	}
+
+	list_iterate(pagina->bloques, (void*)calculaIndice);
+	return indice;
+}
+
+void liberarMemoria(t_puntero puntero, int pid)
+{
+   int nroPagina = (int)(puntero/tamanioPag);
+   int pidLiberar = pid;
+   int offset = puntero - (nroPagina * tamanioPag);
+
+   t_pidHeap* pidElement = getPID(pid);
+   t_paginaHeap* pagina = getPagina(pidElement, nroPagina);
+
+   int indice = calcularIndiceBloque(pagina, offset);
+
+   t_bloque* bloque = getBloque(pagina, indice);
+   bloque->isFree = true;
+
+	if(bloquesTodosFree(pagina))
+	{
+		liberarPagina(pagina);
+		liberarPaginaEstructura(pagina, pidElement);
+	}
+}
+
+void liberarBloque()
+{
+
+}
+//LLega con la cantidad de paginas de codigo?
+void liberarPagina(t_paginaHeap* pagina)
+{
+	int pidLiberar = pagina->pid;
+	int nroPagina = pagina->nro;
+
+
+	void* buffer = malloc(sizeof(int)*3);
+
+	int codAccion = liberarPaginaProcesoAccion;
+
+	memcpy(buffer, &codAccion, sizeof(codAccion));
+	memcpy(buffer + sizeof(codAccion), &pidLiberar, sizeof(pidLiberar));
+	memcpy(buffer + sizeof(nroPagina), &nroPagina, sizeof(nroPagina));
+
+	send(memoria, buffer, sizeof(int)*3, 0);
+
+	char* stackOverflow = malloc(sizeof(int));
+	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), 0);
+	int overflow = char4ToInt(stackOverflow);
+	free(stackOverflow);
+
 }

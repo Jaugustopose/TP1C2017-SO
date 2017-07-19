@@ -21,6 +21,7 @@ enum tipoMensaje {
 	accionObtenerPCB = 9,
 	accionFinInstruccion = 10,
 	accionFinProceso = 11,
+	accionDesalojarProceso = 12,
 	accionObtenerValorCompartida = 14,
 	accionAsignarValorCompartida = 15,
 	accionQuantumInterrumpido = 16,
@@ -86,7 +87,6 @@ typedef struct {
 	t_stack* stackPointer;
 	char* indiceEtiquetas;
 	int etiquetasSize;
-	//t_dictionary* indiceEtiquetas;
 	int exitCode;
 }t_PCB;
 
@@ -96,6 +96,10 @@ typedef struct {
 	int32_t CpuDuenio;
 	int32_t estado;
 	t_PCB* PCB;
+	int32_t rafagas;
+	bool sigusr1;
+	bool abortado;
+	char* semaforo;
 }t_proceso;
 
 typedef struct{
