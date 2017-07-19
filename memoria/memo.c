@@ -537,9 +537,9 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	}
 }
 
-void copiar_De_Memoria_A_Cache(const pedidoBytesMemoria_t* pedidoBytes, paramHiloDedicado* parametros, entradaCache_t* entradaCache, char* bytesSolicitados) {
-	bytesSolicitados = solicitarBytes(pedidoBytes->pid, pedidoBytes->nroPagina, pedidoBytes->offset, pedidoBytes->tamanio, parametros->tablaPaginasInvertida);
-	memcpy(entradaCache->contenido, bytesSolicitados, pedidoBytes->tamanio);
+void copiar_Pagina_De_Memoria_A_Cache(const pedidoBytesMemoria_t* pedidoBytes, paramHiloDedicado* parametros, entradaCache_t* entradaCache, char* bytesSolicitados) {
+	bytesSolicitados = solicitarBytes(pedidoBytes->pid, pedidoBytes->nroPagina, 0, config.marco_size, parametros->tablaPaginasInvertida);
+	memcpy(entradaCache->contenido, bytesSolicitados, config.marco_size);
 }
 
 void crear_Y_Agregar_EntradaOcupadaCache(const pedidoBytesMemoria_t* pedidoBytes, entradaCache_t* entradaLibre, entradaCache_t* entradaCache) {
@@ -576,9 +576,9 @@ void atenderHilo(paramHiloDedicado* parametros) {
 			pedidoAlmacenarBytesMemoria_t pedidoAlmacenarBytes;
 			//					char* bytesAEscribir;
 			char* bytesSolicitados;
-			int resultAccion;
-			int pidAFinalizar;
-			int indicePidEnCache;
+			int32_t resultAccion;
+			int32_t pidAFinalizar;
+			int32_t indicePidEnCache;
 			entradaCache_t* entradaCache;
 			entradaCache_t* entradaCacheAntigua;
 			entradaCache_t* entradaLibre;
@@ -676,12 +676,12 @@ void atenderHilo(paramHiloDedicado* parametros) {
 					entradaCache = list_get(entradasOcupadasCache,indicePidEnCache);
 					if(entradaCache->nroPagina == pedidoBytes.nroPagina){ // También tengo a la página en cache.
 
-						//Hago lo que tenga que hacer con la cache cuando tiene la data.
+						//Envío bytes solicitados desde la caché.
 
 						entradaCache = list_find(entradasOcupadasCache,_soy_pid_buscado_en_cache);
-						int32_t codResult = EXIT_SUCCESS; // No se si le queres poner algún número específico, ale.
-						memcpy(bytesSolicitados,&codResult, sizeof(codResult));
-						memcpy(bytesSolicitados + sizeof(codResult),entradaCache->contenido, config.marco_size);
+						resultAccion = EXIT_SUCCESS; // No se si le queres poner algún número específico, Ale.
+						memcpy(bytesSolicitados,&resultAccion, sizeof(resultAccion));
+						memcpy(bytesSolicitados + sizeof(resultAccion),entradaCache->contenido + pedidoBytes.offset, pedidoBytes.tamanio);
 
 
 					}else{ // Tengo al proceso pero no a la página solicitada. Reviso si alcanzó el máximo de entradas a cache para aplicar LRU local o global.
@@ -689,11 +689,6 @@ void atenderHilo(paramHiloDedicado* parametros) {
 						if(proceso_Alcanzo_Max_Entradas_Cache(pedidoBytes.pid)){
 
 							//Uso LRU sobre una de sus entradas previas.
-
-							//Función privada dentro de este scope (para el closure del find)
-							bool _soy_pid_buscado_en_cache(entradaCache_t *p) {
-							return p->pid == pedidoBytes.pid;
-							}
 
 							entradaCacheAntigua = list_find(entradasOcupadasCache, _soy_pid_buscado_en_cache);
 							entradaCache->contenido = entradaCacheAntigua->contenido;
@@ -705,10 +700,10 @@ void atenderHilo(paramHiloDedicado* parametros) {
 							list_add(entradasOcupadasCache, entradaCache);
 							list_remove_and_destroy_by_condition(entradasOcupadasCache,_soy_pid_buscado_en_cache, (void*)entrada_destroyer);
 
-							copiar_De_Memoria_A_Cache(&pedidoBytes, parametros, entradaCache, bytesSolicitados);
-							int32_t codResult = EXIT_SUCCESS; // No se si le queres poner algún número específico, ale.
-							memcpy(bytesSolicitados,&codResult, sizeof(codResult));
-							memcpy(bytesSolicitados + sizeof(codResult),entradaCache->contenido, config.marco_size);
+							copiar_Pagina_De_Memoria_A_Cache(&pedidoBytes, parametros, entradaCache, bytesSolicitados);
+							resultAccion = EXIT_SUCCESS; // No se si le queres poner algún número específico, ale.
+							memcpy(bytesSolicitados,&resultAccion, sizeof(resultAccion));
+							memcpy(bytesSolicitados + sizeof(resultAccion),entradaCache->contenido + pedidoBytes.offset, pedidoBytes.tamanio);
 
 
 
@@ -731,20 +726,20 @@ void atenderHilo(paramHiloDedicado* parametros) {
 
 								list_add(entradasOcupadasCache, entradaCache);
 
-								copiar_De_Memoria_A_Cache(&pedidoBytes,parametros,entradaCache,bytesSolicitados);
+								copiar_Pagina_De_Memoria_A_Cache(&pedidoBytes,parametros,entradaCache,bytesSolicitados);
 								int32_t codResult = EXIT_SUCCESS; // No se si le queres poner algún número específico, ale.
 								memcpy(bytesSolicitados,&codResult, sizeof(codResult));
-								memcpy(bytesSolicitados + sizeof(codResult),entradaCache->contenido, config.marco_size);
+								memcpy(bytesSolicitados + sizeof(codResult),entradaCache->contenido + pedidoBytes.offset, pedidoBytes.tamanio);
 
 
 							}else{ // Cache no esta llena.
 
 								crear_Y_Agregar_EntradaOcupadaCache(&pedidoBytes, entradaLibre, entradaCache);
 								memset(entradaCache->contenido,'\0',config.marco_size); // Por las dudas. Modo cagón activado.
-								copiar_De_Memoria_A_Cache(&pedidoBytes, parametros, entradaCache, bytesSolicitados);
-								int32_t codResult = EXIT_SUCCESS; // No se si le queres poner algún número específico, ale.
-								memcpy(bytesSolicitados,&codResult, sizeof(codResult));
-								memcpy(bytesSolicitados + sizeof(codResult),entradaCache->contenido, config.marco_size);
+								copiar_Pagina_De_Memoria_A_Cache(&pedidoBytes, parametros, entradaCache, bytesSolicitados);
+								resultAccion = EXIT_SUCCESS; // No se si le queres poner algún número específico, ale.
+								memcpy(bytesSolicitados,&resultAccion, sizeof(resultAccion));
+								memcpy(bytesSolicitados + sizeof(resultAccion),entradaCache->contenido + pedidoBytes.offset, pedidoBytes.tamanio);
 
 							}
 						}
@@ -757,10 +752,10 @@ void atenderHilo(paramHiloDedicado* parametros) {
 
 						crear_Y_Agregar_EntradaOcupadaCache(&pedidoBytes, entradaLibre, entradaCache);
 						memset(entradaCache->contenido,'\0',config.marco_size); // Por las dudas. Modo cagón activado.
-						copiar_De_Memoria_A_Cache(&pedidoBytes, parametros, entradaCache, bytesSolicitados);
-						int32_t codResult = EXIT_SUCCESS; // No se si le queres poner algún número específico, ale.
-						memcpy(bytesSolicitados,&codResult, sizeof(codResult));
-						memcpy(bytesSolicitados + sizeof(codResult),entradaCache->contenido, config.marco_size);
+						copiar_Pagina_De_Memoria_A_Cache(&pedidoBytes, parametros, entradaCache, bytesSolicitados);
+						resultAccion = EXIT_SUCCESS; // No se si le queres poner algún número específico, ale.
+						memcpy(bytesSolicitados,&resultAccion, sizeof(resultAccion));
+						memcpy(bytesSolicitados + sizeof(resultAccion),entradaCache->contenido + pedidoBytes.offset, pedidoBytes.tamanio);
 
 						//TODO: ¿Falta verificación si quiere leer mas de 32 bytes? Eso implicaría traerme más de 32 bytes de memoria y sobrepasaría el config.marcos_size.
 					}else{
@@ -777,10 +772,10 @@ void atenderHilo(paramHiloDedicado* parametros) {
 
 						list_add(entradasOcupadasCache, entradaCache);
 
-						copiar_De_Memoria_A_Cache(&pedidoBytes,parametros,entradaCache,bytesSolicitados);
-						int32_t codResult = EXIT_SUCCESS; // No se si le queres poner algún número específico, ale.
-						memcpy(bytesSolicitados,&codResult, sizeof(codResult));
-						memcpy(bytesSolicitados + sizeof(codResult),entradaCache->contenido, config.marco_size);
+						copiar_Pagina_De_Memoria_A_Cache(&pedidoBytes,parametros,entradaCache,bytesSolicitados);
+						resultAccion = EXIT_SUCCESS; // No se si le queres poner algún número específico, ale.
+						memcpy(bytesSolicitados,&resultAccion, sizeof(resultAccion));
+						memcpy(bytesSolicitados + sizeof(resultAccion),entradaCache->contenido + pedidoBytes.offset, pedidoBytes.tamanio);
 
 					}
 
@@ -808,7 +803,6 @@ void atenderHilo(paramHiloDedicado* parametros) {
 
 				free(bytesSolicitados);
 
-				//guardar en cache
 				break;
 
 			case finalizarProgramaAccion:
