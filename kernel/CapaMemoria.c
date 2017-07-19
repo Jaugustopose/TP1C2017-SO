@@ -7,7 +7,7 @@ bool solicitudValida(int espacioSolicitado)
 
 t_pidHeap* getPID(int pid)
 {
-  bool porPID(t_pidHeap* entradaTabla, int pid){
+  bool porPID(t_pidHeap* entradaTabla){
 				return entradaTabla->pid == pid;
    }
 
@@ -88,25 +88,27 @@ void solicitarPagina(int pid)
     if(pidElemento == NULL)
     {
     	//Creo el elemento pid porque es la primera alocacion del proceso
-    	pidElemento = malloc(sizeof(t_pidHeap));
-    	pidElemento->pid = pid;
-    	pidElemento->paginas = list_create();
+    	t_pidHeap* pidNuevo = malloc(sizeof(t_pidHeap));
+    	pidNuevo->pid = pid;
+    	pidNuevo->paginas = list_create();
 
-    	list_add(listaPidHEAP, pidElemento);
+    	list_add(pidNuevo->paginas, paginaNueva);
+    	list_add(listaPidHEAP, pidNuevo);
+    }else
+    {
+    	list_add(pidElemento->paginas, paginaNueva);
     }
-
-    list_add(pidElemento->paginas, paginaNueva);
 
 }
 
 
 t_paginaHeap* getPaginaConEspacio(t_pidHeap* pidElement, int pid, int espacio)
 {
-	bool porPagina(t_paginaHeap* entradaTabla, int pid){
-						return entradaTabla->pid == pid && (entradaTabla->tamDisponible >= espacio);
+	bool porPIDYTamanio(t_paginaHeap* entradaTabla){
+		return ((entradaTabla->pid == pid) && (entradaTabla->tamDisponible >= espacio));
 	}
 
-  t_paginaHeap* pagina = list_find(pidElement->paginas, (void*)porPagina);
+  t_paginaHeap* pagina = list_find(pidElement->paginas, (void*)porPIDYTamanio);
   return pagina;
 }
 
@@ -144,15 +146,14 @@ t_puntero alocar(int pid, int espacio)
 
 	pagina->tamDisponible = pagina->tamDisponible - espacio;
 
-	int posicion = 0;
-	int tope = 0;
+	int posicion = 5;
+	int tope = bloque->indice;
 
 	void calcularPosicion(t_bloque* bloque)
 	{
-		if(bloque->indice <= tope)
+		if(bloque->indice < tope)
 		{
-			posicion = bloque->metadata->size + 5;
-			tope++;
+			posicion = posicion + bloque->metadata->size + 5;
 		}
 	}
 

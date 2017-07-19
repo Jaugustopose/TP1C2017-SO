@@ -634,7 +634,7 @@ int main(void) {
 	listen_w(sockServ);
 
 	//Conectar con memoria
-	int memoria = socket(AF_INET, SOCK_STREAM, 0);
+     memoria = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in direccionServ;
 	direccionServ.sin_family = AF_INET;
 	direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red
