@@ -19,6 +19,7 @@
 #include <commons/collections/list.h>
 #include <stdbool.h>
 #include "estructurasCompartidas.h"
+#include <commons/log.h>
 
 
 
@@ -54,7 +55,9 @@ int cantMarcosOcupaTablaPaginas;
 t_list** overflow;
 int retardoMemoria;
 int stack_size;//lo recibe del kernel
-//t_list* listaProcesosActivos;
+t_log *memoLogger;
+t_log *memoConsoleLogger;
+char* directorioOutputMemoria = "output/";
 
 enum accionConsolaMemoria {
 	retardo = 1,
