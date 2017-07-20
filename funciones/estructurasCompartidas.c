@@ -105,7 +105,7 @@ void enviarTamanioYString(int codigoAccion, int sock, char* mensaje){
 void enviarTamanioYSerial(int codigoAccion, int sock, int tamanio, char* mensaje){
 	int offset = 0;
 
-	char* bufferVarComp = malloc(sizeof(int) + sizeof(int) + sizeof(tamanio));
+	char* bufferVarComp = malloc(sizeof(int) + sizeof(int) + tamanio);
 	memcpy(bufferVarComp, &codigoAccion, sizeof(codigoAccion));
 	offset += sizeof(codigoAccion);
 	memcpy(bufferVarComp + offset, &tamanio, sizeof(int));

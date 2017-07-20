@@ -120,6 +120,13 @@ void atenderSolicitudMemoriaDinamica()
 
 void atenderLiberacionMemoriaDinamica()
 {
-	char* solicitudSerial = leerTamanioYMensaje(fdCliente);
-	int espacioRequerido = char4ToInt(solicitudSerial);
+	int punteroRecibido;
+	int pid;
+	int cantPaginasCodigo;
+	recv(fdCliente, &pid, sizeof(int),0);
+	recv(fdCliente, &punteroRecibido, sizeof(int),0);
+	recv(fdCliente, &cantPaginasCodigo, sizeof(int),0);
+
+	liberarMemoria(punteroRecibido, pid, cantPaginasCodigo);
+
 }

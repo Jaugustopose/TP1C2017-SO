@@ -359,16 +359,26 @@ t_puntero reservar(t_valor_variable espacio)
 
 	int puntero;
 	recv(kernel, &puntero, sizeof(int), 0);
-
-
 	loggearFinDePrimitiva("reservar");
+
+	return puntero;
 }
 
 void liberar(t_puntero puntero)
 {
 	int codigoAccion = accionLiberarHeap;
-	char* punteroSerial = intToChar4(puntero);
-	enviarTamanioYSerial(codigoAccion, kernel, sizeof(int), punteroSerial);
+	int pid = pcbNuevo->PID;
+	int punteroALiberar = puntero;
+	int cantPagCodigo = pcbNuevo->cantidadPaginas;
+
+	void* buffer = malloc(sizeof(int32_t)*4);
+	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
+	memcpy(buffer + sizeof(codigoAccion), &pid, sizeof(pid));
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(int), &punteroALiberar, sizeof(punteroALiberar));
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(int) + sizeof(punteroALiberar), &cantPagCodigo, sizeof(cantPagCodigo));
+
+	send(kernel, buffer, sizeof(int32_t)*4, 0);
+
 
 	loggearFinDePrimitiva("liberar");
 }
