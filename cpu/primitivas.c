@@ -55,6 +55,7 @@ void enviarDireccionAMemoria(t_puntero direccion) {
 
 	enviarSolicitudBytes(pid, pagina, offset, size);
 }
+
 void enviar_direccion_y_valor_a_Memoria(t_puntero direccion, t_valor_variable valor) {
 	int pagina = (int)(direccion/tamanioPaginas) + cantidadPagCodigo; //Agrego el desplazamiento por las paginas ya ocupadas por el codigo
 	int offset = direccion % tamanioPaginas;
