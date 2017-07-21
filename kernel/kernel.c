@@ -412,15 +412,19 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 		break;
 
 	case accionEscribir:
-		escribirArchivo();
+		escribirArchivo(fdCliente, socketFS);
 		break;
 
 	case accionMoverCursor:
-		//TODO: WTF!!!
+		moverCursor(fdCliente, socketFS);
 		break;
 
 	case accionAbrirArchivo:
-		abrirArchivo();
+		abrirArchivo(fdCliente, socketFS);
+		break;
+
+	case accionCerrarArchivo:
+		cerrarArchivo(fdCliente, socketFS);
 		break;
 
 	case accionCrearArchivo:
@@ -428,11 +432,11 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 		break;
 
 	case accionBorrarArchivo:
-		borrarArchivo();
+		borrarArchivo(fdCliente, socketFS);
 		break;
 
 	case accionObtenerDatosArchivo:
-		leerArchivo();
+		leerArchivo(fdCliente, socketFS);
 		break;
 
 	case accionReservarHeap:
@@ -627,13 +631,13 @@ int main(void) {
 	enviar_stack_size(memoria);
 
 	//Conectar con FS
-	socketFS = socket(AF_INET, SOCK_STREAM, 0);
+	int socketFS = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in direccionServFS;
 	direccionServFS.sin_family = AF_INET;
 	direccionServFS.sin_port = htons(config.PUERTO_FS); // short, Ordenación de bytes de la red
 	direccionServFS.sin_addr.s_addr = inet_addr(config.IP_FS);
 	memset(&(direccionServFS.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
-	connect(memoria, (struct sockaddr*) &direccionServFS, sizeof(struct sockaddr));
+	connect(socketFS, (struct sockaddr*) &direccionServFS, sizeof(struct sockaddr));
 
 	//Añadir listener al conjunto maestro
 	FD_SET(sockServ, &master);

@@ -11,10 +11,9 @@
 
 #include "estructurasCompartidas.h"
 
-extern int socketFS;
-
 typedef struct{
 	char* permisos;
+	int offset;
 	int indiceTablaGlobal;
 }FD_t;
 

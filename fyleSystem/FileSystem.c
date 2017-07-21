@@ -435,11 +435,11 @@ void sockets(){
 		if ((sockClie = accept(sockServ, (struct sockaddr*) &direccionCliente, &addrlen)) == -1) {
 			perror("Error en el accept");
 		} else {
-			if(!verificarIdentidad()){
+			/*if(!verificarIdentidad()){
 				close(sockClie);
 				printf("El cliente conectado no era un Kernel, se rechaza la conexión");
 				continue;
-			}
+			}*/
 			printf("Server: nueva conexion de %s en socket %d\n", inet_ntoa(direccionCliente.sin_addr), sockClie);
 			for (;;) {
 				// Gestionar datos de un cliente. Recibimos el código de acción que quiere realizar.

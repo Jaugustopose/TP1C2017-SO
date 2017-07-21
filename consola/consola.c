@@ -175,7 +175,7 @@ void* pidePathAlUsuario()
 //  printf("Ingresar archivo ansisop: \n");
 //  scanf("%c", path);
 
-  programa = fopen("/home/utnso/ansisop-parser/programas-ejemplo/facil.ansisop","rb");
+  programa = fopen("/home/utnso/ansisop-parser/programas-ejemplo/copiarArchivo.ansisop","rb");
   if(programa == NULL){
 	  return NULL;
     }
