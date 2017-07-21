@@ -319,8 +319,6 @@ void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
 	log_debug(debugLog, ANSI_COLOR_YELLOW "LLAMAR_CON_RETORNO");
 	log_debug(debugLog, "Se llama a la funcion: |%s| y se retornara luego a: |%d| ", etiqueta, donde_retornar);
 
-
-	//t_puntero_instruccion posicionFuncion =  obtenerPosicionLabel(etiqueta);
 	t_puntero_instruccion posicionFuncion = metadata_buscar_etiqueta(etiqueta, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
 
 	t_elemento_stack* newHead = stack_elemento_crear();
@@ -384,8 +382,16 @@ void wait(t_nombre_semaforo identificador_semaforo)
 	log_debug(debugLog, ANSI_COLOR_YELLOW "WAIT");
 	log_debug(debugLog, "El semaforo es: |%c|.", identificador_semaforo);
 
-    int codigoAccion = accionWait;
-    enviarTamanioYString(codigoAccion, kernel, identificador_semaforo);
+	int codigoAccion = accionWait;
+	int tamanioNombreSem = strlen(identificador_semaforo) + 1;
+
+	void* buffer = malloc(sizeof(int32_t)*2 + tamanioNombreSem);
+	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
+	memcpy(buffer + sizeof(codigoAccion), &tamanioNombreSem, sizeof(tamanioNombreSem));
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(tamanioNombreSem), identificador_semaforo, tamanioNombreSem);
+
+	send(kernel, buffer, sizeof(int32_t)*2 + tamanioNombreSem, 0);
+
 
 	loggearFinDePrimitiva("wait");
 }

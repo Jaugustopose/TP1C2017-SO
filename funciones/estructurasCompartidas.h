@@ -30,7 +30,7 @@ enum tipoMensaje {
 	accionConsolaFinalizarNormalmente = 19,
 	accionConsolaFinalizarErrorInstruccion = 20,
 	accionImprimirTextoConsola = 21,
-	accionWait = 22,
+	accionWait = 13,
 	accionSignal = 23,
 	accionEscribir = 24, //puede ser en archivo o consola, depende el FD
 	accionMoverCursor = 25,

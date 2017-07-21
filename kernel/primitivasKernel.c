@@ -1,5 +1,29 @@
 #include "kernel.h"
 
+void recibirWait(int cliente)
+{
+	char* serialTamanio = malloc(sizeof(int32_t));
+	recv(cliente, serialTamanio, sizeof(int32_t), 0);
+	int32_t tamanio = char4ToInt(serialTamanio);
+	void* semid = malloc(tamanio);
+	recv(cliente, semid, tamanio, 0);
+
+	primitivaWait(cliente, semid);
+	free(semid);
+}
+
+void recibirSignal(int cliente)
+{
+	void* serialTamanio = malloc(sizeof(int32_t));
+	recv(cliente, serialTamanio, sizeof(int32_t), 0);
+	int32_t tamanio = char4ToInt(serialTamanio);
+	void* semid = malloc(tamanio);
+	recv(cliente, semid, tamanio, 0);
+
+	primitivaSignal(cliente, semid);
+	free(semid);
+}
+
 void primitivaSignal(int cliente, char* semaforoID)
 {
 	t_semaforo* semaforo = (t_semaforo*)dictionary_get(tablaSemaforos, semaforoID);
