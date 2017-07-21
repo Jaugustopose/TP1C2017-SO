@@ -272,7 +272,7 @@ int calcularIndiceBloque(t_paginaHeap* pagina, int offset)
 	return indice;
 }
 
-void liberarMemoria(t_puntero puntero, int pid, int cantPaginasCodigo)
+int liberarMemoria(t_puntero puntero, int pid, int cantPaginasCodigo)
 {
    int nroPagina = (int)(puntero/tamanioPag);
    nroPagina = nroPagina - config.STACK_SIZE;
@@ -292,6 +292,7 @@ void liberarMemoria(t_puntero puntero, int pid, int cantPaginasCodigo)
 		liberarPagina(pagina, puntero, cantPaginasCodigo);
 		liberarPaginaEstructura(pagina, pidElement);
 	}
+	return 1;
 }
 
 

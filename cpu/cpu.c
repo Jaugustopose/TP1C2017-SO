@@ -37,7 +37,7 @@ bool finalizarEjecucion(){
 }
 
 bool hayOverflow(){
-	return overflow!=1;
+	return overflow ==-10;
 }
 
 void overflowException(int mensajeMemoria){
@@ -218,7 +218,7 @@ void finalizar_programa(bool normalmente){
 			//Loguear mensaje
 
 	}
-	if((overflow != 2 && overflow != 0) || normalmente){
+	if((overflow == -10) || normalmente){
 
 		//Avisar a Memoria que termino el proceso
 		char* accionEnviarMemo = (char*)accionFinProceso;
@@ -259,7 +259,8 @@ void inicializarContexto()
 /**********FUNCIONES PARA MANEJO DE SENTENCIAS*********************************************************************/
 
 void enviarSolicitudBytes(int pid, int pagina, int offset, int size) {
-
+	if(!hayOverflow())
+	{
 	pedidoBytesMemoria_t pedido;
 	pedido.pid = pid;
 	pedido.nroPagina = pagina;
@@ -281,15 +282,17 @@ void enviarSolicitudBytes(int pid, int pagina, int offset, int size) {
 	overflow = char4ToInt(stackOverflow);
     free(stackOverflow);
 
-	//if (hayOverflow()) {
-		overflowException(overflow);
-	//}
+	if (hayOverflow()) {
+		log_debug(debugLog, ANSI_COLOR_RED "OVERFLOW!");
+		ejecutar= false;
+		//overflowException(overflow);
+	}
     free(solicitud);
-
+	}
 }
 
 void enviarAlmacenarBytes(int pid, int pagina, int offset, int size, t_valor_variable valor) {
-
+	if (!hayOverflow()) {
 	pedidoBytesMemoria_t sub_pedido;
 	sub_pedido.pid = pid;
 	sub_pedido.nroPagina = pagina;
@@ -315,11 +318,13 @@ void enviarAlmacenarBytes(int pid, int pagina, int offset, int size, t_valor_var
 	overflow = char4ToInt(stackOverflow);
     free(stackOverflow);
 
-	//if (hayOverflow()) {
-		overflowException(overflow);
-	//}
+	if (hayOverflow()) {
+		log_debug(debugLog, ANSI_COLOR_RED "OVERFLOW!");
+		ejecutar = false;
+		//overflowException(overflow);
+	}
     free(solicitud);
-
+	}
 }
 
 t_sentencia* obtenerSentenciaRelativa(int* paginaInicioSentencia) {
@@ -499,10 +504,10 @@ void pedirSentencia()
 			sentenciaPedida = string_new();
 			obtenerSentencia(&tamanio);
 
-		//	if(!hayOverflow()){
+			if(!hayOverflow()){
 				parsear(sentenciaPedida);
 				free(sentenciaPedida);
-		//	}
+			}
 		}
 
 }
