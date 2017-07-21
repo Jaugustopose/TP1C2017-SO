@@ -420,11 +420,11 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 //	break;
 
 	case accionAsignarValorCompartida:
-		obtenerAsignarCompartida();
+		obtenerAsignarCompartida(fdCliente);
 	break;
 
 	case accionObtenerValorCompartida:
-		obtenerValorCompartida();
+		obtenerValorCompartida(fdCliente);
 	break;
 
 	case accionWait:
@@ -502,7 +502,7 @@ void crearCompartidas() {
 	while (config.SHARED_VARS[i] != '\0') {
 
 		int* compartida = malloc(sizeof(int));
-		*compartida = 0;
+		*compartida = 7;
 		dictionary_put(tablaCompartidas, config.SHARED_VARS[i], compartida);
 		i++;
 	}

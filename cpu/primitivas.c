@@ -237,12 +237,19 @@ void finalizar()
 t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableCompartida)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "OBTENER_VALOR_COMPARTIDA");
-	log_debug(debugLog, "Se pide a kernel el valor de la variable: |%c| ", nombreVariableCompartida);
+	log_debug(debugLog, "Se pide a kernel el valor de la variable: |%s| ", nombreVariableCompartida);
 
 	t_valor_variable valorCompartida;
 	int codigoAccion = accionObtenerValorCompartida;
 
-	enviarTamanioYString(codigoAccion, kernel, nombreVariableCompartida);
+	int tamanioNombreCom = strlen(nombreVariableCompartida) + 1;
+
+	void* buffer = malloc(sizeof(int32_t)*2 + tamanioNombreCom);
+	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
+	memcpy(buffer + sizeof(codigoAccion), &tamanioNombreCom, sizeof(tamanioNombreCom));
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(tamanioNombreCom), nombreVariableCompartida, tamanioNombreCom);
+
+	send(kernel, buffer, sizeof(int32_t)*2 + tamanioNombreCom, 0);
 
 	recv(kernel, &valorCompartida, sizeof(int), 0);
 
@@ -256,24 +263,27 @@ t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableComp
 t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableCompartida, t_valor_variable valorCompartida)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "ASIGNAR_VALOR_COMPARTIDA");
-	log_debug(debugLog, "Se pide a kernel asignar: |%d| a la variable: |%c| ", valorCompartida, nombreVariableCompartida);
+	log_debug(debugLog, "Se pide a kernel asignar: |%d| a la variable: |%s| ", valorCompartida, nombreVariableCompartida);
 
 	t_valor_variable valorAsignado;
 
 	int codigoAccion = accionAsignarValorCompartida;
 
-	enviarTamanioYString(codigoAccion, kernel, nombreVariableCompartida);
+	int tamanioNombreCom = strlen(nombreVariableCompartida) + 1;
 
-	//envio el valor
-	char* valor = intToChar4(valorCompartida);
-	send(kernel, valor, sizeof(int), 0);
+	void* buffer = malloc(sizeof(int32_t)*3 + tamanioNombreCom);
+	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
+	memcpy(buffer + sizeof(codigoAccion), &tamanioNombreCom, sizeof(tamanioNombreCom));
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(tamanioNombreCom), nombreVariableCompartida, tamanioNombreCom);
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(tamanioNombreCom) + tamanioNombreCom, &valorCompartida, sizeof(valorCompartida));
 
-	recv(kernel, &valorAsignado,sizeof(int), 0);
+	send(kernel, buffer, sizeof(int32_t)*3 + tamanioNombreCom, 0);
 
+	recv(kernel, &valorAsignado,sizeof(int32_t), 0);
 
 	loggearFinDePrimitiva("asignar_valor_compartida");
 
-	if(valorAsignado == *valor){
+	if(valorAsignado == valorCompartida){
 		log_debug(debugLog, "Se asigno el valor: |%c| ", valorAsignado);
 		return valorAsignado;
 	}
