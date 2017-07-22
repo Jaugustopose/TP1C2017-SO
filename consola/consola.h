@@ -41,7 +41,7 @@ enum opcionesUsuario {
 int identidad = 1;
 t_config* configConsola;
 config_t config;
-char* path;
+char path[200];
 FILE* programa;
 struct sockaddr_in dirKernel;
 

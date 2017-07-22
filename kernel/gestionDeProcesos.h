@@ -10,6 +10,7 @@
 #include <commons/collections/list.h>
 #include "deserializador.h"
 #include "serializador.h"
+#include "kernel.h"
 #include "estructurasCompartidas.h"
 #include <parser/parser.h>
 #include <parser/metadata_program.h>

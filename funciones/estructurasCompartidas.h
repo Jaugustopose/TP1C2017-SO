@@ -21,6 +21,7 @@ enum tipoMensaje {
 	accionObtenerPCB = 9,
 	accionFinInstruccion = 10,
 	accionFinProceso = 11,
+	accionDesalojarProceso = 12,
 	accionObtenerValorCompartida = 14,
 	accionAsignarValorCompartida = 15,
 	accionQuantumInterrumpido = 16,
@@ -29,18 +30,19 @@ enum tipoMensaje {
 	accionConsolaFinalizarNormalmente = 19,
 	accionConsolaFinalizarErrorInstruccion = 20,
 	accionImprimirTextoConsola = 21,
-	accionWait = 22,
+	accionWait = 13,
 	accionSignal = 23,
 	accionEscribir = 24, //puede ser en archivo o consola, depende el FD
 	accionMoverCursor = 25,
 	accionAbrirArchivo = 26,
-	accionCrearArchivo = 27,
-	accionBorrarArchivo = 28,
-	accionObtenerDatosArchivo = 29,
-	accionReservarHeap = 30,
-	accionLiberarHeap = 31,
-	accionEnviarStackSize = 32,
-	liberarPaginaProcesoAccion = 33
+	accionCerrarArchivo = 27,
+	accionCrearArchivo = 28,
+	accionBorrarArchivo = 29,
+	accionObtenerDatosArchivo = 30,
+	accionReservarHeap = 31,
+	accionLiberarHeap = 32,
+	accionEnviarStackSize = 33,
+	liberarPaginaProcesoAccion = 34
 
 };
 
@@ -86,7 +88,6 @@ typedef struct {
 	t_stack* stackPointer;
 	char* indiceEtiquetas;
 	int etiquetasSize;
-	//t_dictionary* indiceEtiquetas;
 	int exitCode;
 }t_PCB;
 
@@ -96,6 +97,10 @@ typedef struct {
 	int32_t CpuDuenio;
 	int32_t estado;
 	t_PCB* PCB;
+	int32_t rafagas;
+	bool sigusr1;
+	bool abortado;
+	char* semaforo;
 }t_proceso;
 
 typedef struct{

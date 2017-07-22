@@ -1,5 +1,29 @@
 #include "kernel.h"
 
+void recibirWait(int cliente)
+{
+	char* serialTamanio = malloc(sizeof(int32_t));
+	recv(cliente, serialTamanio, sizeof(int32_t), 0);
+	int32_t tamanio = char4ToInt(serialTamanio);
+	void* semid = malloc(tamanio);
+	recv(cliente, semid, tamanio, 0);
+
+	primitivaWait(cliente, semid);
+	free(semid);
+}
+
+void recibirSignal(int cliente)
+{
+	void* serialTamanio = malloc(sizeof(int32_t));
+	recv(cliente, serialTamanio, sizeof(int32_t), 0);
+	int32_t tamanio = char4ToInt(serialTamanio);
+	void* semid = malloc(tamanio);
+	recv(cliente, semid, tamanio, 0);
+
+	primitivaSignal(cliente, semid);
+	free(semid);
+}
+
 void primitivaSignal(int cliente, char* semaforoID)
 {
 	t_semaforo* semaforo = (t_semaforo*)dictionary_get(tablaSemaforos, semaforoID);
@@ -7,11 +31,13 @@ void primitivaSignal(int cliente, char* semaforoID)
 		if (!queue_is_empty(semaforo->colaSemaforo)) {
 
 			t_proceso* proceso = queue_pop(semaforo->colaSemaforo);
-			//TODO: IMPLEMENTAR! desbloquearProceso(proceso);
+		    desbloquearProceso(proceso);
 		}
 		else{
 			semaforo->valorSemaforo++;
 		}
+
+		//clientes[cliente].atentido=false;
 }
 
 void primitivaWait(int cliente, char* semaforoID)
@@ -20,64 +46,58 @@ void primitivaWait(int cliente, char* semaforoID)
 
 	if (semaforo->valorSemaforo > 0){
 		semaforo->valorSemaforo--;
-		}
-	else{
-		//TODO: IMPLEMENTAR! bloquearProcesoSem(cliente, semaforoID);
+	}else{
+		bloquearProcesoSem(cliente, semaforoID);
 	}
+
+	//clientes[cliente].atentido=false;
 }
 
-int primitivaDevolverCompartida()
+void obtenerValorCompartida(int cliente)
 {
 
-}
-
-void primitivaAsignarCompartida()
-{
-
-}
-
-void imprimir()
-{
-
-}
-
-void obtenerValorCompartida()
-{
-	char* compartidaSerial = leerTamanioYMensaje(fdCliente);
+	char* serialTamanio = malloc(sizeof(int32_t));
+	recv(cliente, serialTamanio, sizeof(int32_t), 0);
+	int32_t tamanio = char4ToInt(serialTamanio);
+	void* compartidaSerial = malloc(tamanio);
+	recv(cliente, compartidaSerial, tamanio, 0);
 	char* compartida = string_from_format("!%s",compartidaSerial);
-	char* valor = intToChar4(devolverCompartida(compartida));
+	int valor = devolverCompartida(compartida);
+	if(valor != -1)
+	{
+		char* valorSerial = intToChar4(valor);
+		send(fdCliente, valorSerial, sizeof(int32_t), 0);
+	}else
+	{
+		//ERROR:ABORTAR
+	}
 
-	send(fdCliente, valor, sizeof(int32_t), 0);
-
-	 //t_proceso* proceso = obtenerProceso(fdCliente);
-	 //if (!dictionary_has_key(tablaCompartidas,compartida))
-	//proceso->abortado=true;
-
-	free(valor);
 	free(compartidaSerial);
-	free(compartida);
-
 	//clientes[fdCliente].atentido=false;
 }
 
-void obtenerAsignarCompartida(){
-	char* compartidaSerial = leerTamanioYMensaje(fdCliente);
+void obtenerAsignarCompartida(int cliente){
+
+	char* serialTamanio = malloc(sizeof(int32_t));
+	recv(cliente, serialTamanio, sizeof(int32_t), 0);
+	int32_t tamanio = char4ToInt(serialTamanio);
+	void* compartidaSerial = malloc(tamanio);
+	recv(cliente, compartidaSerial, tamanio, 0);
 	char* compartida = string_from_format("!%s",compartidaSerial);
-	char* valor = malloc(sizeof(int));
-	recv(fdCliente, valor, sizeof(int), 0);
-	asignarCompartida(compartida, char4ToInt(valor));
+	int32_t valorNuevo;
+	recv(cliente, &valorNuevo, sizeof(int32_t), 0);
+	int32_t resultado = asignarCompartida(compartida, valorNuevo, cliente);
 
-	//	t_proceso* proceso = obtenerProceso(fdCliente);
-	//	if (!dictionary_has_key(tablaCompartidas,compartida))
-	//		proceso->abortado=true;
+	if(resultado != -1)
+	{
+		int valorAsignado = devolverCompartida(compartida);
+		send(fdCliente, &valorAsignado,sizeof(int),0);
+	}else
+	{
+		//ERROR:ABORTAR
+	}
 
-
-	//clientes[fdCliente].atentido=false;
-	int valorAsignado = devolverCompartida(compartida);
-	send(fdCliente, &valorAsignado,sizeof(int),0);
-	free(compartida);
 	free(compartidaSerial);
-	free(valor);
 }
 
 int devolverCompartida(char* compartida) {
@@ -87,17 +107,34 @@ int devolverCompartida(char* compartida) {
 	}
 	else{
 		//ERROR: Se solicita el valor de una compartida inexistente
+		 t_proceso* proceso = obtenerProceso(fdCliente);
+		 if (!dictionary_has_key(tablaCompartidas,compartida))
+		 {
+			proceso->abortado=true;
+		 }
+
+		return -1;
 	}
-	return 0;
+
 }
 
-void asignarCompartida(char* compartida, int valor) {
+int asignarCompartida(char* compartida, int valor, int cliente) {
 	if (dictionary_has_key(tablaCompartidas,compartida))
 	{
 		*(int*)dictionary_get(tablaCompartidas, compartida) = valor;
+		return valor;
 	}
 	else{
 		//ERROR: Se solicito asignar un valor a  una compartida inexistente
+
+		t_proceso* proceso = obtenerProceso(cliente);
+		if(!dictionary_has_key(tablaCompartidas,compartida))
+		{
+		    proceso->abortado=true;
+		}
+
+		return -1;
+		//clientes[fdCliente].atentido=false;
 	}
 }
 
@@ -112,17 +149,28 @@ void primitivaLiberar(int puntero)
 //TODO:IMPLEMENTAR MANEJO HEAP
 }
 
-void recibirPedidoMemoria(int tamanioSolicitud, int pidSolicitante)
+void atenderSolicitudMemoriaDinamica()
 {
-	if(peticion_valida(tamanioSolicitud))
-	{
-		//pedido a memoria de una pagina: cantpaginas = 1, pidSolicitante
-		//recibe respuesta
-	//	crearPagina(pidSolicitante, tamanioSolicitud);
+	int espacioSolicitado;
+	int pid;
 
+	recv(fdCliente, &pid, sizeof(int),0);
+	recv(fdCliente, &espacioSolicitado, sizeof(int),0);
 
-	}else
-	{
-		//finalizar programa abruptamente por exceder tamanio del pedido
-	}
+	int puntero = alocarMemoria(espacioSolicitado, pid);
+
+	send(fdCliente, &puntero, sizeof(int), 0);
+}
+
+void atenderLiberacionMemoriaDinamica()
+{
+	int punteroRecibido;
+	int pid;
+	int cantPaginasCodigo;
+	recv(fdCliente, &pid, sizeof(int),0);
+	recv(fdCliente, &punteroRecibido, sizeof(int),0);
+	recv(fdCliente, &cantPaginasCodigo, sizeof(int),0);
+
+	liberarMemoria(punteroRecibido, pid, cantPaginasCodigo);
+
 }

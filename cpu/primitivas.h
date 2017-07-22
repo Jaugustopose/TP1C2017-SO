@@ -54,7 +54,7 @@ void llamar_sin_retorno(t_nombre_etiqueta etiqueta);
 void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar);
 void retornar(t_valor_variable unaVariable);
 void wait(t_nombre_semaforo identificador_semaforo);
-void signal(t_nombre_semaforo identificador_semaforo);
+void primitiva_signal(t_nombre_semaforo identificador_semaforo);
 
 
 #endif /* PRIMITIVAS_H_ */

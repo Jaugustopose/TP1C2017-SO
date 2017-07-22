@@ -19,6 +19,7 @@
 #include <commons/collections/list.h>
 #include <stdbool.h>
 #include "estructurasCompartidas.h"
+#include <commons/log.h>
 
 
 
@@ -61,6 +62,10 @@ int tamanioCache;
 t_list* entradasLibresCache;
 t_list* entradasOcupadasCache;
 //t_list* listaProcesosActivos;
+t_log *memoLogger;
+t_log *memoConsoleLogger;
+char* directorioOutputMemoria = "output";
+
 
 enum accionConsolaMemoria {
 	retardo = 1,

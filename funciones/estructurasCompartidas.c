@@ -69,13 +69,23 @@ int stack_tamanio(t_stack* stack){
 //	return pedido;
 //}
 
-//ATENCION: SE TOMAN LAS DIRECCIONES LOGICAS DESDE LA PAGINA 1 DEL CODIGO + STACK + HEAP
+//ATENCION: VERSION ANTERIOR. NO BORRAR TODAVIA!
+//t_pedido* stack_proximo_pedido(t_stack* stack, int tamanioPagina, int cantidadPaginasCodigo) {
+//
+//	t_pedido* pedido = malloc(sizeof(t_pedido));
+//	int tamanioActualDeStack = stack_tamanio_memoria(stack);
+//	pedido->nroPagina = (cantidadPaginasCodigo + tamanioActualDeStack) / tamanioPagina;
+//	pedido->offset = (cantidadPaginasCodigo + tamanioActualDeStack) - (pedido->nroPagina * tamanioPagina);
+//	pedido->size = sizeof(int);
+//	return pedido;
+//}
+
 t_pedido* stack_proximo_pedido(t_stack* stack, int tamanioPagina, int cantidadPaginasCodigo) {
 
 	t_pedido* pedido = malloc(sizeof(t_pedido));
 	int tamanioActualDeStack = stack_tamanio_memoria(stack);
-	pedido->nroPagina = (cantidadPaginasCodigo + tamanioActualDeStack) / tamanioPagina;
-	pedido->offset = (cantidadPaginasCodigo + tamanioActualDeStack) - (pedido->nroPagina * tamanioPagina);
+	pedido->nroPagina = tamanioActualDeStack / tamanioPagina;
+	pedido->offset = tamanioActualDeStack - (pedido->nroPagina * tamanioPagina);
 	pedido->size = sizeof(int);
 	return pedido;
 }
@@ -84,7 +94,6 @@ void destruir_PCB(t_PCB* pcb){
 	//Lo usa CPU y Kernel
 	list_destroy(pcb->indiceCodigo);
 	stack_destruir(pcb->stackPointer);
-	//dictionary_destroy(pcb->indiceEtiquetas);
 
 	free(pcb);
 }
@@ -106,7 +115,7 @@ void enviarTamanioYString(int codigoAccion, int sock, char* mensaje){
 void enviarTamanioYSerial(int codigoAccion, int sock, int tamanio, char* mensaje){
 	int offset = 0;
 
-	char* bufferVarComp = malloc(sizeof(int) + sizeof(int) + sizeof(tamanio));
+	void* bufferVarComp = malloc(sizeof(int) + sizeof(int) + tamanio);
 	memcpy(bufferVarComp, &codigoAccion, sizeof(codigoAccion));
 	offset += sizeof(codigoAccion);
 	memcpy(bufferVarComp + offset, &tamanio, sizeof(int));

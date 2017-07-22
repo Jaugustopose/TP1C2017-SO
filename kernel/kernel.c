@@ -1,7 +1,5 @@
 #include "kernel.h"
 
-//#include <sys/select.h>
-
 /********************************** INICIALIZACIONES *****************************************************/
 
 void cargarConfiguracion() {
@@ -47,6 +45,20 @@ void cargarConfiguracion() {
 				"PUERTO_CONSOLA");
 		printf("PUERTO_CONSOLA: %d\n", config.PUERTO_CONSOLA);
 	}
+	if (config_has_property(configKernel, "ALGORITMO")) {
+			config.ALGORITMO = config_get_string_value(configKernel, "ALGORITMO");
+			printf("ALGORITMO: %s\n", config.ALGORITMO);
+		}
+	if (config_has_property(configKernel, "QUANTUM")) {
+			config.QUANTUM = config_get_int_value(configKernel,
+					"QUANTUM");
+			printf("QUANTUM: %d\n", config.QUANTUM);
+		}
+	if (config_has_property(configKernel, "QUANTUM_SLEEP")) {
+				config.QUANTUM_SLEEP = config_get_int_value(configKernel,
+						"QUANTUM_SLEEP");
+				printf("QUANTUM_SLEEP: %d\n", config.QUANTUM_SLEEP);
+			}
 	if (config_has_property(configKernel, "GRADO_MULTIPROG")) {
 		config.GRADO_MULTIPROG = config_get_int_value(configKernel,
 				"GRADO_MULTIPROG");
@@ -63,7 +75,7 @@ void cargarConfiguracion() {
 	if (config_has_property(configKernel, "SHARED_VARS")) {
 		config.SHARED_VARS = config_get_array_value(configKernel,
 				"SHARED_VARS");
-		printf("SEM_INIT: %s\n", config.SHARED_VARS);
+		printf("SHARED_VARS: %s\n", config.SHARED_VARS);
 	}
 	if (config_has_property(configKernel, "STACK_SIZE")) {
 			config.STACK_SIZE = config_get_int_value(configKernel,
@@ -82,6 +94,18 @@ void enviar_stack_size(int sock)
 	memcpy(buffer + sizeof(codigoAccion), &stackSize, sizeof(codigoAccion));
 
 	send(sock, buffer, sizeof(int32_t)*2, 0);
+
+	//VERIFICAR
+	free(buffer);
+}
+
+int obtener_tamanio_pagina(int memoria) {
+	int valorRecibido;
+	int idMensaje = 6;
+	send(memoria, &idMensaje, sizeof(int32_t), 0);
+	recv(memoria, &valorRecibido, sizeof(int32_t), 0);
+
+	return valorRecibido;
 }
 
 void inicializarContexto() {
@@ -90,8 +114,14 @@ void inicializarContexto() {
 	tablaCompartidas = dictionary_create();
 	crearSemaforos();
 	crearCompartidas();
+	iniciarVigilanciaConfiguracion();
+	listaPidHEAP = list_create();
 
 	colaCPU = queue_create();
+	colaNew = queue_create();
+	colaReady = queue_create();
+	colaExit = queue_create();
+	colaConsola = queue_create();
 }
 
 int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
@@ -112,8 +142,6 @@ int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
 
 	return resultAccion;
 }
-
-
 
 int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffer, int tamanioTotal) {
 	printf("tamanioTotal = %d\n", tamanioTotal);
@@ -183,6 +211,9 @@ int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffe
 		printf("almacenarBytes resultó con código de acción: %d\n", resultAccion);
 	}
 
+	//VERIFICAR
+	free(bufferParaAlmacenarEnMemoria);
+
 	return resultAccion;
 
 }
@@ -192,15 +223,6 @@ void comprobarSockets(int maxSock, fd_set* read_fds) {
 		perror("select");
 		exit(1);
 	}
-}
-
-int obtener_tamanio_pagina(int memoria) {
-	int valorRecibido;
-	int idMensaje = 6;
-	send(memoria, &idMensaje, sizeof(int32_t), 0);
-	recv(memoria, &valorRecibido, sizeof(int32_t), 0);
-
-	return valorRecibido;
 }
 
 int redondear(float numero) {
@@ -232,11 +254,12 @@ void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProces
 	//Encontrar cada proceso con proceso.ConsolaDuenio = fileDescriptor
 	//Cambiarle el exit code a -6 (finalizo por desconexion de consola)
 	//Llevo el proceso con exit code = 6 a la cola de exit
-	for (fdCliente = 0; fdCliente < list_size(listaConProcesos); fdCliente++) {
-		t_proceso* proceso = list_get(listaConProcesos, fdCliente);
+	int fdClienteCont;
+	for (fdClienteCont = 0; fdClienteCont < list_size(listaConProcesos); fdClienteCont++) {
+		t_proceso* proceso = list_get(listaConProcesos, fdClienteCont);
 		if (proceso -> ConsolaDuenio == fileDescriptor) {
 			proceso -> PCB->exitCode = -6;
-			queue_push(colaExit,&proceso);
+			queue_push(colaExit, proceso);
 		}
 
 	}
@@ -245,16 +268,16 @@ void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProces
 
 				return (-6 == p->PCB->exitCode);
 			}
-	list_remove_by_condition(listaConProcesos,exit_code_de_proceso);
+	list_remove_by_condition(listaConProcesos, (void*)exit_code_de_proceso);
 }
 
 void liberar_procesos_de_cpu(int fileDescriptor, t_list* listaConProcesos) {
 
 	//Encontrar cada proceso con proceso.CpuDuenio = filedescriptor
 	//Y cambiarle el CpuDuenio a -1 (el menos 1 significa que no tiene cpu asignado)
-
-	for (fdCliente = 0; fdCliente < list_size(listaConProcesos); fdCliente++) {
-		t_proceso* proceso = list_get(listaConProcesos, fdCliente);
+	int fdClienteCont;
+	for (fdClienteCont = 0; fdClienteCont < list_size(listaConProcesos); fdClienteCont++) {
+		t_proceso* proceso = list_get(listaConProcesos, fdClienteCont);
 		if (proceso -> CpuDuenio == fileDescriptor) {
 			proceso -> CpuDuenio = -1;
 		}
@@ -305,58 +328,98 @@ void conexion_de_cliente_finalizada() {
 	} else {
 		FD_CLR(fdCliente, &bolsaCpus);
 		printf("Se desconecto cpu del socket %d", fdCliente);
-
+	    colaCPU = queue_remove(colaCPU, fdCliente);
 		liberar_procesos_de_cpu(fdCliente, listaDeProcesos);
 	}
 	close(fdCliente); // Si se perdio la conexion, la cierro.
 }
+
 void enviarPCBaCPU(t_PCB* pcb, int cpu, int32_t accion)
 {
 	serializar_PCB(pcb, cpu, accion);
 }
 
-void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMensaje) {
-	if (config.GRADO_MULTIPROG > list_size(listaDeProcesos)) {
-		printf("Procediendo a recibir tamaño script\n");
-		recv(consola, &tamanioScript, sizeof(int32_t), 0);
-		printf("Tamaño del script: %d\n", tamanioScript);
+void agregarNuevaConsola(char* buff, int32_t consola, int tamanioScript)
+{
+	t_consola* consolaNueva = malloc(sizeof(t_consola));
+	consolaNueva->consolaID = consola;
+	consolaNueva->codigoPrograma = buff;
+	consolaNueva->tamanioScript = tamanioScript;
+	queue_push(colaConsola, consolaNueva);
+}
 
-		char* buff = malloc(tamanioScript);
-		//char* cadena = malloc(tamanio*sizeof(char));
-		recv(fdCliente, buff, tamanioScript, 0);
-		//memcpy(cadena,buff,tamanio * sizeof(char));
-		printf("el valor de cadena es: %s\n", buff);
-		///////////FIN DE DESERIALIZADOR///////////////
-		identificadorProceso++;
-		t_proceso* proceso = crearProceso(identificadorProceso, consola, (char*) buff);
-		list_add(listaDeProcesos, &proceso); //Agregar un proceso a esa bendita lista
+t_consola* desencolarConsola()
+{
+	return (t_consola*)queue_pop(colaConsola);
+}
 
+void nuevoProceso(t_consola* consola)
+{
+	identificadorProceso++;
+		t_proceso* proceso = crearProceso(identificadorProceso, consola->consolaID, (char*)consola->codigoPrograma);
 
+		list_add(listaDeProcesos, proceso); //Agregar un proceso a esa bendita lista
 
-		send(consola,&identificadorProceso,sizeof(int32_t),0);
+		send(consola->consolaID, &identificadorProceso, sizeof(int32_t),0);
 		//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
-		int paginasASolicitar = redondear((float) tamanioScript /(float) tamanioPag);
+		int paginasASolicitar = redondear((float) consola->tamanioScript /(float) tamanioPag);
 		int resultadoAccionInicializar = pedido_Inicializar_Programa(memoria,paginasASolicitar, proceso -> PCB->PID);
 		if (resultadoAccionInicializar == 0) {//Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
 
-			//queue_push(colaNew,&proceso); TODO: arreglar esto que no anda
-			printf("Se procede a preparar solicitud almacenar para enviar\n");
-			proceso -> PCB->cantidadPaginas = paginasASolicitar;
-			int resultadoAccionAlmacenar = enviarSolicitudAlmacenarBytes(memoria, proceso, buff, tamanioScript);
-			if (resultadoAccionAlmacenar == 0) {
-				//queue_pop(colaNew);
-				//queue_push(colaReady, &proceso);
-			}
+		//Meto proceso en la cola de nuevos, implica que hay grado de multiprogramacion disponible
+		queue_push(colaNew, proceso);
 
-			//EnviarPCBaCPU
-			int cpu = queue_pop(colaCPU);
-			proceso->PCB->cantidadPaginas = paginasASolicitar;
-			enviarPCBaCPU(proceso->PCB, cpu, accionObtenerPCB);
+		printf("Se procede a preparar solicitud almacenar para enviar\n");
+		proceso -> PCB->cantidadPaginas = paginasASolicitar;
+		int resultadoAccionAlmacenar = enviarSolicitudAlmacenarBytes(memoria, proceso, consola->codigoPrograma, consola->tamanioScript);
+		if (resultadoAccionAlmacenar == 0) {
+			proceso = (t_proceso*)queue_pop(colaNew);
+			cambiarEstado(proceso, READY);
 		}
-	}else{
-		printf("El proceso no pudo ingresar a la cola de New ya que excede el grado de multiprogramacion\n");
+
+		proceso->PCB->cantidadPaginas = paginasASolicitar;
+
+		//VERIFICAR
+		free(consola);
+ }
+}
+
+void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMensaje)
+{
+
+	printf("Procediendo a recibir tamaño script\n");
+		recv(consola, &tamanioScript, sizeof(int32_t), 0);
+	printf("Tamaño del script: %d\n", tamanioScript);
+		char* buff = malloc(tamanioScript + 1);
+		recv(fdCliente, buff, tamanioScript, 0);
+	printf("el valor de cadena es: %.*s\n", tamanioScript, buff);
+
+	agregarNuevaConsola(buff, consola, tamanioScript);
+
+	if (config.GRADO_MULTIPROG >= list_size(listaDeProcesos)) {
+			t_consola* proximaConsola = desencolarConsola();
+			if(proximaConsola != NULL)
+			{
+				nuevoProceso(proximaConsola);
+			}
+		}else{
+
+			printf("El proceso no pudo ingresar a la cola de New ya que excede el grado de multiprogramacion\n");
 	}
 
+
+}
+void sigusr1(int cpu){
+	t_proceso* proceso = obtenerProceso(cpu);
+
+	if (proceso!=NULL){
+		//proceso->sigusr1=true;
+	}
+	else{
+		//quitarCliente(cpu);
+		//limpiarColaCPU();
+	}
+	//clientes[cpu].atentido=false;
 }
 
 void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
@@ -364,52 +427,73 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 	switch (idMensaje) {
 
 	case accionSignal:
-
+		recibirSignal(fdCliente);
 		break;
+
+	case accionFinInstruccion:
+		//TODO:MUTEX
+		rafagaProceso(fdCliente);
+	break;
+
+	case accionFinProceso:
+		recibirFinalizacion(fdCliente);
+	break;
+
+//	case accionQuantumInterrumpido:
+//
+//	break;
 
 	case accionAsignarValorCompartida:
-			obtenerAsignarCompartida();
-		break;
+		obtenerAsignarCompartida(fdCliente);
+	break;
 
 	case accionObtenerValorCompartida:
-			obtenerValorCompartida();
-		break;
+		obtenerValorCompartida(fdCliente);
+	break;
 
 	case accionWait:
-
-		break;
+		recibirWait(fdCliente);
+	break;
 
 	case accionEscribir:
-
+		escribirArchivo(fdCliente, socketFS);
 		break;
 
 	case accionMoverCursor:
-
+		moverCursor(fdCliente, socketFS);
 		break;
 
 	case accionAbrirArchivo:
+		abrirArchivo(fdCliente, socketFS);
+		break;
 
+	case accionCerrarArchivo:
+		cerrarArchivo(fdCliente, socketFS);
 		break;
 
 	case accionCrearArchivo:
-
+		//TODO: Esto no existe, para crear un archivo se debe abrir el archivo con permisos de creacion
 		break;
 
 	case accionBorrarArchivo:
-
+		borrarArchivo(fdCliente, socketFS);
 		break;
 
 	case accionObtenerDatosArchivo:
-
+		leerArchivo(fdCliente, socketFS);
 		break;
 
 	case accionReservarHeap:
-
+		atenderSolicitudMemoriaDinamica();
 		break;
 
 	case accionLiberarHeap:
-
+		atenderLiberacionMemoriaDinamica();
 		break;
+
+	case accionQuantumInterrumpido:
+		sigusr1(fdCliente);
+	break;
 
 	}
 }
@@ -426,16 +510,17 @@ void atender_accion_consola(int idMensaje, int tamanioScript, int memoria, int c
 
 /***************************SEMAFOROS Y COMPARTIDAS****************************************************/
 void crearSemaforos() {
-	int i = 0;
 
+	int i = 0;
+	char* sem = string_substring_from(config.SEM_IDS[i],1);
 	while (config.SEM_IDS[i] != '\0') {
 
 		t_semaforo* semaforo = malloc(sizeof(t_semaforo));
 		semaforo->valorSemaforo = atoi(config.SEM_INIT[i]);
 		semaforo->colaSemaforo = queue_create();
-		dictionary_put(tablaSemaforos, config.SEM_IDS[i], semaforo);
-
+		dictionary_put(tablaSemaforos, sem, semaforo);
 		i++;
+		sem = config.SEM_IDS[i];
 	}
 }
 
@@ -445,7 +530,7 @@ void crearCompartidas() {
 	while (config.SHARED_VARS[i] != '\0') {
 
 		int* compartida = malloc(sizeof(int));
-		*compartida = 0;
+		*compartida = 7;
 		dictionary_put(tablaCompartidas, config.SHARED_VARS[i], compartida);
 		i++;
 	}
@@ -468,22 +553,106 @@ void destruirSemaforos() {
 	dictionary_destroy_and_destroy_elements(tablaSemaforos, destruirSemaforo);
 }
 
+/*********************************PLANIFICACION***********************************************************/
+
 void planificar()
 {
-//	int codAccion = accionContinuarProceso;
-//	int cpu = (int)queue_pop(colaCPU);
-//	send(cpu, &codAccion, sizeof(codAccion), 0);
+	if(strcmp(config.ALGORITMO, FIFO) == 0){
+		planificarFIFO();
+	}
+	else if(strcmp(config.ALGORITMO, ROUND_ROBIN) == 0)
+	{
+		planificarRR();
+	}else
+	{
+		//TODO:MANEJAR ERROR DE HABER INGRESADO CUALQUIER COSA EN EL CONFIG
+	}
+
 }
+
+void planificarRR()
+{
+
+}
+
+void planificarFIFO()
+{
+
+
+	while (!queue_is_empty(colaReady) && !queue_is_empty(colaCPU)) {
+
+			//limpiarColaListos();
+			//limpiarColaCPU();
+//
+//		int codAccion = (int)accionContinuarProceso;
+//		int cpu = (int)queue_pop(colaCPU);
+//		void* buffer = malloc(sizeof(codAccion));
+//		memcpy(buffer, &codAccion, sizeof(codAccion)); //PRIMERO EL CODIGO
+//		send(cpu, buffer, sizeof(codAccion), 0);
+
+			// Si no se vaciaron las listas entonces los primeros de ambas listas son validos
+			if (!queue_is_empty(colaReady) && !queue_is_empty(colaCPU)){
+				ejecutarProceso((t_proceso*) queue_pop(colaReady),(int) queue_pop(colaCPU));
+			}
+	}
+
+}
+
+/********************************************INOTIFY*******************************************/
+void recargarConfiguracion() {
+	t_config* configNuevo;
+	char* pat = string_new();
+	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
+	string_append(&pat, getcwd(cwd, sizeof(cwd)));
+	if (string_contains(pat, "/Debug")){
+			string_append(&pat,"/kernel.cfg");
+	}else{
+		string_append(&pat, "/Debug/kernel.cfg");
+	}
+	configNuevo = config_create(pat);
+	free(pat);
+
+	if (config_has_property(configNuevo, "QUANTUM_SLEEP")) {
+			config.QUANTUM_SLEEP = config_get_int_value(configNuevo, "QUANTUM_SLEEP");
+	}
+
+
+	config_destroy(configNuevo);
+}
+
+void iniciarVigilanciaConfiguracion(){
+	cambiosConfiguracion = inotify_init();
+	inotify_add_watch(cambiosConfiguracion,".",IN_CLOSE_WRITE);
+}
+
+void procesarCambiosConfiguracion(){
+	char buffer[EVENT_BUF_LEN];
+	int length = read(cambiosConfiguracion, buffer, EVENT_BUF_LEN);
+	int e = 0;
+	while (e < length) {
+		struct inotify_event *event =
+				(struct inotify_event *) &buffer[e];
+		if (event->len) {
+			if (event->mask & IN_CLOSE_WRITE) {
+				if (strcmp(event->name, "kernel.cfg") == 0) {
+					recargarConfiguracion();
+				}
+			}
+		}
+		e += EVENT_SIZE + event->len;
+	}
+}
+
 
 /************************************** MAIN ****************************************************************/
 
 int main(void) {
+
+	FIFO = "FIFO";
+	ROUND_ROBIN = "RR";
 	identificadorProceso = 0;
 	yes = 1;
-
-	//Cargar configuracion
 	cargarConfiguracion();
-
 	inicializarContexto();
 
 	//Crear socket. Dejar reutilizable. Crear direccion del servidor. Bind. Listen.
@@ -494,21 +663,31 @@ int main(void) {
 	listen_w(sockServ);
 
 	//Conectar con memoria
-		int memoria = socket(AF_INET, SOCK_STREAM, 0);
-		struct sockaddr_in direccionServ;
-			direccionServ.sin_family = AF_INET;
-			direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red
-			direccionServ.sin_addr.s_addr = inet_addr("127.0.0.1");
-			memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
+     memoria = socket(AF_INET, SOCK_STREAM, 0);
+	struct sockaddr_in direccionServ;
+	direccionServ.sin_family = AF_INET;
+	direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red
+	direccionServ.sin_addr.s_addr = inet_addr("127.0.0.1");
+	memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
 //		crearDireccionServidor(9030);
 //		conectar_con_server(memoria, &direccionServidor);
-			connect(memoria, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
-		tamanioPag = obtener_tamanio_pagina(memoria);
-		enviar_stack_size(memoria);
+	connect(memoria, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
+	tamanioPag = obtener_tamanio_pagina(memoria);
+	enviar_stack_size(memoria);
+
+	//Conectar con FS
+	int socketFS = socket(AF_INET, SOCK_STREAM, 0);
+	struct sockaddr_in direccionServFS;
+	direccionServFS.sin_family = AF_INET;
+	direccionServFS.sin_port = htons(config.PUERTO_FS); // short, Ordenación de bytes de la red
+	direccionServFS.sin_addr.s_addr = inet_addr(config.IP_FS);
+	memset(&(direccionServFS.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
+	connect(socketFS, (struct sockaddr*) &direccionServFS, sizeof(struct sockaddr));
 
 	//Añadir listener al conjunto maestro
 	FD_SET(sockServ, &master);
-
+	FD_SET(cambiosConfiguracion, &master);
+	FD_SET(cambiosConfiguracion, &configuracionCambio);
 	//Mantener actualizado cual es el maxSock
 	maxFd = sockServ;
 
@@ -531,13 +710,12 @@ int main(void) {
 
 					// gestionar nuevas conexiones
 					addrlen = sizeof(direccionCliente);
-					if ((sockClie = accept(sockServ,
-							(struct sockaddr*) &direccionCliente, &addrlen))
+					if ((sockClie = accept(sockServ,(struct sockaddr*) &direccionCliente, &addrlen))
 							== -1) {
-						perror("accept");
+							perror("accept");
 					} else {
 						printf("Server: nueva conexion de %s en socket %d\n",
-								inet_ntoa(direccionCliente.sin_addr), sockClie);
+						inet_ntoa(direccionCliente.sin_addr), sockClie);
 
 						FD_SET(sockClie, &master); // añadir al conjunto maestro
 						Colocar_en_respectivo_fdset();
@@ -551,7 +729,13 @@ int main(void) {
 					if ((cantBytes = recv(fdCliente, &idMensaje, sizeof(int32_t), 0))
 							<= 0) {
 
-						conexion_de_cliente_finalizada();
+						if (FD_ISSET(fdCliente, &configuracionCambio)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO INOTIFY
+							procesarCambiosConfiguracion();
+							printf("Nuevo QUANTUM_SLEEP: %d\n", config.QUANTUM_SLEEP);
+						}else
+						{
+							conexion_de_cliente_finalizada();
+						}
 
 					} else {
 
@@ -568,12 +752,11 @@ int main(void) {
 			}
 		}
 
-
-		//TODO:Hay que desarrollar la planificacion, pero por ahora es lo basico
 		planificar();
 	}
 	return 0;
 }
+
 
 // RECORDATORIO PARA ENVIAR ALGO A TODOS LOS CLIENTES SEA QUIEN SEA (POR LAS DUDAS)
 
