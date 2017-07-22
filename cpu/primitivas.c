@@ -34,8 +34,6 @@ bool existeLabel(t_nombre_etiqueta label) {
 	return metadata_buscar_etiqueta(label, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
 }
 
-
-
 void validarOverflow(t_puntero direccion) {
 
 	//Agrego el desplazamiento por las paginas ya ocupadas por el codigo
@@ -55,6 +53,7 @@ void enviarDireccionAMemoria(t_puntero direccion) {
 
 	enviarSolicitudBytes(pid, pagina, offset, size);
 }
+
 void enviar_direccion_y_valor_a_Memoria(t_puntero direccion, t_valor_variable valor) {
 	int pagina = (int)(direccion/tamanioPaginas) + cantidadPagCodigo; //Agrego el desplazamiento por las paginas ya ocupadas por el codigo
 	int offset = direccion % tamanioPaginas;
@@ -78,6 +77,9 @@ char* convertirFlags(t_banderas flags){
 /******************************* PRIMITIVAS ******************************/
 
 t_puntero obtener_posicion_de(t_nombre_variable variable) {
+
+	log_debug(debugLog, ANSI_COLOR_YELLOW "OBTENER_POSICION_DE");
+	log_debug(debugLog, "La primitiva recibio la VARIABLE: |%c| ", variable);
 
 	t_puntero posicionAbsoluta = 0;
 	t_pedido* posicionRelativa;
@@ -103,6 +105,8 @@ t_puntero obtener_posicion_de(t_nombre_variable variable) {
 		finalizarProgramaVariableInvalida();
 	}
 
+	log_debug(debugLog, "La pos_relativa es pagina: |%d|, offset: |%d| ", posicionRelativa->nroPagina, posicionRelativa->offset);
+	log_debug(debugLog, "La pos_absoluta: |%d|", posicionAbsoluta);
 	loggearFinDePrimitiva("obtener_posicion_de");
 
 	free(cadena);
@@ -111,6 +115,8 @@ t_puntero obtener_posicion_de(t_nombre_variable variable) {
 
 t_puntero definir_variable(t_nombre_variable variable) {
 
+	log_debug(debugLog, ANSI_COLOR_YELLOW "DEFINIR_VARIABLE");
+	log_debug(debugLog, "La primitiva recibio la VARIABLE: |%c| ", variable);
 	//t_pedido* direccion = stack_proximo_pedido(stack, tamanioPaginas);
 
 	//ATENCION: ACA SE TOMAN LAS DIRECCIONES LOGICAS: CODIGO + STACK + HEAP
@@ -136,7 +142,10 @@ t_puntero definir_variable(t_nombre_variable variable) {
 
 t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 {
-		t_valor_variable valor;
+	log_debug(debugLog, ANSI_COLOR_YELLOW "DEREFERENCIAR_VARIABLE");
+	log_debug(debugLog, "La primitiva recibio la direccion: |%d| ", direccion_variable);
+
+	t_valor_variable valor = 0;
 
 		//manda codigo de accion
 		char* accion = (char*)solicitarBytesAccion;
@@ -158,6 +167,7 @@ t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 
 			valor = char4ToInt(bufferValor);
 
+			log_debug(debugLog, "La primitiva recibio el |%d| de la posicion |%d|.", valor, direccion_variable);
 			loggearFinDePrimitiva("dereferenciar_variable");
 
 			free(bufferValor);
@@ -172,6 +182,9 @@ t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 
 void asignar(t_puntero direccion_variable, t_valor_variable valor)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "ASIGNAR");
+	log_debug(debugLog, "La primitiva recibio la direccion: |%d|, con el valor: |%d| ", direccion_variable, valor);
+
 	//Manda pedido a memoria
 	enviar_direccion_y_valor_a_Memoria(direccion_variable, valor);
 
@@ -182,6 +195,9 @@ void asignar(t_puntero direccion_variable, t_valor_variable valor)
 
 void ir_al_label(t_nombre_etiqueta label)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "IR_AL_LABEL");
+	log_debug(debugLog, "La primitiva recibio el label: |%c| ", label);
+
 	t_puntero_instruccion posPrimeraInstruccionUtil = -1;
 
 	if (existeLabel(label)) {
@@ -192,7 +208,7 @@ void ir_al_label(t_nombre_etiqueta label)
 		//ERRROR!
 		//devuelve posPrimeraInstruccionUtil = -1
 	}
-
+	log_debug(debugLog, "Se actualiza el PC del PCB a: |%d| ", posPrimeraInstruccionUtil);
 	actualizarPC(pcbNuevo, posPrimeraInstruccionUtil);
 
 	loggearFinDePrimitiva("ir_al_label");
@@ -202,6 +218,9 @@ void ir_al_label(t_nombre_etiqueta label)
 
 void finalizar()
 {
+
+	log_debug(debugLog, ANSI_COLOR_YELLOW "FINALIZAR");
+
 	t_elemento_stack* head = stack_pop(stack);
 
 	//posRetorno coincide con el PC. Es a donde tiene que volver
@@ -219,6 +238,8 @@ void finalizar()
 
 	actualizarPC(pcbNuevo, retorno);
 
+	log_debug(debugLog, "Se actualiza el PC del PCB a: |%d|. Retorno. ", retorno);
+
 	loggearFinDePrimitiva("finalizar");
 
 
@@ -226,13 +247,24 @@ void finalizar()
 
 t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableCompartida)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "OBTENER_VALOR_COMPARTIDA");
+	log_debug(debugLog, "Se pide a kernel el valor de la variable: |%s| ", nombreVariableCompartida);
+
 	t_valor_variable valorCompartida;
 	int codigoAccion = accionObtenerValorCompartida;
 
-	enviarTamanioYString(codigoAccion, kernel, nombreVariableCompartida);
+	int tamanioNombreCom = strlen(nombreVariableCompartida) + 1;
+
+	void* buffer = malloc(sizeof(int32_t)*2 + tamanioNombreCom);
+	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
+	memcpy(buffer + sizeof(codigoAccion), &tamanioNombreCom, sizeof(tamanioNombreCom));
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(tamanioNombreCom), nombreVariableCompartida, tamanioNombreCom);
+
+	send(kernel, buffer, sizeof(int32_t)*2 + tamanioNombreCom, 0);
 
 	recv(kernel, &valorCompartida, sizeof(int), 0);
 
+	log_debug(debugLog, "El valor es: |%d| ", valorCompartida);
 	loggearFinDePrimitiva("obtener_valor_compartida");
 
 	return valorCompartida;
@@ -241,21 +273,29 @@ t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableComp
 
 t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableCompartida, t_valor_variable valorCompartida)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "ASIGNAR_VALOR_COMPARTIDA");
+	log_debug(debugLog, "Se pide a kernel asignar: |%d| a la variable: |%s| ", valorCompartida, nombreVariableCompartida);
+
 	t_valor_variable valorAsignado;
 
 	int codigoAccion = accionAsignarValorCompartida;
 
-	enviarTamanioYString(codigoAccion, kernel, nombreVariableCompartida);
+	int tamanioNombreCom = strlen(nombreVariableCompartida) + 1;
 
-	//envio el valor
-	char* valor = intToChar4(valorCompartida);
-	send(kernel, valor, sizeof(int), 0);
+	void* buffer = malloc(sizeof(int32_t)*3 + tamanioNombreCom);
+	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
+	memcpy(buffer + sizeof(codigoAccion), &tamanioNombreCom, sizeof(tamanioNombreCom));
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(tamanioNombreCom), nombreVariableCompartida, tamanioNombreCom);
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(tamanioNombreCom) + tamanioNombreCom, &valorCompartida, sizeof(valorCompartida));
 
-	recv(kernel, &valorAsignado,sizeof(int), 0);
+	send(kernel, buffer, sizeof(int32_t)*3 + tamanioNombreCom, 0);
+
+	recv(kernel, &valorAsignado,sizeof(int32_t), 0);
 
 	loggearFinDePrimitiva("asignar_valor_compartida");
 
-	if(valorAsignado == *valor){
+	if(valorAsignado == valorCompartida){
+		log_debug(debugLog, "Se asigno el valor: |%c| ", valorAsignado);
 		return valorAsignado;
 	}
 	else
@@ -269,12 +309,17 @@ t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableComp
 
 void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "LLAMAR_SIN_RETORNO");
+	log_debug(debugLog, "Se llama a la funcion |%c| ", etiqueta);
+
 	t_puntero_instruccion posicionFuncion = metadata_buscar_etiqueta(etiqueta, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
 	t_elemento_stack* newHead = stack_elemento_crear();
 
 	//dondeRetornar
 	int posicion = pcbNuevo->contadorPrograma;
 	newHead->posRetorno = ++posicion;
+
+	log_debug(debugLog, "Se retorna a la posicion |%d| ", posicion);
 
 	// Si el stack tiene pos 0, size=1, si tiene 0 y 1, size=2,... Da la posicion del lugar nuevo.
 	newHead->pos = stack_tamanio(stack);
@@ -284,13 +329,17 @@ void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 
 	actualizarPC(pcbNuevo, posicionFuncion);
 
+	log_debug(debugLog, "Se actualiza el PC: |%d| ", posicionFuncion);
+
 	loggearFinDePrimitiva("llamar_sin_retorno");
 
 }
 
 void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
 {
-	//t_puntero_instruccion posicionFuncion =  obtenerPosicionLabel(etiqueta);
+	log_debug(debugLog, ANSI_COLOR_YELLOW "LLAMAR_CON_RETORNO");
+	log_debug(debugLog, "Se llama a la funcion: |%s| y se retornara luego a: |%d| ", etiqueta, donde_retornar);
+
 	t_puntero_instruccion posicionFuncion = metadata_buscar_etiqueta(etiqueta, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
 
 	t_elemento_stack* newHead = stack_elemento_crear();
@@ -308,6 +357,8 @@ void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
 
 	actualizarPC(pcbNuevo, posicionFuncion);
 
+	log_debug(debugLog, "Se actualiza el PC: |%d| ", posicionFuncion);
+
 	loggearFinDePrimitiva("llamar_con_retorno");
 
 	return;
@@ -315,6 +366,9 @@ void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
 
 void retornar(t_valor_variable unaVariable)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "RETORNAR");
+	log_debug(debugLog, "Se retorna: |%d|.", unaVariable);
+
 	t_elemento_stack* head = stack_pop(stack);
 
 	//posRetorno coincide con el PC. Es a donde tiene que volver
@@ -336,6 +390,9 @@ void retornar(t_valor_variable unaVariable)
 
 	actualizarPC(pcbNuevo, retorno);
 
+	log_debug(debugLog, "Se actualiza el PC: |%d| ", retorno);
+
+
 	loggearFinDePrimitiva("retornar");
 
 	return;
@@ -343,13 +400,28 @@ void retornar(t_valor_variable unaVariable)
 
 void wait(t_nombre_semaforo identificador_semaforo)
 {
-    int codigoAccion = accionWait;
-    enviarTamanioYString(codigoAccion, kernel, identificador_semaforo);
+	log_debug(debugLog, ANSI_COLOR_YELLOW "WAIT");
+	log_debug(debugLog, "El semaforo es: |%c|.", identificador_semaforo);
+
+	int codigoAccion = accionWait;
+	int tamanioNombreSem = strlen(identificador_semaforo) + 1;
+
+	void* buffer = malloc(sizeof(int32_t)*2 + tamanioNombreSem);
+	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
+	memcpy(buffer + sizeof(codigoAccion), &tamanioNombreSem, sizeof(tamanioNombreSem));
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(tamanioNombreSem), identificador_semaforo, tamanioNombreSem);
+
+	send(kernel, buffer, sizeof(int32_t)*2 + tamanioNombreSem, 0);
+
+
 	loggearFinDePrimitiva("wait");
 }
 
 void primitiva_signal(t_nombre_semaforo identificador_semaforo)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "SIGNAL");
+	log_debug(debugLog, "El semaforo es: |%c|.", identificador_semaforo);
+
 	int codigoAccion = accionSignal;
 	enviarTamanioYString(codigoAccion, kernel, identificador_semaforo);
 	loggearFinDePrimitiva("signal");
@@ -357,6 +429,8 @@ void primitiva_signal(t_nombre_semaforo identificador_semaforo)
 
 t_puntero reservar(t_valor_variable espacio)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "RESERVAR");
+	log_debug(debugLog, "La primitiva recibio para reservar: |%d| de espacio.", espacio);
 	int codigoAccion = accionReservarHeap;
 	int pid = pcbNuevo->PID;
 	int espacioParaAlocar = espacio;
@@ -371,17 +445,40 @@ t_puntero reservar(t_valor_variable espacio)
 	int puntero;
 	recv(kernel, &puntero, sizeof(int), 0);
 
-
+	log_debug(debugLog, "La primitiva recibio el puntero: |%d| .", puntero);
 	loggearFinDePrimitiva("reservar");
+
+	return puntero;
 }
 
 void liberar(t_puntero puntero)
 {
-	int codigoAccion = accionLiberarHeap;
-	char* punteroSerial = intToChar4(puntero);
-	enviarTamanioYSerial(codigoAccion, kernel, sizeof(int), punteroSerial);
+	log_debug(debugLog, ANSI_COLOR_YELLOW "LIBERAR");
+	log_debug(debugLog, "La primitiva recibio el puntero: |%d| para liberar.", puntero);
 
-	loggearFinDePrimitiva("liberar");
+	int codigoAccion = accionLiberarHeap;
+	int pid = pcbNuevo->PID;
+	int punteroALiberar = puntero;
+	int cantPagCodigo = pcbNuevo->cantidadPaginas;
+
+	void* buffer = malloc(sizeof(int32_t)*4);
+	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
+	memcpy(buffer + sizeof(codigoAccion), &pid, sizeof(pid));
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(int), &punteroALiberar, sizeof(punteroALiberar));
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(int) + sizeof(punteroALiberar), &cantPagCodigo, sizeof(cantPagCodigo));
+
+	send(kernel, buffer, sizeof(int32_t)*4, 0);
+
+	int respuesta = 0;
+	recv(kernel, &respuesta, sizeof(int), 0);
+	if(respuesta == 1)
+	{
+		loggearFinDePrimitiva("liberar");
+	}
+	else
+	{
+		log_error(debugLog, "ERROR AL LIBERAR");
+	}
 }
 
 t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)

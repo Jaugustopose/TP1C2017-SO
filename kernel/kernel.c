@@ -75,7 +75,7 @@ void cargarConfiguracion() {
 	if (config_has_property(configKernel, "SHARED_VARS")) {
 		config.SHARED_VARS = config_get_array_value(configKernel,
 				"SHARED_VARS");
-		printf("SEM_INIT: %s\n", config.SHARED_VARS);
+		printf("SHARED_VARS: %s\n", config.SHARED_VARS);
 	}
 	if (config_has_property(configKernel, "STACK_SIZE")) {
 			config.STACK_SIZE = config_get_int_value(configKernel,
@@ -402,7 +402,7 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 	switch (idMensaje) {
 
 	case accionSignal:
-
+		recibirSignal(fdCliente);
 		break;
 
 	case accionFinInstruccion:
@@ -419,15 +419,15 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 //	break;
 
 	case accionAsignarValorCompartida:
-		obtenerAsignarCompartida();
+		obtenerAsignarCompartida(fdCliente);
 	break;
 
 	case accionObtenerValorCompartida:
-		obtenerValorCompartida();
+		obtenerValorCompartida(fdCliente);
 	break;
 
 	case accionWait:
-
+		recibirWait(fdCliente);
 	break;
 
 	case accionEscribir:
@@ -485,16 +485,17 @@ void atender_accion_consola(int idMensaje, int tamanioScript, int memoria, int c
 
 /***************************SEMAFOROS Y COMPARTIDAS****************************************************/
 void crearSemaforos() {
-	int i = 0;
 
+	int i = 0;
+	char* sem = string_substring_from(config.SEM_IDS[i],1);
 	while (config.SEM_IDS[i] != '\0') {
 
 		t_semaforo* semaforo = malloc(sizeof(t_semaforo));
 		semaforo->valorSemaforo = atoi(config.SEM_INIT[i]);
 		semaforo->colaSemaforo = queue_create();
-		dictionary_put(tablaSemaforos, config.SEM_IDS[i], semaforo);
-
+		dictionary_put(tablaSemaforos, sem, semaforo);
 		i++;
+		sem = config.SEM_IDS[i];
 	}
 }
 
@@ -504,7 +505,7 @@ void crearCompartidas() {
 	while (config.SHARED_VARS[i] != '\0') {
 
 		int* compartida = malloc(sizeof(int));
-		*compartida = 0;
+		*compartida = 7;
 		dictionary_put(tablaCompartidas, config.SHARED_VARS[i], compartida);
 		i++;
 	}

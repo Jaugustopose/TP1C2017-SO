@@ -15,24 +15,24 @@ t_pidHeap* getPID(int pid)
   return entrada;
 }
 
-t_pidHeap* getPagina(t_pidHeap* pidElement, int nroPag)
+t_paginaHeap* getPagina(t_pidHeap* pidElement, int nroPag)
 {
-  bool porPagina(t_paginaHeap* entradaTabla, int nroPag){
+  bool porPagina(t_paginaHeap* entradaTabla){
 				return entradaTabla->nro == nroPag;
    }
 
-  t_paginaHeap* entrada = list_find(pidElement->paginas, (void*)porPagina);
+  t_paginaHeap* entrada = list_find(pidElement->paginas, (void*) porPagina);
 
   return entrada;
 }
 
 t_bloque* getBloque(t_paginaHeap* pagina, int indice)
 {
-  bool porBloque(t_bloque* entradaTabla, int indice){
+  bool porBloque(t_bloque* entradaTabla){
 				return entradaTabla->indice == indice;
    }
 
-  t_paginaHeap* entrada = list_find(pagina->bloques, (void*)porBloque);
+  t_bloque* entrada = list_find(pagina->bloques, (void*)porBloque);
 
   return entrada;
 }
@@ -272,11 +272,12 @@ int calcularIndiceBloque(t_paginaHeap* pagina, int offset)
 	return indice;
 }
 
-void liberarMemoria(t_puntero puntero, int pid)
+int liberarMemoria(t_puntero puntero, int pid, int cantPaginasCodigo)
 {
    int nroPagina = (int)(puntero/tamanioPag);
+   nroPagina = nroPagina - config.STACK_SIZE;
    int pidLiberar = pid;
-   int offset = puntero - (nroPagina * tamanioPag);
+   int offset = puntero - ((nroPagina + config.STACK_SIZE) * tamanioPag); //hacerloPositivo
 
    t_pidHeap* pidElement = getPID(pid);
    t_paginaHeap* pagina = getPagina(pidElement, nroPagina);
@@ -288,21 +289,18 @@ void liberarMemoria(t_puntero puntero, int pid)
 
 	if(bloquesTodosFree(pagina))
 	{
-		liberarPagina(pagina);
+		liberarPagina(pagina, puntero, cantPaginasCodigo);
 		liberarPaginaEstructura(pagina, pidElement);
 	}
+	return 1;
 }
 
-void liberarBloque()
-{
 
-}
 //LLega con la cantidad de paginas de codigo?
-void liberarPagina(t_paginaHeap* pagina)
+void liberarPagina(t_paginaHeap* pagina, int puntero, int cantPaginasCodigo)
 {
 	int pidLiberar = pagina->pid;
-	int nroPagina = pagina->nro;
-
+	int nroPagina = (int)((puntero/tamanioPag) + cantPaginasCodigo);
 
 	void* buffer = malloc(sizeof(int)*3);
 
