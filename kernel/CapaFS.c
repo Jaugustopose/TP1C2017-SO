@@ -68,7 +68,7 @@ void quitarTablaProceso(int pid, int fd){
 void crearArchivo(int Pid, char* path, char* permisos, int socketCpu, int socketFS){
 	//Envio mensaje al FS
 	int codOperacion = accionCrearArchivo;
-	int pathSize = string_length(path);
+	int pathSize = string_length(path)+1;
 	// Tamanio paquete = codOperacion + pathSize + path
 	int packetSize = pathSize + sizeof(int)*2;
 	void *buffer = malloc(packetSize);
@@ -80,7 +80,7 @@ void crearArchivo(int Pid, char* path, char* permisos, int socketCpu, int socket
 	//Recibo respuesta
 	int res;
 	recv(socketFS, &res, sizeof(res), 0);
-	if(res==0){
+	if(res==1){
 		int indiceTablaGlobal = agregarTablaGlobal(path);
 		int fd = agregarTablaProceso(Pid, indiceTablaGlobal, permisos);
 		send(socketCpu, &fd, sizeof(fd),0);
@@ -91,16 +91,16 @@ void crearArchivo(int Pid, char* path, char* permisos, int socketCpu, int socket
 
 void abrirArchivo(int socketCpu, int socketFS){
 	int pid;
-	char* path;
-	char* permisos;
 	int tamanioPath;
 	int tamanioPermisos;
 	//Recibo datos del CPU
 	recv(socketCpu, &pid, sizeof(pid), 0);
 	recv(socketCpu, &tamanioPath, sizeof(tamanioPath), 0);
 	recv(socketCpu, &tamanioPermisos, sizeof(tamanioPermisos), 0);
-	recv(socketCpu, &path, tamanioPath, 0);
-	recv(socketCpu, &permisos, tamanioPermisos, 0);
+	char* path = malloc(tamanioPath);
+	char* permisos = malloc(tamanioPermisos);
+	recv(socketCpu, path, tamanioPath, 0);
+	recv(socketCpu, permisos, tamanioPermisos, 0);
 
 	//Envio mensaje al FS
 	int codOperacion = accionAbrirArchivo;
@@ -113,10 +113,10 @@ void abrirArchivo(int socketCpu, int socketFS){
 	send(socketFS, buffer, packetSize,0);
 	free(buffer);
 	//Recibo respuesta
-	int res;
+	int res=-1;
 	recv(socketFS, &res, sizeof(res), 0);
 	//Analizar respuesta y enviar a CPU
-	if(res==0){
+	if(res==1){
 		int indiceTablaGlobal = agregarTablaGlobal(path);
 		int fd = agregarTablaProceso(pid, indiceTablaGlobal, permisos);
 		send(socketCpu, &fd, sizeof(fd),0);
@@ -150,7 +150,7 @@ void leerArchivo(int socketCpu, int socketFS){
 	globalFD_t* globalFD = list_get(tablaGlobalArchivos, fileDescriptor->indiceTablaGlobal);
 	//Envio mensaje al FS
 	int codOperacion = accionObtenerDatosArchivo;
-	int pathSize = string_length(globalFD->path);
+	int pathSize = string_length(globalFD->path)+1;
 	// Tamanio paquete = codOperacion + pathSize + path + offset + tamanio
 	int packetSize = pathSize + sizeof(int)*4;
 	void *buffer = malloc(packetSize);
@@ -164,10 +164,10 @@ void leerArchivo(int socketCpu, int socketFS){
 	//Recibo respuesta
 	int res;
 	recv(socketFS, &res, sizeof(res), 0);
-	if(res==0){
+	if(res==1){
 		char* datos = malloc(tamanio);
 		recv(socketFS, datos, tamanio, 0);
-		//TODO: Enviar respuesta a la CPU
+		send(socketCpu, datos, tamanio,0);
 	}else{
 		//TODO: Dar error
 	}
@@ -192,7 +192,7 @@ void escribirArchivo(int socketCpu, int socketFS){
 	globalFD_t* globalFD = list_get(tablaGlobalArchivos, fileDescriptor->indiceTablaGlobal);
 	//Envio mensaje al FS
 	int codOperacion = accionEscribir;
-	int pathSize = string_length(globalFD->path);
+	int pathSize = string_length(globalFD->path)+1;
 	// Tamanio paquete = codOperacion + pathSize + path + offset + tamanio + datos
 	int packetSize = pathSize + sizeof(int)*4 + tamanio;
 	void *buffer = malloc(packetSize);
@@ -208,7 +208,7 @@ void escribirArchivo(int socketCpu, int socketFS){
 	int res;
 	recv(socketFS, &res, sizeof(res), 0);
 	//Analizar respuesta y enviar a CPU
-	if(res==0){
+	if(res==1){
 		//TODO: OK
 	}else{
 		//TODO: -1 error al escribir el archivo
@@ -244,7 +244,7 @@ void borrarArchivo(int socketCPU, int socketFS){
 		quitarTablaProceso(pid, fd);
 		//Envio mensaje al FS
 		int codOperacion = accionBorrarArchivo;
-		int pathSize = string_length(globalFD->path);
+		int pathSize = string_length(globalFD->path)+1;
 		// Tamanio paquete = codOperacion + pathSize + path
 		int packetSize = pathSize + sizeof(int)*2;
 		void *buffer = malloc(packetSize);
@@ -256,7 +256,7 @@ void borrarArchivo(int socketCPU, int socketFS){
 		//Recibo respuesta
 		int res;
 		recv(socketFS, &res, sizeof(res), 0);
-		if(res==0){
+		if(res==1){
 			//OK
 		}else{
 			//TODO: Error al borrar el archivo

@@ -60,7 +60,7 @@ int cargarConfiguracion()
 	string_append(&pat,"/Bloques/");
 	paths.Bloques = pat;
 
-	return 0;
+	return 1;
 }
 
 int leerMetadata(){
@@ -94,7 +94,7 @@ int leerMetadata(){
 	//Creo carpetas de Bloques y archivos si es que no existen
 	mkdir(paths.Bloques, S_IRWXU);
 	mkdir(paths.Archivos, S_IRWXU);
-	return 0;
+	return 1;
 }
 
 /***********************************BITMAP**************************************/
@@ -196,7 +196,7 @@ int leerArchivo(char *path, archivo_t *archivo){
 		return -2; //Archivo corrupto
 	}
 
-	return 0;
+	return 1;
 }
 
 void escribirArchivo(char* path, archivo_t *archivo){
@@ -244,7 +244,7 @@ int crearDirectorio(char* path){
 		}
 	}
 	free(pathLocal);
-	return 0;
+	return 1;
 }
 
 /***********************************OPERACIONES FS******************************/
@@ -282,7 +282,7 @@ int crearArchivo(char *path)
 	fprintf(archivo, "BLOQUES=[%i]", bloque[0]);
 	fclose(archivo);
 	free(bloque);
-	return 0;
+	return 1;
 }
 
 int borrarArchivo(char *path)
@@ -305,7 +305,7 @@ int borrarArchivo(char *path)
 	string_append(&pat, path);
 	remove(pat);
 	free(pat);
-	return 0;
+	return 1;
 }
 
 char* obtenerDatos(char *path, int offset, int size)
@@ -401,7 +401,7 @@ int guardarDatos(char *path, int offset, int size, char* buffer)
 	//Escribo archivos de metadata
 	escribirArchivo(path, archivo);
 	escribirBitmap();
-	return 0;
+	return 1;
 }
 
 /*************************************SOCKETS FS********************************/
@@ -456,7 +456,6 @@ void sockets(){
 						break;
 					}
 				} else {
-					printf("He recibido %d bytes con la acción: %d\n", cantBytesRecibidos, codAccion);
 					int resultAccion;
 					int largoPath;
 					char *path;
@@ -472,9 +471,9 @@ void sockets(){
 						path = malloc(largoPath);
 						recv(sockClie, path, largoPath, 0);
 						res = validarArchivo(path);
-						free(path);
 						send(sockClie, &res, sizeof(res),0);
 						printf("Recibida solicitud de apertura de archivo: %s\n", path);
+						free(path);
 						break;
 
 					case accionBorrarArchivo:
@@ -482,9 +481,9 @@ void sockets(){
 						path = malloc(largoPath);
 						recv(sockClie, path, largoPath, 0);
 						res = borrarArchivo(path);
-						free(path);
 						send(sockClie, &res, sizeof(res),0);
 						printf("Recibida solicitud de borrado de archivo: %s\n", path);
+						free(path);
 						break;
 
 					case accionCrearArchivo:
@@ -492,9 +491,9 @@ void sockets(){
 						path = malloc(largoPath);
 						recv(sockClie, path, largoPath, 0);
 						res = crearArchivo(path);
-						free(path);
 						send(sockClie, &res, sizeof(res),0);
 						printf("Recibida solicitud de creacion de archivo: %s\n", path);
+						free(path);
 						break;
 
 					case accionObtenerDatosArchivo:
@@ -504,17 +503,17 @@ void sockets(){
 						recv(sockClie, &offset, sizeof(offset), 0);
 						recv(sockClie, &size, sizeof(size), 0);
 						datos = obtenerDatos(path, offset, size);
-						free(path);
 						if(datos==NULL){
 							int error = -1;
 							send(sockClie, &error, sizeof(int),0);
 						}else{
-							int error = 0;
+							int error = 1;
 							send(sockClie, &error, sizeof(int),0);
 							send(sockClie, datos, size,0);
 							free(datos);
 						}
 						printf("Recibida solicitud de lectura de archivo: %s\n", path);
+						free(path);
 						break;
 
 					case accionEscribir:
@@ -526,10 +525,10 @@ void sockets(){
 						datos = malloc(size);
 						recv(sockClie, datos, size, 0);
 						res = guardarDatos(path, offset, size, datos);
-						free(path);
 						free(datos);
 						send(sockClie, &res, sizeof(res),0);
 						printf("Recibida solicitud de escritura de archivo: %s\n", path);
+						free(path);
 						break;
 
 
@@ -538,7 +537,6 @@ void sockets(){
 						resultAccion = -13;
 						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
 					}
-					printf("Fin atención acción\n");
 				}
 			}
 		}

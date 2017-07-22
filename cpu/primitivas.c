@@ -483,7 +483,6 @@ void liberar(t_puntero puntero)
 
 t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 {
-
 	log_debug(debugLog, ANSI_COLOR_YELLOW "ABRIR");
 	log_debug(debugLog, "La primitiva recibio la direccion: |%s|", direccion);
 
@@ -498,7 +497,7 @@ t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 	int offset = 0;
 	memcpy(buffer, &codigoAccion, sizeof(int));
 	offset += sizeof(int);
-	memcpy(buffer, &pid, sizeof(int));
+	memcpy(buffer + offset, &pid, sizeof(int));
 	offset += sizeof(int);
 	memcpy(buffer + offset, &tamanioPath, sizeof(int));
 	offset += sizeof(int);
@@ -519,6 +518,9 @@ t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 
 void borrar(t_descriptor_archivo direccion)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "BORRAR");
+	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|", direccion);
+
 	//Envio comando al kernel
 	int codigoAccion = accionBorrarArchivo;
 	int fd= (int)direccion;
@@ -538,6 +540,9 @@ void borrar(t_descriptor_archivo direccion)
 
 void cerrar(t_descriptor_archivo descriptor_archivo)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "CERRAR");
+	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|", descriptor_archivo);
+
 	//Envio comando al kernel
 	int codigoAccion = accionCerrarArchivo;
 	int fd= (int)descriptor_archivo;
@@ -557,6 +562,9 @@ void cerrar(t_descriptor_archivo descriptor_archivo)
 
 void mover_cursor(t_descriptor_archivo descriptor_archivo, t_valor_variable posicion)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "MOVER CURSOR");
+	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|, y la posicion |%d|", descriptor_archivo, posicion);
+
 	//Envio comando al kernel
 	int codigoAccion = accionMoverCursor;
 	int fd= (int)descriptor_archivo;
@@ -578,6 +586,9 @@ void mover_cursor(t_descriptor_archivo descriptor_archivo, t_valor_variable posi
 
 void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "ESCRIBIR");
+	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|, y un tamanio |%d|", descriptor_archivo, tamanio);
+
 	//Envio comando al kernel
 	int codigoAccion = accionEscribir;
 	int fd = (int) descriptor_archivo;
@@ -601,6 +612,9 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 
 void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valor_variable tamanio)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "LEER");
+	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|, y un tamanio |%d|", descriptor_archivo, tamanio);
+
 	//Envio comando al kernel
 	int codigoAccion = accionObtenerDatosArchivo;
 	int fd= (int)descriptor_archivo;

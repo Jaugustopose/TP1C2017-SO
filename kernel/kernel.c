@@ -422,7 +422,7 @@ void sigusr1(int cpu){
 	//clientes[cpu].atentido=false;
 }
 
-void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
+void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria, int socketFS) {
 
 	switch (idMensaje) {
 
@@ -745,7 +745,7 @@ int main(void) {
 						}
 						if (FD_ISSET(fdCliente, &bolsaCpus)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UN CPU
 
-							atender_accion_cpu(idMensaje, tamanioScript, memoria); //Argumentos que le paso muy probablemente cambien
+							atender_accion_cpu(idMensaje, tamanioScript, memoria, socketFS); //Argumentos que le paso muy probablemente cambien
 						}
 					}
 				}
