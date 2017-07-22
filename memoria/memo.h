@@ -57,7 +57,7 @@ int retardoMemoria;
 int stack_size;//lo recibe del kernel
 t_log *memoLogger;
 t_log *memoConsoleLogger;
-char* directorioOutputMemoria = "output/";
+char* directorioOutputMemoria = "output";
 
 enum accionConsolaMemoria {
 	retardo = 1,
