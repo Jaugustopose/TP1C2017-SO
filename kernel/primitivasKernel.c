@@ -107,27 +107,19 @@ void primitivaLiberar(int puntero)
 
 void atenderSolicitudMemoriaDinamica()
 {
-	char* solicitudSerial = leerTamanioYMensaje(fdCliente);
-	int espacioRequerido = char4ToInt(solicitudSerial);
+	int espacioSolicitado;
+	int pid;
+
+	recv(fdCliente, &pid, sizeof(int),0);
+	recv(fdCliente, &espacioSolicitado, sizeof(int),0);
+
+	int puntero = alocarMemoria(espacioSolicitado, pid);
+
+	send(fdCliente, &puntero, sizeof(int), 0);
 }
 
 void atenderLiberacionMemoriaDinamica()
 {
 	char* solicitudSerial = leerTamanioYMensaje(fdCliente);
 	int espacioRequerido = char4ToInt(solicitudSerial);
-}
-
-void recibirPedidoMemoria(int tamanioSolicitud, int pidSolicitante)
-{
-	if(peticion_valida(tamanioSolicitud))
-	{
-		//pedido a memoria de una pagina: cantpaginas = 1, pidSolicitante
-		//recibe respuesta
-	//	crearPagina(pidSolicitante, tamanioSolicitud);
-
-
-	}else
-	{
-		//finalizar programa abruptamente por exceder tamanio del pedido
-	}
 }

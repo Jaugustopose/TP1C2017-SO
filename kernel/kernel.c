@@ -94,6 +94,9 @@ void enviar_stack_size(int sock)
 	memcpy(buffer + sizeof(codigoAccion), &stackSize, sizeof(codigoAccion));
 
 	send(sock, buffer, sizeof(int32_t)*2, 0);
+
+	//VERIFICAR
+	free(buffer);
 }
 
 int obtener_tamanio_pagina(int memoria) {
@@ -112,6 +115,7 @@ void inicializarContexto() {
 	crearSemaforos();
 	crearCompartidas();
 	iniciarVigilanciaConfiguracion();
+	listaPidHEAP = list_create();
 
 	colaCPU = queue_create();
 	colaNew = queue_create();
@@ -206,6 +210,9 @@ int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffe
 		printf("almacenarBytes resultó con código de acción: %d\n", resultAccion);
 	}
 
+	//VERIFICAR
+	free(bufferParaAlmacenarEnMemoria);
+
 	return resultAccion;
 
 }
@@ -246,11 +253,12 @@ void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProces
 	//Encontrar cada proceso con proceso.ConsolaDuenio = fileDescriptor
 	//Cambiarle el exit code a -6 (finalizo por desconexion de consola)
 	//Llevo el proceso con exit code = 6 a la cola de exit
-	for (fdCliente = 0; fdCliente < list_size(listaConProcesos); fdCliente++) {
-		t_proceso* proceso = list_get(listaConProcesos, fdCliente);
+	int fdClienteCont;
+	for (fdClienteCont = 0; fdClienteCont < list_size(listaConProcesos); fdClienteCont++) {
+		t_proceso* proceso = list_get(listaConProcesos, fdClienteCont);
 		if (proceso -> ConsolaDuenio == fileDescriptor) {
 			proceso -> PCB->exitCode = -6;
-			queue_push(colaExit,&proceso);
+			queue_push(colaExit, proceso);
 		}
 
 	}
@@ -259,16 +267,16 @@ void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProces
 
 				return (-6 == p->PCB->exitCode);
 			}
-	list_remove_by_condition(listaConProcesos,exit_code_de_proceso);
+	list_remove_by_condition(listaConProcesos, (void*)exit_code_de_proceso);
 }
 
 void liberar_procesos_de_cpu(int fileDescriptor, t_list* listaConProcesos) {
 
 	//Encontrar cada proceso con proceso.CpuDuenio = filedescriptor
 	//Y cambiarle el CpuDuenio a -1 (el menos 1 significa que no tiene cpu asignado)
-
-	for (fdCliente = 0; fdCliente < list_size(listaConProcesos); fdCliente++) {
-		t_proceso* proceso = list_get(listaConProcesos, fdCliente);
+	int fdClienteCont;
+	for (fdClienteCont = 0; fdClienteCont < list_size(listaConProcesos); fdClienteCont++) {
+		t_proceso* proceso = list_get(listaConProcesos, fdClienteCont);
 		if (proceso -> CpuDuenio == fileDescriptor) {
 			proceso -> CpuDuenio = -1;
 		}
@@ -319,7 +327,7 @@ void conexion_de_cliente_finalizada() {
 	} else {
 		FD_CLR(fdCliente, &bolsaCpus);
 		printf("Se desconecto cpu del socket %d", fdCliente);
-
+	    colaCPU = queue_remove(colaCPU, fdCliente);
 		liberar_procesos_de_cpu(fdCliente, listaDeProcesos);
 	}
 	close(fdCliente); // Si se perdio la conexion, la cierro.
@@ -336,14 +344,15 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 		recv(consola, &tamanioScript, sizeof(int32_t), 0);
 		printf("Tamaño del script: %d\n", tamanioScript);
 
-		char* buff = malloc(tamanioScript);
+		char* buff = malloc(tamanioScript + 1);
 		//char* cadena = malloc(tamanio*sizeof(char));
 		recv(fdCliente, buff, tamanioScript, 0);
 		//memcpy(cadena,buff,tamanio * sizeof(char));
-		printf("el valor de cadena es: %s\n", buff);
+		printf("el valor de cadena es: %.*s\n", tamanioScript, buff);
 		///////////FIN DE DESERIALIZADOR///////////////
 		identificadorProceso++;
-		t_proceso* proceso = crearProceso(identificadorProceso, consola, (char*) buff);
+		t_proceso* proceso = crearProceso(identificadorProceso, consola, (char*)buff);
+
 		list_add(listaDeProcesos, proceso); //Agregar un proceso a esa bendita lista
 
 
@@ -359,18 +368,20 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 			proceso -> PCB->cantidadPaginas = paginasASolicitar;
 			int resultadoAccionAlmacenar = enviarSolicitudAlmacenarBytes(memoria, proceso, buff, tamanioScript);
 			if (resultadoAccionAlmacenar == 0) {
-				//queue_pop(colaNew);
-				queue_push(colaReady, proceso);
+				proceso = (t_proceso*)queue_pop(colaNew);
+				cambiarEstado(proceso, READY);
 			}
 
-			//EnviarPCBaCPU
-			//int cpu = queue_pop(colaCPU);
 			proceso->PCB->cantidadPaginas = paginasASolicitar;
-			//enviarPCBaCPU(proceso->PCB, cpu, accionObtenerPCB);
+
+			//VERIFICAR
+			free(buff);
+
 		}
 	}else{
 		printf("El proceso no pudo ingresar a la cola de New ya que excede el grado de multiprogramacion\n");
 	}
+
 
 }
 void sigusr1(int cpu){
@@ -399,17 +410,25 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 		rafagaProceso(fdCliente);
 	break;
 
+	case accionFinProceso:
+		recibirFinalizacion(fdCliente);
+	break;
+
+//	case accionQuantumInterrumpido:
+//
+//	break;
+
 	case accionAsignarValorCompartida:
-			obtenerAsignarCompartida();
-		break;
+		obtenerAsignarCompartida();
+	break;
 
 	case accionObtenerValorCompartida:
-			obtenerValorCompartida();
-		break;
+		obtenerValorCompartida();
+	break;
 
 	case accionWait:
 
-		break;
+	break;
 
 	case accionEscribir:
 		escribirArchivo(fdCliente, socketFS);
@@ -618,7 +637,7 @@ int main(void) {
 	listen_w(sockServ);
 
 	//Conectar con memoria
-	int memoria = socket(AF_INET, SOCK_STREAM, 0);
+     memoria = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in direccionServ;
 	direccionServ.sin_family = AF_INET;
 	direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red

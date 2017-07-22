@@ -170,11 +170,8 @@ void imprimeMenuUsuario()
 			puts("4: Limpiar Mensajes");
 }
 
-void* pidePathAlUsuario()
+void* pidePathAlUsuario(char* path)
 {
-//  printf("Ingresar archivo ansisop: \n");
-//  scanf("%c", path);
-
   programa = fopen("/home/utnso/ansisop-parser/programas-ejemplo/copiarArchivo.ansisop","rb");
   if(programa == NULL){
 	  return NULL;
@@ -241,8 +238,6 @@ void escucharUsuario(int kernel)
 {
 	 while(1){
 
-	    	imprimeMenuUsuario();
-
 			char accion[3];
 			if (fgets(accion, sizeof(accion), stdin) == NULL) {
 						printf("ERROR EN fgets !\n");
@@ -254,7 +249,10 @@ void escucharUsuario(int kernel)
 						char* programaSolicitado;
 						case iniciarPrograma:
 							//crea un hilo (programa)
-							if ((programaSolicitado = pidePathAlUsuario()) == NULL){
+
+							  printf("Ingresar archivo ansisop: \n");
+							  scanf("%s", &path);
+							if ((programaSolicitado = pidePathAlUsuario(path)) == NULL){
 								puts("No se encontró el archivo\n");
 								break;
 							}else {
@@ -312,6 +310,8 @@ int main(void){
     cargarConfiguracion();
 
     conectarConKernel(kernel);
+
+    imprimeMenuUsuario();
 
     escucharUsuario(kernel);
 
