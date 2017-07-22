@@ -165,8 +165,9 @@ void leerArchivo(int socketCpu, int socketFS){
 	int res;
 	recv(socketFS, &res, sizeof(res), 0);
 	if(res==1){
-		char* datos = malloc(tamanio);
+		void* datos = malloc(tamanio);
 		recv(socketFS, datos, tamanio, 0);
+		fwrite(datos,1,tamanio,stdout);
 		send(socketCpu, datos, tamanio,0);
 	}else{
 		//TODO: Dar error

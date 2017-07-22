@@ -631,8 +631,9 @@ void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valo
 	memcpy(buffer + offset, &tamanio, sizeof(int));
 	send(kernel, buffer, tamanioBuffer, 0);
 
-	recv(kernel, (void *)informacion, tamanio, 0);
-
+	void *recibido = malloc(tamanio);
+	recv(kernel, recibido, tamanio, 0);
+	informacion = recibido;
 	loggearFinDePrimitiva("leer");
 }
 
