@@ -19,6 +19,7 @@
 #include <commons/collections/list.h>
 #include <stdbool.h>
 #include "estructurasCompartidas.h"
+#include <commons/log.h>
 
 
 
@@ -52,9 +53,11 @@ int tamanioMemoria;
 int tamanioTablaPagina;
 int cantMarcosOcupaTablaPaginas;
 t_list** overflow;
-int CANTIDAD_DE_MARCOS;
+int retardoMemoria;
 int stack_size;//lo recibe del kernel
-//t_list* listaProcesosActivos;
+t_log *memoLogger;
+t_log *memoConsoleLogger;
+char* directorioOutputMemoria = "output";
 
 enum accionConsolaMemoria {
 	retardo = 1,
@@ -86,6 +89,12 @@ void borrarDeOverflow(int pos_inicial, int frame);
 int esMarcoCorrecto(int pos_candidata, int pid, int pagina, tablaPagina_t* tablaPaginasInvertida);
 bool estaElMarcoReservado(int marcoBuscado, int cantPaginasSolicitadas, int marcosSolicitados[][2]);
 int liberarPaginaPid(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida);
+int configurarRetardoMemoria();
+void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida);
+void realizarDumpContenidoMemoriaCompleta(tablaPagina_t* tablaPaginasInvertida);
+void realizarDumpContenidoProceso(tablaPagina_t* tablaPaginasInvertida);
+void obtenerSizeMemoria(tablaPagina_t* tablaPaginasInvertida);
+void obtenerSizePid(tablaPagina_t* tablaPaginasInvertida);
 
 
 #endif /* MEMO_H_ */
