@@ -483,9 +483,13 @@ void liberar(t_puntero puntero)
 
 t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 {
+
+	log_debug(debugLog, ANSI_COLOR_YELLOW "ABRIR");
+	log_debug(debugLog, "La primitiva recibio la direccion: |%s|", direccion);
+
 	//Envio comando al kernel
 	int codigoAccion = accionAbrirArchivo;
-	int pid = (int) pcbNuevo->PID;
+	int pid = pcbNuevo->PID;
 	int tamanioPath = string_length(direccion) + 1;
 	char* permisos = convertirFlags(flags);
 	int tamanioPermisos = string_length(permisos) + 1;
