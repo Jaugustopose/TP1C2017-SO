@@ -72,6 +72,13 @@ typedef enum t_proceso_estado {
 	NEW, READY, EXEC, BLOCK, EXIT
 }t_proceso_estado;
 
+
+typedef struct t_consola{
+	int32_t consolaID;
+	int32_t tamanioScript;
+	char* codigoPrograma;
+}t_consola;
+
 //VARIABLES
 
 fd_set master; // Conjunto maestro de file descriptor (Donde me voy a ir guardando todos los socket nuevos)
@@ -102,6 +109,7 @@ t_queue* colaReady;
 t_queue* colaExec;
 t_queue* colaExit;
 t_queue* colaCPU;
+t_queue* colaConsola;
 t_dictionary* tablaCompartidas;
 t_dictionary* tablaSemaforos;
 

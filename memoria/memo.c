@@ -902,4 +902,3 @@ int main(void) {
 	log_destroy(memoConsoleLogger);
 	free(memoria);
 }
-

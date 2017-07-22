@@ -173,6 +173,7 @@ void imprimeMenuUsuario()
 void* pidePathAlUsuario(char* path)
 {
   programa = fopen("/home/utnso/ansisop-parser/programas-ejemplo/editarFS.ansisop","rb");
+  //programa = fopen(path,"rb");
   if(programa == NULL){
 	  return NULL;
     }
