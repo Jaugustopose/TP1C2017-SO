@@ -121,6 +121,7 @@ void inicializarContexto() {
 	colaNew = queue_create();
 	colaReady = queue_create();
 	colaExit = queue_create();
+	colaConsola = queue_create();
 }
 
 int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
@@ -338,48 +339,72 @@ void enviarPCBaCPU(t_PCB* pcb, int cpu, int32_t accion)
 	serializar_PCB(pcb, cpu, accion);
 }
 
-void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMensaje) {
-	if (config.GRADO_MULTIPROG > list_size(listaDeProcesos)) {
-		printf("Procediendo a recibir tamaño script\n");
-		recv(consola, &tamanioScript, sizeof(int32_t), 0);
-		printf("Tamaño del script: %d\n", tamanioScript);
+void agregarNuevaConsola(char* buff, int32_t consola, int tamanioScript)
+{
+	t_consola* consolaNueva = malloc(sizeof(t_consola));
+	consolaNueva->consolaID = consola;
+	consolaNueva->codigoPrograma = buff;
+	consolaNueva->tamanioScript = tamanioScript;
+	queue_push(colaConsola, consolaNueva);
+}
 
-		char* buff = malloc(tamanioScript + 1);
-		//char* cadena = malloc(tamanio*sizeof(char));
-		recv(fdCliente, buff, tamanioScript, 0);
-		//memcpy(cadena,buff,tamanio * sizeof(char));
-		printf("el valor de cadena es: %.*s\n", tamanioScript, buff);
-		///////////FIN DE DESERIALIZADOR///////////////
-		identificadorProceso++;
-		t_proceso* proceso = crearProceso(identificadorProceso, consola, (char*)buff);
+t_consola* desencolarConsola()
+{
+	return (t_consola*)queue_pop(colaConsola);
+}
+
+void nuevoProceso(t_consola* consola)
+{
+	identificadorProceso++;
+		t_proceso* proceso = crearProceso(identificadorProceso, consola->consolaID, (char*)consola->codigoPrograma);
 
 		list_add(listaDeProcesos, proceso); //Agregar un proceso a esa bendita lista
 
-
-
-		send(consola,&identificadorProceso,sizeof(int32_t),0);
+		send(consola->consolaID, &identificadorProceso, sizeof(int32_t),0);
 		//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
-		int paginasASolicitar = redondear((float) tamanioScript /(float) tamanioPag);
+		int paginasASolicitar = redondear((float) consola->tamanioScript /(float) tamanioPag);
 		int resultadoAccionInicializar = pedido_Inicializar_Programa(memoria,paginasASolicitar, proceso -> PCB->PID);
 		if (resultadoAccionInicializar == 0) {//Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
 
-			queue_push(colaNew, proceso);
-			printf("Se procede a preparar solicitud almacenar para enviar\n");
-			proceso -> PCB->cantidadPaginas = paginasASolicitar;
-			int resultadoAccionAlmacenar = enviarSolicitudAlmacenarBytes(memoria, proceso, buff, tamanioScript);
-			if (resultadoAccionAlmacenar == 0) {
-				proceso = (t_proceso*)queue_pop(colaNew);
-				cambiarEstado(proceso, READY);
-			}
+		//Meto proceso en la cola de nuevos, implica que hay grado de multiprogramacion disponible
+		queue_push(colaNew, proceso);
 
-			proceso->PCB->cantidadPaginas = paginasASolicitar;
-
-			//VERIFICAR
-			free(buff);
-
+		printf("Se procede a preparar solicitud almacenar para enviar\n");
+		proceso -> PCB->cantidadPaginas = paginasASolicitar;
+		int resultadoAccionAlmacenar = enviarSolicitudAlmacenarBytes(memoria, proceso, consola->codigoPrograma, consola->tamanioScript);
+		if (resultadoAccionAlmacenar == 0) {
+			proceso = (t_proceso*)queue_pop(colaNew);
+			cambiarEstado(proceso, READY);
 		}
-	}else{
-		printf("El proceso no pudo ingresar a la cola de New ya que excede el grado de multiprogramacion\n");
+
+		proceso->PCB->cantidadPaginas = paginasASolicitar;
+
+		//VERIFICAR
+		free(consola);
+ }
+}
+
+void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMensaje)
+{
+
+	printf("Procediendo a recibir tamaño script\n");
+		recv(consola, &tamanioScript, sizeof(int32_t), 0);
+	printf("Tamaño del script: %d\n", tamanioScript);
+		char* buff = malloc(tamanioScript + 1);
+		recv(fdCliente, buff, tamanioScript, 0);
+	printf("el valor de cadena es: %.*s\n", tamanioScript, buff);
+
+	agregarNuevaConsola(buff, consola, tamanioScript);
+
+	if (config.GRADO_MULTIPROG >= list_size(listaDeProcesos)) {
+			t_consola* proximaConsola = desencolarConsola();
+			if(proximaConsola != NULL)
+			{
+				nuevoProceso(proximaConsola);
+			}
+		}else{
+
+			printf("El proceso no pudo ingresar a la cola de New ya que excede el grado de multiprogramacion\n");
 	}
 
 

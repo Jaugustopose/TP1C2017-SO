@@ -189,7 +189,7 @@ void continuarProceso(t_proceso* proceso) {
 
 bool terminoQuantum(t_proceso* proceso) {
 	// mutexProcesos SAFE
-	return (proceso->rafagas >= config.QUANTUM);
+	return (proceso->rafagas > config.QUANTUM);
 }
 
 void desasignarCPU(t_proceso* proceso) {
@@ -237,17 +237,17 @@ void expulsarProceso(t_proceso* proceso) {
 
 void planificarExpulsion(t_proceso* proceso) {
 
-	if(proceso->estado == BLOCK) {
+	if(proceso->estado == BLOCK || (config.ALGORITMO == ROUND_ROBIN && terminoQuantum(proceso))) {
 	    expulsarProceso(proceso);
 	   return;
 	 }
 
-	if(proceso->estado == EXEC && ((config.ALGORITMO == ROUND_ROBIN && terminoQuantum(proceso)) || proceso->abortado))
+	if((proceso->estado == EXEC && (config.ALGORITMO == ROUND_ROBIN && terminoQuantum(proceso))) || proceso->abortado)
 	{
-			expulsarProceso(proceso);
+		expulsarProceso(proceso);
 	}
 	else{
-			continuarProceso(proceso);
+		continuarProceso(proceso);
 	}
 	if(proceso->abortado)
 	{
