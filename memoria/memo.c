@@ -114,7 +114,7 @@ void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	char fechaFormateada[20];
 	strftime(fechaFormateada, 20, "%Y%m%d_%H%M%S", localtime(&tm));
 	int i;
-	char* path = string_from_format("%sdumpEstructuras_%s.txt", directorioOutputMemoria, fechaFormateada);
+	char* path = string_from_format("%s/dumpEstructuras_%s.txt", directorioOutputMemoria, fechaFormateada);
 	FILE* dumpFile = txt_open_for_append(path);
 	t_list* listaProcesosActivos = list_create();
 	puts("TABLA DE PÁGINAS INVERTIDA");
@@ -138,7 +138,7 @@ void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	printf("======================================\n\n");
 	fprintf(dumpFile, "======================================\n\n");
 	puts("LISTADO DE PROCESOS ACTIVOS");
-	fprintf(dumpFile, "LISTADO DE PROCESOS ACTIVOS");
+	fprintf(dumpFile, "LISTADO DE PROCESOS ACTIVOS\n");
 	for (i = 0; i < list_size(listaProcesosActivos); i++) {
 		int pid = (int) list_get(listaProcesosActivos, i);
 		//No imprimimos los nros de pid correspondientes a estructuras administrativas (-1) ni libres (-10)
@@ -158,7 +158,7 @@ void realizarDumpContenidoMemoriaCompleta(tablaPagina_t* tablaPaginasInvertida) 
 	time_t tm = time(NULL);
 	char fechaFormateada[20];
 	strftime(fechaFormateada, 20, "%Y%m%d_%H%M%S", localtime(&tm));
-	char* path = string_from_format("%sdumpContenidoMemoria_%s.txt", directorioOutputMemoria, fechaFormateada);
+	char* path = string_from_format("%s/dumpContenidoMemoria_%s.txt", directorioOutputMemoria, fechaFormateada);
 	FILE* dumpFile = txt_open_for_append(path);
 
 	int i;
@@ -196,7 +196,7 @@ void realizarDumpContenidoProceso(tablaPagina_t* tablaPaginasInvertida) {
 	time_t tm = time(NULL);
 	char fechaFormateada[20];
 	strftime(fechaFormateada, 20, "%Y%m%d_%H%M%S", localtime(&tm));
-	char* path = string_from_format("%sdumpContenidoPID%d_%s.txt", directorioOutputMemoria, pid, fechaFormateada);
+	char* path = string_from_format("%s/dumpContenidoPID%d_%s.txt", directorioOutputMemoria, pid, fechaFormateada);
 	FILE* dumpFile = txt_open_for_append(path);
 
 	char* bufferPagina = malloc(config.marco_size);
@@ -803,8 +803,15 @@ void atenderHilo(paramHiloDedicado* parametros) {
 }
 
 int main(void) {
+
+	struct stat st = {0};
+	if (stat("output", &st) == -1) {
+	    mkdir("output", 0700);
+	}
+
 	char* filename = string_new();
 	string_append(&filename, directorioOutputMemoria);
+	string_append(&filename, "/");
 	string_append(&filename, "memoria");
 	memoLogger = log_create(string_from_format("%s.log",filename),"Memoria",false,LOG_LEVEL_INFO);
 	memoConsoleLogger = log_create(string_from_format("%s.log",filename),"Memoria",true,LOG_LEVEL_INFO);
