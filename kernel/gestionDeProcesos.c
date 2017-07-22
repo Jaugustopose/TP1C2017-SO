@@ -106,9 +106,13 @@ t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo)
 	return proceso;
 }
 
-void finalizarProceso(int cliente)
+void destructorProcesos(t_proceso* unProceso)
 {
-	t_proceso* proceso = obtenerProceso(cliente);
+	free(unProceso);
+}
+
+void finalizarProceso(t_proceso* proceso)
+{
 	cambiarEstado(proceso,EXIT);
 
 	//TODO: ELIMINAR ARCHIVOS ABIERTOS QUE TENGAMOS!!!!
@@ -116,7 +120,17 @@ void finalizarProceso(int cliente)
 	if (proceso->semaforo != NULL){
 			t_semaforo* semaforo = dictionary_get(tablaSemaforos,proceso);
 			semaforo->colaSemaforo = queue_remove(semaforo->colaSemaforo, proceso->semaforo);
-		}
+	}
+
+	desasignarCPU(proceso);
+
+	bool esElProcesoBuscado(t_proceso* unProceso)
+	{
+		return unProceso->PCB->PID == proceso->PCB->PID;
+	}
+
+	//Lo saco de la lista de procesos. Queda su PCB en la cola de exit para historico
+	list_remove_and_destroy_by_condition(listaDeProcesos,(void*)esElProcesoBuscado, (void*)destructorProcesos);
 }
 
 void bloquearProcesoSem(int cliente, char* semid) {
@@ -143,7 +157,6 @@ void bloquearProceso(t_proceso* proceso) {
 void desbloquearProceso(t_proceso* proceso) {
 
 	cambiarEstado(proceso,READY);
-	//TODO: PARA ARCHIVOS!!! proceso->io=NULL;
 	proceso->semaforo = NULL;
 }
 
@@ -176,7 +189,6 @@ void rafagaProceso(int cliente){
 
 void continuarProceso(t_proceso* proceso) {
 
-	//char* serialSleep = intToChar4(config.queantum_sleep);
 	int codAccion = accionContinuarProceso;
 	int quantum = config.QUANTUM_SLEEP;
 	void* buffer = malloc(2*sizeof(int));
@@ -188,7 +200,6 @@ void continuarProceso(t_proceso* proceso) {
 }
 
 bool terminoQuantum(t_proceso* proceso) {
-	// mutexProcesos SAFE
 	return (proceso->rafagas > config.QUANTUM);
 }
 
@@ -196,15 +207,13 @@ void desasignarCPU(t_proceso* proceso) {
 	if (!proceso->sigusr1){
 		queue_push(colaCPU, (void*)proceso->CpuDuenio);
 	}
-//	clientes[proceso->cpu].proceso = NULL;
-//	clientes[proceso->cpu].pid = -1;
+
 	proceso->CpuDuenio = -1;
 }
 
 void actualizarPCB(t_proceso* proceso, t_PCB* PCB) { //
 	destruir_PCB(proceso->PCB);
 	proceso->PCB = PCB;
-	//imprimir_PCB(proceso->PCB);
 }
 
 void expulsarProceso(t_proceso* proceso) {
@@ -261,18 +270,13 @@ void asignarCPU(t_proceso* proceso, int cpu) {
 	proceso->CpuDuenio = cpu;
 	proceso->rafagas = 0;
 	proceso->sigusr1 = false;
-	//MUTEXCLIENTES(clientes[cpu].proceso = proceso);
-	//MUTEXCLIENTES(clientes[cpu].pid = proceso->PCB->PID);
-	//MUTEXCLIENTES(proceso->socketCPU = clientes[cpu].socket);
 }
 
 void ejecutarProceso(t_proceso* proceso, int cpu) {
 
 	asignarCPU(proceso,cpu);
 	enviarPCBaCPU(proceso->PCB, cpu, accionObtenerPCB);
-	//	if (!isclosed(proceso->socketCPU)) {
 	continuarProceso(proceso);
-	//}
 }
 
 void recibirFinalizacion(int cliente) {
@@ -280,9 +284,7 @@ void recibirFinalizacion(int cliente) {
 	if (proceso != NULL) {
 		if (!proceso->abortado)
 		{
-			finalizarProceso(cliente);
+			finalizarProceso(proceso);
 		}
-		desasignarCPU(proceso);
-		//clientes[cliente].atentido = false;
 	}
 }

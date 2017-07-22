@@ -235,7 +235,7 @@ void borrarArchivo(int socketCPU, int socketFS){
 	recv(socketCPU, &pid, sizeof(pid), 0);
 	FD_t* fileDescriptor = obtenerFD(pid, fd);
 
-	globalFD_t* globalFD = list_get(tablaGlobalArchivos, fileDescriptor.indiceTablaGlobal);
+	globalFD_t* globalFD = list_get(tablaGlobalArchivos, fileDescriptor->indiceTablaGlobal);
 	if(globalFD->cantProcesos>1){
 		//Error: No se puede borrar el archivo porque alguien mas lo tienen abierto
 		//TODO: Terminar el proceso.

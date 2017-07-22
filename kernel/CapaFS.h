@@ -1,3 +1,6 @@
+#ifndef cpu_h
+#define cpu_h
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -8,7 +11,7 @@
 #include <commons/string.h>
 #include <commons/collections/list.h>
 #include <commons/collections/dictionary.h>
-
+#include "kernel.h"
 #include "estructurasCompartidas.h"
 
 typedef struct{
@@ -21,3 +24,5 @@ typedef struct{
 	char* path;
 	int cantProcesos;
 }globalFD_t;
+
+#endif

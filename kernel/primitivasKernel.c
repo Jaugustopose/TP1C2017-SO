@@ -138,17 +138,6 @@ int asignarCompartida(char* compartida, int valor, int cliente) {
 	}
 }
 
-void primitivaReservar(int espacioSolicitado)
-{
-//TODO:IMPLEMENTAR MANEJO HEAP
-
-}
-
-void primitivaLiberar(int puntero)
-{
-//TODO:IMPLEMENTAR MANEJO HEAP
-}
-
 void atenderSolicitudMemoriaDinamica()
 {
 	int espacioSolicitado;
