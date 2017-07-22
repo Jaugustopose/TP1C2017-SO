@@ -10,15 +10,20 @@
 int cargarConfiguracion()
 {
 	char* pat = string_new();
-		char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
-		string_append(&pat, getcwd(cwd, sizeof(cwd)));
-		if (string_contains(pat, "/Debug")) {
-			string_append(&pat, "/FileSystem.cfg");
-		} else {
-			string_append(&pat, "/Debug/FileSystem.cfg");
-		}
-		t_config* configFs = config_create(pat);
-		free(pat);
+	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
+	string_append(&pat,getcwd(cwd,sizeof(cwd)));
+	if (string_contains(pat, "/Debug")){
+		string_append(&pat,"/FileSystem.cfg");
+	}else{
+	string_append(&pat, "/Debug/FileSystem.cfg");
+	}
+	t_config* configFs = config_create(pat);
+	if(configFs==NULL){
+		return -1;
+		printf("No se encontró el archivo de configuración: %s\n", pat);
+	}
+	printf("El directorio sobre el que se esta trabajando es %s\n", pat);
+	free(pat);
 
 	if (config_has_property(configFs, "PUERTO")){
 		config.PUERTO = config_get_int_value(configFs,"PUERTO");
@@ -353,6 +358,10 @@ int guardarDatos(char *path, int offset, int size, char* buffer)
 	if(bloquesNecesarios>bloquesReservados){
 		int cantBloques = bloquesNecesarios-bloquesReservados;
 		int *bloques = buscarBloquesLibres(cantBloques);
+		if(bloques==NULL){
+			puts("Error al guardar datos en el archivo. No hay suficientes bloques libres");
+			return -1;
+		}
 		int i;
 		char **arrBloques = (char**) malloc(sizeof(char*)*bloquesNecesarios);
 		for (i = 0; archivo->BLOQUES[i]; ++i) {
@@ -426,11 +435,11 @@ void sockets(){
 		if ((sockClie = accept(sockServ, (struct sockaddr*) &direccionCliente, &addrlen)) == -1) {
 			perror("Error en el accept");
 		} else {
-			if(!verificarIdentidad()){
+			/*if(!verificarIdentidad()){
 				close(sockClie);
 				printf("El cliente conectado no era un Kernel, se rechaza la conexión");
 				continue;
-			}
+			}*/
 			printf("Server: nueva conexion de %s en socket %d\n", inet_ntoa(direccionCliente.sin_addr), sockClie);
 			for (;;) {
 				// Gestionar datos de un cliente. Recibimos el código de acción que quiere realizar.
@@ -449,51 +458,80 @@ void sockets(){
 				} else {
 					printf("He recibido %d bytes con la acción: %d\n", cantBytesRecibidos, codAccion);
 					int resultAccion;
-					int largoMsg;
+					int largoPath;
 					char *path;
 					int res;
+					int offset;
+					int size;
+					char* datos;
 
 					switch (codAccion) {
 
 					case accionAbrirArchivo:
-						recv(sockClie, &largoMsg, sizeof(largoMsg), 0);
-						path = (char*) malloc(sizeof(char)*largoMsg);
-						recv(sockClie, path, largoMsg, 0);
+						recv(sockClie, &largoPath, sizeof(largoPath), 0);
+						path = malloc(largoPath);
+						recv(sockClie, path, largoPath, 0);
 						res = validarArchivo(path);
+						free(path);
 						send(sockClie, &res, sizeof(res),0);
 						printf("Recibida solicitud de apertura de archivo: %s\n", path);
 						break;
 
 					case accionBorrarArchivo:
-						recv(sockClie, &largoMsg, sizeof(largoMsg), 0);
-						path = (char*) malloc(sizeof(char)*largoMsg);
-						recv(sockClie, path, largoMsg, 0);
+						recv(sockClie, &largoPath, sizeof(largoPath), 0);
+						path = malloc(largoPath);
+						recv(sockClie, path, largoPath, 0);
 						res = borrarArchivo(path);
+						free(path);
 						send(sockClie, &res, sizeof(res),0);
 						printf("Recibida solicitud de borrado de archivo: %s\n", path);
 						break;
 
 					case accionCrearArchivo:
-						recv(sockClie, &largoMsg, sizeof(largoMsg), 0);
-						path = (char*) malloc(sizeof(char)*largoMsg);
-						recv(sockClie, path, largoMsg, 0);
+						recv(sockClie, &largoPath, sizeof(largoPath), 0);
+						path = malloc(largoPath);
+						recv(sockClie, path, largoPath, 0);
 						res = crearArchivo(path);
+						free(path);
 						send(sockClie, &res, sizeof(res),0);
 						printf("Recibida solicitud de creacion de archivo: %s\n", path);
 						break;
 
 					case accionObtenerDatosArchivo:
-						recv(sockClie, &largoMsg, sizeof(largoMsg), 0);
-						path = (char*) malloc(sizeof(char)*largoMsg);
-						recv(sockClie, path, largoMsg, 0);
-						int offset;
-						int size;
+						recv(sockClie, &largoPath, sizeof(largoPath), 0);
+						path = malloc(largoPath);
+						recv(sockClie, path, largoPath, 0);
 						recv(sockClie, &offset, sizeof(offset), 0);
 						recv(sockClie, &size, sizeof(size), 0);
-						char * datos = obtenerDatos(path, offset, size);
-						send(sockClie, datos, size,0);
+						datos = obtenerDatos(path, offset, size);
+						free(path);
+						if(datos==NULL){
+							int error = -1;
+							send(sockClie, &error, sizeof(int),0);
+						}else{
+							int error = 0;
+							send(sockClie, &error, sizeof(int),0);
+							send(sockClie, datos, size,0);
+							free(datos);
+						}
 						printf("Recibida solicitud de lectura de archivo: %s\n", path);
 						break;
+
+					case accionEscribir:
+						recv(sockClie, &largoPath, sizeof(largoPath), 0);
+						path = malloc(largoPath);
+						recv(sockClie, path, largoPath, 0);
+						recv(sockClie, &offset, sizeof(offset), 0);
+						recv(sockClie, &size, sizeof(size), 0);
+						datos = malloc(size);
+						recv(sockClie, datos, size, 0);
+						res = guardarDatos(path, offset, size, datos);
+						free(path);
+						free(datos);
+						send(sockClie, &res, sizeof(res),0);
+						printf("Recibida solicitud de escritura de archivo: %s\n", path);
+						break;
+
 
 					default:
 						printf("No reconozco el código de acción\n");

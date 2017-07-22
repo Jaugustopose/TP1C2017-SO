@@ -31,9 +31,10 @@
 #include "gestionDeProcesos.h"
 #include <sys/inotify.h>
 #include "CapaMemoria.h"
+#include "CapaFS.h"
+
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
 #define EVENT_BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
-
 
 const char* FIFO;
 const char* ROUND_ROBIN;
@@ -99,6 +100,7 @@ int tamanioPag;
 //int identificadorProceso = 0;
 int identificadorProceso;
 int memoria; //NECESITO GUARDAR EL FD DE MEMORIA ACA PARA LLAMARLO SIEMPRE QUE QUIERA
+int socketFS;
 int cambiosConfiguracion;
 
 t_list* listaDeProcesos;

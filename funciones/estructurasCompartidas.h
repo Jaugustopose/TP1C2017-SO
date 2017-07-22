@@ -35,13 +35,14 @@ enum tipoMensaje {
 	accionEscribir = 24, //puede ser en archivo o consola, depende el FD
 	accionMoverCursor = 25,
 	accionAbrirArchivo = 26,
-	accionCrearArchivo = 27,
-	accionBorrarArchivo = 28,
-	accionObtenerDatosArchivo = 29,
-	accionReservarHeap = 30,
-	accionLiberarHeap = 31,
-	accionEnviarStackSize = 32,
-	liberarPaginaProcesoAccion = 33
+	accionCerrarArchivo = 27,
+	accionCrearArchivo = 28,
+	accionBorrarArchivo = 29,
+	accionObtenerDatosArchivo = 30,
+	accionReservarHeap = 31,
+	accionLiberarHeap = 32,
+	accionEnviarStackSize = 33,
+	liberarPaginaProcesoAccion = 34
 
 };
 

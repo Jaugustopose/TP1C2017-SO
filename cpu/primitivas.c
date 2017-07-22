@@ -63,6 +63,17 @@ void enviar_direccion_y_valor_a_Memoria(t_puntero direccion, t_valor_variable va
 	enviarAlmacenarBytes(pid, pagina, offset, size, valor);
 }
 
+char* convertirFlags(t_banderas flags){
+	char* permisos = string_new();
+	if(flags.creacion);
+	string_append(&permisos,"c");
+	if(flags.escritura);
+	string_append(&permisos,"w");
+	if(flags.lectura);
+	string_append(&permisos,"r");
+	return permisos;
+}
+
 /******************************* PRIMITIVAS ******************************/
 
 t_puntero obtener_posicion_de(t_nombre_variable variable) {
@@ -472,31 +483,138 @@ void liberar(t_puntero puntero)
 
 t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 {
+	//Envio comando al kernel
+	int codigoAccion = accionAbrirArchivo;
+	int pid = (int) pcbNuevo->PID;
+	int tamanioPath = string_length(direccion) + 1;
+	char* permisos = convertirFlags(flags);
+	int tamanioPermisos = string_length(permisos) + 1;
+	int tamanioBuffer = sizeof(int)*4 + tamanioPath + tamanioPermisos;
+	void* buffer = malloc(tamanioBuffer);
+	int offset = 0;
+	memcpy(buffer, &codigoAccion, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer, &pid, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer + offset, &tamanioPath, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer + offset, &tamanioPermisos, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer + offset, direccion, tamanioPath);
+	offset += tamanioPath;
+	memcpy(buffer + offset, permisos, tamanioPermisos);
+	send(kernel, buffer, tamanioBuffer, 0);
+
+	int fd;
+	recv(kernel, &fd, sizeof(int), 0);
+
+	return fd;
+
 	loggearFinDePrimitiva("abrir");
 }
 
 void borrar(t_descriptor_archivo direccion)
 {
+	//Envio comando al kernel
+	int codigoAccion = accionBorrarArchivo;
+	int fd= (int)direccion;
+	int pid = (int) pcbNuevo->PID;
+	int tamanioBuffer = sizeof(int)*3;
+	void* buffer = malloc(tamanioBuffer);
+	int offset = 0;
+	memcpy(buffer, &codigoAccion, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer + offset, &fd, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer + offset, &pid, sizeof(int));
+	send(kernel, buffer, tamanioBuffer, 0);
+
 	loggearFinDePrimitiva("borrar");
 }
 
 void cerrar(t_descriptor_archivo descriptor_archivo)
 {
+	//Envio comando al kernel
+	int codigoAccion = accionCerrarArchivo;
+	int fd= (int)descriptor_archivo;
+	int pid = (int) pcbNuevo->PID;
+	int tamanioBuffer = sizeof(int)*3;
+	void* buffer = malloc(tamanioBuffer);
+	int offset = 0;
+	memcpy(buffer, &codigoAccion, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer + offset, &fd, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer + offset, &pid, sizeof(int));
+	send(kernel, buffer, tamanioBuffer, 0);
+
 	loggearFinDePrimitiva("cerrar");
 }
 
 void mover_cursor(t_descriptor_archivo descriptor_archivo, t_valor_variable posicion)
 {
+	//Envio comando al kernel
+	int codigoAccion = accionMoverCursor;
+	int fd= (int)descriptor_archivo;
+	int pid = (int) pcbNuevo->PID;
+	int tamanioBuffer = sizeof(int)*4;
+	void* buffer = malloc(tamanioBuffer);
+	int offset = 0;
+	memcpy(buffer, &codigoAccion, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer + offset, &fd, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer + offset, &pid, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer + offset, &posicion, sizeof(int));
+	send(kernel, buffer, tamanioBuffer, 0);
+
 	loggearFinDePrimitiva("mover_cursor");
 }
 
 void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio)
 {
+	//Envio comando al kernel
+	int codigoAccion = accionEscribir;
+	int fd = (int) descriptor_archivo;
+	int pid = (int) pcbNuevo->PID;
+	int tamanioBuffer = sizeof(int)*4 + tamanio;
+	void* buffer = malloc(tamanioBuffer);
+	int offset = 0;
+	memcpy(buffer, &codigoAccion, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer, &fd, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer, &pid, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer + offset, &tamanio, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer + offset, informacion, tamanio);
+	send(kernel, buffer, tamanioBuffer, 0);
+
 	loggearFinDePrimitiva("escribir");
 }
 
 void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valor_variable tamanio)
 {
+	//Envio comando al kernel
+	int codigoAccion = accionObtenerDatosArchivo;
+	int fd= (int)descriptor_archivo;
+	int pid = (int) pcbNuevo->PID;
+	int tamanioBuffer = sizeof(int)*4;
+	void* buffer = malloc(tamanioBuffer);
+	int offset = 0;
+	memcpy(buffer, &codigoAccion, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer + offset, &fd, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer + offset, &pid, sizeof(int));
+	offset += sizeof(int);
+	memcpy(buffer + offset, &tamanio, sizeof(int));
+	send(kernel, buffer, tamanioBuffer, 0);
+
+	recv(kernel, (void *)informacion, tamanio, 0);
+
 	loggearFinDePrimitiva("leer");
 }
 
