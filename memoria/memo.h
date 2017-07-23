@@ -58,6 +58,10 @@ int stack_size;//lo recibe del kernel
 t_log *memoLogger;
 t_log *memoConsoleLogger;
 char* directorioOutputMemoria = "output";
+char* memoriaLogFileName = "memoria";
+pthread_mutex_t lockMemoria;
+pthread_mutex_t lockTablaPaginas;
+pthread_mutex_t lockColisiones;
 
 enum accionConsolaMemoria {
 	retardo = 1,

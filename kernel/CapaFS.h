@@ -1,3 +1,5 @@
+#ifndef CapaFS_h
+#define CapaFS_h
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -9,6 +11,7 @@
 #include <commons/collections/list.h>
 #include <commons/collections/dictionary.h>
 
+#include "kernel.h"
 #include "estructurasCompartidas.h"
 
 typedef struct{
@@ -21,3 +24,4 @@ typedef struct{
 	char* path;
 	int cantProcesos;
 }globalFD_t;
+#endif

@@ -327,7 +327,7 @@ void conexion_de_cliente_finalizada() {
 
 	} else {
 		FD_CLR(fdCliente, &bolsaCpus);
-		printf("Se desconecto cpu del socket %d", fdCliente);
+		printf("Se desconecto cpu del socket %d\n", fdCliente);
 	    colaCPU = queue_remove(colaCPU, fdCliente);
 		liberar_procesos_de_cpu(fdCliente, listaDeProcesos);
 	}
