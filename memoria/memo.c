@@ -187,8 +187,8 @@ void realizarDumpContenidoMemoriaCompleta(tablaPagina_t* tablaPaginasInvertida) 
 				tablaPaginasInvertida[i].pid,
 				tablaPaginasInvertida[i].nroPagina, bufferPagina);
 	}
-	pthread_mutex_lock(&lockMemoria);
-	pthread_mutex_lock(&lockTablaPaginas);
+	pthread_mutex_unlock(&lockMemoria);
+	pthread_mutex_unlock(&lockTablaPaginas);
 	fclose(dumpFile);
 	free(bufferPagina);
 }
