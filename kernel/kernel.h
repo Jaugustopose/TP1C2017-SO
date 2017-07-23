@@ -110,6 +110,7 @@ t_queue* colaExec;
 t_queue* colaExit;
 t_queue* colaCPU;
 t_queue* colaConsola;
+t_list* listaEjecucion;
 t_dictionary* tablaCompartidas;
 t_dictionary* tablaSemaforos;
 

@@ -22,14 +22,14 @@ t_queue* queue_remove(t_queue* queue, void* toRemove){
 	return queueNew;
 }
 
-void transformarCodigoToMetadata(t_PCB* pcb, char* cod)
+void transformarCodigoToMetadata(t_proceso* proceso)
 {
-	t_metadata_program* metadata = metadata_desde_literal(cod);
-	pcb->contadorPrograma = metadata->instruccion_inicio;
+	t_metadata_program* metadata = metadata_desde_literal(proceso->codigoPrograma);
+	proceso->PCB->contadorPrograma = metadata->instruccion_inicio;
 
 	//Etiquetas
-	pcb->indiceEtiquetas = metadata->etiquetas;
-	pcb->etiquetasSize = metadata->etiquetas_size;
+	proceso->PCB->indiceEtiquetas = metadata->etiquetas;
+	proceso->PCB->etiquetasSize = metadata->etiquetas_size;
 
 	    //Llena indice de codigo
 		int i;
@@ -38,24 +38,29 @@ void transformarCodigoToMetadata(t_PCB* pcb, char* cod)
 				sentencia = malloc(sizeof(t_sentencia));
 				sentencia->inicio = metadata->instrucciones_serializado[i].start;
 				sentencia->fin = sentencia->inicio + metadata->instrucciones_serializado[i].offset;
-				list_add(pcb->indiceCodigo, sentencia);
+				list_add(proceso->PCB->indiceCodigo, sentencia);
 			}
 
 	free(metadata);
 }
 
-t_PCB* crearPCB()
+t_PCB* crearPCB(t_proceso* proceso, int32_t cantidadDePaginas)
 {
 	t_PCB* pcb = malloc(sizeof(t_PCB));
-
-	pcb->PID=0;
+	pcb->PID = proceso->pidProceso;
 	pcb->contadorPrograma = 0;
-	pcb->cantidadPaginas = 0;
+	pcb->cantidadPaginas = cantidadDePaginas;
 	pcb->exitCode = -1;
 	pcb->etiquetasSize = 0;
 	pcb->indiceEtiquetas = NULL;
 	pcb->stackPointer = stack_crear();
 	pcb->indiceCodigo = list_create();
+
+	stack_PCB_main(pcb);
+
+	proceso->PCB = pcb;
+
+	transformarCodigoToMetadata(proceso);
 
 	return pcb;
 }
@@ -82,33 +87,33 @@ void stack_PCB_main(t_PCB* pcb){
 	stack_push(pcb->stackPointer, main);
 }
 
-t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo)
+t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo, int tamanioScript)
 {
-
 	printf("Crear proceso - init\n");
-	t_proceso* proceso = malloc(sizeof(t_PCB));
-	proceso->PCB = crearPCB();
-	proceso->PCB->PID = pid;
+
+	t_proceso* proceso = malloc(sizeof(t_proceso));
+	proceso->pidProceso = pid;
 	proceso->ConsolaDuenio = consolaDuenio;
 	proceso->CpuDuenio = -1;
 	proceso->sigusr1 = false;
 	proceso->abortado = false;
 	proceso->estado = NEW;
 	proceso->semaforo = NULL;
+	proceso->codigoPrograma = codigo;
+	proceso->tamanioScript = tamanioScript;
+
 	printf("Crear proceso - end\n");
-
-	transformarCodigoToMetadata(proceso->PCB, codigo);
-
-	stack_PCB_main(proceso->PCB);
-
-	//cambiarEstado(proceso, READY);
 
 	return proceso;
 }
 
-void finalizarProceso(int cliente)
+void destructorProcesos(t_proceso* unProceso)
 {
-	t_proceso* proceso = obtenerProceso(cliente);
+	free(unProceso);
+}
+
+void finalizarProceso(t_proceso* proceso)
+{
 	cambiarEstado(proceso,EXIT);
 
 	//TODO: ELIMINAR ARCHIVOS ABIERTOS QUE TENGAMOS!!!!
@@ -116,7 +121,17 @@ void finalizarProceso(int cliente)
 	if (proceso->semaforo != NULL){
 			t_semaforo* semaforo = dictionary_get(tablaSemaforos,proceso);
 			semaforo->colaSemaforo = queue_remove(semaforo->colaSemaforo, proceso->semaforo);
-		}
+	}
+
+	desasignarCPU(proceso);
+
+	bool esElProcesoBuscado(t_proceso* unProceso)
+	{
+		return unProceso->PCB->PID == proceso->PCB->PID;
+	}
+
+	//Lo saco de la lista de procesos. Queda su PCB en la cola de exit para historico
+	list_remove_and_destroy_by_condition(listaDeProcesos,(void*)esElProcesoBuscado, (void*)destructorProcesos);
 }
 
 void bloquearProcesoSem(int cliente, char* semid) {
@@ -137,13 +152,13 @@ void bloquearProcesoSem(int cliente, char* semid) {
 }
 
 void bloquearProceso(t_proceso* proceso) {
+	//Hacer toda la logica para enviar PCB
 	cambiarEstado(proceso,BLOCK);
 }
 
 void desbloquearProceso(t_proceso* proceso) {
-
+	//Hacer toda la logica para enviar PCB
 	cambiarEstado(proceso,READY);
-	//TODO: PARA ARCHIVOS!!! proceso->io=NULL;
 	proceso->semaforo = NULL;
 }
 
@@ -172,11 +187,11 @@ void rafagaProceso(int cliente){
 	t_proceso* proceso = obtenerProceso(cliente);
 	proceso->rafagas++;
 	planificarExpulsion(proceso);
+
 }
 
 void continuarProceso(t_proceso* proceso) {
 
-	//char* serialSleep = intToChar4(config.queantum_sleep);
 	int codAccion = accionContinuarProceso;
 	int quantum = config.QUANTUM_SLEEP;
 	void* buffer = malloc(2*sizeof(int));
@@ -188,23 +203,21 @@ void continuarProceso(t_proceso* proceso) {
 }
 
 bool terminoQuantum(t_proceso* proceso) {
-	// mutexProcesos SAFE
-	return (proceso->rafagas > config.QUANTUM);
+	return (bool)(strcmp(config.ALGORITMO, ROUND_ROBIN) == 0 &&
+					proceso->rafagas > config.QUANTUM);
 }
 
 void desasignarCPU(t_proceso* proceso) {
 	if (!proceso->sigusr1){
 		queue_push(colaCPU, (void*)proceso->CpuDuenio);
 	}
-//	clientes[proceso->cpu].proceso = NULL;
-//	clientes[proceso->cpu].pid = -1;
+
 	proceso->CpuDuenio = -1;
 }
 
 void actualizarPCB(t_proceso* proceso, t_PCB* PCB) { //
 	destruir_PCB(proceso->PCB);
 	proceso->PCB = PCB;
-	//imprimir_PCB(proceso->PCB);
 }
 
 void expulsarProceso(t_proceso* proceso) {
@@ -232,47 +245,51 @@ void expulsarProceso(t_proceso* proceso) {
 		}
 	desasignarCPU(proceso);
 
+	proceso->rafagas = 0;
+
 	free(pcbSerializado);
 }
 
 void planificarExpulsion(t_proceso* proceso) {
 
-	if(proceso->estado == BLOCK || (config.ALGORITMO == ROUND_ROBIN && terminoQuantum(proceso))) {
-	    expulsarProceso(proceso);
-	   return;
-	 }
+	bool seLeAcaboElQuantum = terminoQuantum(proceso);
 
-	if((proceso->estado == EXEC && (config.ALGORITMO == ROUND_ROBIN && terminoQuantum(proceso))) || proceso->abortado)
+	if(proceso->abortado)
 	{
 		expulsarProceso(proceso);
 	}
-	else{
-		continuarProceso(proceso);
-	}
-	if(proceso->abortado)
+	else if(proceso->estado == EXEC)
 	{
-		//TODO: LIBERAR RECURSOS, FINALIZAR PROCESO Y CONSOLA ASOCIADA
+		if(seLeAcaboElQuantum)
+		{
+			expulsarProceso(proceso);
+		}else
+		{
+			continuarProceso(proceso);
+		}
+	}else if(proceso->estado == BLOCK)
+	{
+		expulsarProceso(proceso);
 	}
 
 }
 
 void asignarCPU(t_proceso* proceso, int cpu) {
+
 	cambiarEstado(proceso, EXEC);
+
+	list_add(listaEjecucion, proceso);
+
 	proceso->CpuDuenio = cpu;
 	proceso->rafagas = 0;
 	proceso->sigusr1 = false;
-	//MUTEXCLIENTES(clientes[cpu].proceso = proceso);
-	//MUTEXCLIENTES(clientes[cpu].pid = proceso->PCB->PID);
-	//MUTEXCLIENTES(proceso->socketCPU = clientes[cpu].socket);
 }
 
 void ejecutarProceso(t_proceso* proceso, int cpu) {
 
 	asignarCPU(proceso,cpu);
 	enviarPCBaCPU(proceso->PCB, cpu, accionObtenerPCB);
-	//	if (!isclosed(proceso->socketCPU)) {
 	continuarProceso(proceso);
-	//}
 }
 
 void recibirFinalizacion(int cliente) {
@@ -280,9 +297,7 @@ void recibirFinalizacion(int cliente) {
 	if (proceso != NULL) {
 		if (!proceso->abortado)
 		{
-			finalizarProceso(cliente);
+			finalizarProceso(proceso);
 		}
-		desasignarCPU(proceso);
-		//clientes[cliente].atentido = false;
 	}
 }

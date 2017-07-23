@@ -187,7 +187,7 @@ int bytes_stack(t_stack* origen) {
 
 
 int bytes_PCB(t_PCB* pcb) {
-	return (int)((sizeof(int) * 4)
+	return (int)((sizeof(int) * 5)
 			+ bytes_stack(pcb->stackPointer)
 			+ bytes_list(pcb->indiceCodigo, sizeof(t_sentencia))
 			+ pcb->etiquetasSize
@@ -210,6 +210,8 @@ void* serializar_PCB(t_PCB* pcb, int sock, int32_t codigoAccion) {
 	desplazamiento = desplazamiento + serializar_int(pcbSerializado + desplazamiento, &(pcb->contadorPrograma));
 
 	desplazamiento = desplazamiento + serializar_int(pcbSerializado + desplazamiento, &(pcb->cantidadPaginas));
+
+	desplazamiento = desplazamiento + serializar_int(pcbSerializado + desplazamiento, &(pcb->exitCode));
 
 	desplazamiento = desplazamiento + serializar_lista(pcbSerializado + desplazamiento, pcb->indiceCodigo, sizeof(t_sentencia));
 

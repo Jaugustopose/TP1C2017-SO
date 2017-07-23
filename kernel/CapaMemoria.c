@@ -1,5 +1,6 @@
 #include "CapaMemoria.h"
 
+//De esos 10: 5 para su propio heapMetadata y otros 5 para el bloque que siempre esta en la lista.
 bool solicitudValida(int espacioSolicitado)
 {
 	return (espacioSolicitado <= (tamanioPag - 10));
@@ -36,7 +37,7 @@ t_bloque* getBloque(t_paginaHeap* pagina, int indice)
 
   return entrada;
 }
-
+//
 //OJO:Paginas que arrancan a numerarse en 0
 int getLastNroPag(int pid)
 {
@@ -74,7 +75,7 @@ void solicitarPagina(int pid)
 	t_paginaHeap *paginaNueva = malloc(sizeof(t_paginaHeap));
 	paginaNueva->pid = pid;
 	paginaNueva->nro = getLastNroPag(pid);
-	paginaNueva->tamDisponible = tamanioPag - 5;
+	paginaNueva->tamDisponible = tamanioPag - 10;
 	paginaNueva->bloques = list_create();
 
 	t_bloque *bloqueInicial = malloc(sizeof(t_bloque));
@@ -257,11 +258,11 @@ bool bloquesTodosFree(t_paginaHeap* pagina)
 
 int calcularIndiceBloque(t_paginaHeap* pagina, int offset)
 {
-	int bytes = 0;
+	int bytes = 5;
 	int indice = 0;
 	void calculaIndice(t_bloque* bloque)
 	{
-		if(bytes <= offset)
+		if(bytes < offset)
 		{
 			bytes = bytes +( 5 + bloque->size);
 			indice++;
@@ -308,7 +309,7 @@ void liberarPagina(t_paginaHeap* pagina, int puntero, int cantPaginasCodigo)
 
 	memcpy(buffer, &codAccion, sizeof(codAccion));
 	memcpy(buffer + sizeof(codAccion), &pidLiberar, sizeof(pidLiberar));
-	memcpy(buffer + sizeof(nroPagina), &nroPagina, sizeof(nroPagina));
+	memcpy(buffer + sizeof(codAccion) + sizeof(nroPagina), &nroPagina, sizeof(nroPagina));
 
 	send(memoria, buffer, sizeof(int)*3, 0);
 

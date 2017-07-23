@@ -443,6 +443,7 @@ void finalizar_proceso(bool terminaNormalmente)
 	{
 		log_debug(debugLog, ANSI_COLOR_GREEN "El proceso ansisop ejecutó su última instrucción." ANSI_COLOR_RESET);
 
+		//TODO: ENVIAR EL PCB PARA QUE LO METAN EN LA COLA DE EXIT
 		int codAccion = accionFinProceso;
 		void* buffer = malloc(sizeof(int));
 		memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
