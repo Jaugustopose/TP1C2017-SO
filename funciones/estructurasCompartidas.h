@@ -92,7 +92,7 @@ typedef struct {
 }t_PCB;
 
 typedef struct {
-
+	int32_t pidProceso;
 	int32_t ConsolaDuenio;
 	int32_t CpuDuenio;
 	int32_t estado;
@@ -101,6 +101,8 @@ typedef struct {
 	bool sigusr1;
 	bool abortado;
 	char* semaforo;
+	int32_t tamanioScript;
+	char* codigoPrograma;
 }t_proceso;
 
 typedef struct{

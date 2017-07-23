@@ -22,14 +22,14 @@ t_queue* queue_remove(t_queue* queue, void* toRemove){
 	return queueNew;
 }
 
-void transformarCodigoToMetadata(t_PCB* pcb, char* cod)
+void transformarCodigoToMetadata(t_proceso* proceso)
 {
-	t_metadata_program* metadata = metadata_desde_literal(cod);
-	pcb->contadorPrograma = metadata->instruccion_inicio;
+	t_metadata_program* metadata = metadata_desde_literal(proceso->codigoPrograma);
+	proceso->PCB->contadorPrograma = metadata->instruccion_inicio;
 
 	//Etiquetas
-	pcb->indiceEtiquetas = metadata->etiquetas;
-	pcb->etiquetasSize = metadata->etiquetas_size;
+	proceso->PCB->indiceEtiquetas = metadata->etiquetas;
+	proceso->PCB->etiquetasSize = metadata->etiquetas_size;
 
 	    //Llena indice de codigo
 		int i;
@@ -38,24 +38,29 @@ void transformarCodigoToMetadata(t_PCB* pcb, char* cod)
 				sentencia = malloc(sizeof(t_sentencia));
 				sentencia->inicio = metadata->instrucciones_serializado[i].start;
 				sentencia->fin = sentencia->inicio + metadata->instrucciones_serializado[i].offset;
-				list_add(pcb->indiceCodigo, sentencia);
+				list_add(proceso->PCB->indiceCodigo, sentencia);
 			}
 
 	free(metadata);
 }
 
-t_PCB* crearPCB()
+t_PCB* crearPCB(t_proceso* proceso, int32_t cantidadDePaginas)
 {
 	t_PCB* pcb = malloc(sizeof(t_PCB));
-
-	pcb->PID=0;
+	pcb->PID = proceso->pidProceso;
 	pcb->contadorPrograma = 0;
-	pcb->cantidadPaginas = 0;
+	pcb->cantidadPaginas = cantidadDePaginas;
 	pcb->exitCode = -1;
 	pcb->etiquetasSize = 0;
 	pcb->indiceEtiquetas = NULL;
 	pcb->stackPointer = stack_crear();
 	pcb->indiceCodigo = list_create();
+
+	stack_PCB_main(pcb);
+
+	proceso->PCB = pcb;
+
+	transformarCodigoToMetadata(proceso);
 
 	return pcb;
 }
@@ -82,26 +87,22 @@ void stack_PCB_main(t_PCB* pcb){
 	stack_push(pcb->stackPointer, main);
 }
 
-t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo)
+t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo, int tamanioScript)
 {
-
 	printf("Crear proceso - init\n");
-	t_proceso* proceso = malloc(sizeof(t_PCB));
-	proceso->PCB = crearPCB();
-	proceso->PCB->PID = pid;
+
+	t_proceso* proceso = malloc(sizeof(t_proceso));
+	proceso->pidProceso = pid;
 	proceso->ConsolaDuenio = consolaDuenio;
 	proceso->CpuDuenio = -1;
 	proceso->sigusr1 = false;
 	proceso->abortado = false;
 	proceso->estado = NEW;
 	proceso->semaforo = NULL;
+	proceso->codigoPrograma = codigo;
+	proceso->tamanioScript = tamanioScript;
+
 	printf("Crear proceso - end\n");
-
-	transformarCodigoToMetadata(proceso->PCB, codigo);
-
-	stack_PCB_main(proceso->PCB);
-
-	//cambiarEstado(proceso, READY);
 
 	return proceso;
 }
@@ -151,11 +152,12 @@ void bloquearProcesoSem(int cliente, char* semid) {
 }
 
 void bloquearProceso(t_proceso* proceso) {
+	//Hacer toda la logica para enviar PCB
 	cambiarEstado(proceso,BLOCK);
 }
 
 void desbloquearProceso(t_proceso* proceso) {
-
+	//Hacer toda la logica para enviar PCB
 	cambiarEstado(proceso,READY);
 	proceso->semaforo = NULL;
 }
@@ -275,6 +277,8 @@ void planificarExpulsion(t_proceso* proceso) {
 void asignarCPU(t_proceso* proceso, int cpu) {
 
 	cambiarEstado(proceso, EXEC);
+
+	list_add(listaEjecucion, proceso);
 
 	proceso->CpuDuenio = cpu;
 	proceso->rafagas = 0;
