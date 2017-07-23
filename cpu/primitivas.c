@@ -79,6 +79,7 @@ char* convertirFlags(t_banderas flags){
 t_puntero obtener_posicion_de(t_nombre_variable variable) {
 
 	log_debug(debugLog, ANSI_COLOR_YELLOW "OBTENER_POSICION_DE");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio la VARIABLE: |%c| ", variable);
 
 	t_puntero posicionAbsoluta = 0;
@@ -116,6 +117,7 @@ t_puntero obtener_posicion_de(t_nombre_variable variable) {
 t_puntero definir_variable(t_nombre_variable variable) {
 
 	log_debug(debugLog, ANSI_COLOR_YELLOW "DEFINIR_VARIABLE");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio la VARIABLE: |%c| ", variable);
 	//t_pedido* direccion = stack_proximo_pedido(stack, tamanioPaginas);
 
@@ -143,6 +145,7 @@ t_puntero definir_variable(t_nombre_variable variable) {
 t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "DEREFERENCIAR_VARIABLE");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio la direccion: |%d| ", direccion_variable);
 
 	t_valor_variable valor = 0;
@@ -183,6 +186,7 @@ t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 void asignar(t_puntero direccion_variable, t_valor_variable valor)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "ASIGNAR");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio la direccion: |%d|, con el valor: |%d| ", direccion_variable, valor);
 
 	//Manda pedido a memoria
@@ -196,6 +200,7 @@ void asignar(t_puntero direccion_variable, t_valor_variable valor)
 void ir_al_label(t_nombre_etiqueta label)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "IR_AL_LABEL");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio el label: |%c| ", label);
 
 	t_puntero_instruccion posPrimeraInstruccionUtil = -1;
@@ -220,6 +225,7 @@ void finalizar()
 {
 
 	log_debug(debugLog, ANSI_COLOR_YELLOW "FINALIZAR");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 
 	t_elemento_stack* head = stack_pop(stack);
 
@@ -248,6 +254,7 @@ void finalizar()
 t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableCompartida)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "OBTENER_VALOR_COMPARTIDA");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "Se pide a kernel el valor de la variable: |%s| ", nombreVariableCompartida);
 
 	t_valor_variable valorCompartida;
@@ -274,6 +281,7 @@ t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableComp
 t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableCompartida, t_valor_variable valorCompartida)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "ASIGNAR_VALOR_COMPARTIDA");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "Se pide a kernel asignar: |%d| a la variable: |%s| ", valorCompartida, nombreVariableCompartida);
 
 	t_valor_variable valorAsignado;
@@ -310,6 +318,7 @@ t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableComp
 void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "LLAMAR_SIN_RETORNO");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "Se llama a la funcion |%c| ", etiqueta);
 
 	t_puntero_instruccion posicionFuncion = metadata_buscar_etiqueta(etiqueta, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
@@ -338,6 +347,7 @@ void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "LLAMAR_CON_RETORNO");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "Se llama a la funcion: |%s| y se retornara luego a: |%d| ", etiqueta, donde_retornar);
 
 	t_puntero_instruccion posicionFuncion = metadata_buscar_etiqueta(etiqueta, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
@@ -367,6 +377,7 @@ void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
 void retornar(t_valor_variable unaVariable)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "RETORNAR");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "Se retorna: |%d|.", unaVariable);
 
 	t_elemento_stack* head = stack_pop(stack);
@@ -401,6 +412,7 @@ void retornar(t_valor_variable unaVariable)
 void wait(t_nombre_semaforo identificador_semaforo)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "WAIT");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "El semaforo es: |%c|.", identificador_semaforo);
 
 	int codigoAccion = accionWait;
@@ -420,6 +432,7 @@ void wait(t_nombre_semaforo identificador_semaforo)
 void primitiva_signal(t_nombre_semaforo identificador_semaforo)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "SIGNAL");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "El semaforo es: |%c|.", identificador_semaforo);
 
 	int codigoAccion = accionSignal;
@@ -430,6 +443,7 @@ void primitiva_signal(t_nombre_semaforo identificador_semaforo)
 t_puntero reservar(t_valor_variable espacio)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "RESERVAR");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio para reservar: |%d| de espacio.", espacio);
 	int codigoAccion = accionReservarHeap;
 	int pid = pcbNuevo->PID;
@@ -454,6 +468,7 @@ t_puntero reservar(t_valor_variable espacio)
 void liberar(t_puntero puntero)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "LIBERAR");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio el puntero: |%d| para liberar.", puntero);
 
 	int codigoAccion = accionLiberarHeap;

@@ -110,7 +110,7 @@ int deserializar_stack(t_stack* destino, char* origen) {
 
 int deserializar_diccionario(t_dictionary* destino, char* origen, int pesoData){
 
-	int i;
+	int i = 0;
 	int offset = 1;
 	char* key;
 	void* value;
@@ -131,8 +131,6 @@ int deserializar_diccionario(t_dictionary* destino, char* origen, int pesoData){
 
 		dictionary_put(destino,key,value);
 
-		free(key);
-		free(value);
 	}
 	return offset;
 }
