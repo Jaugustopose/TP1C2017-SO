@@ -52,7 +52,7 @@ int cargarConfiguracion()
 
 	pat = string_new();
 	string_append(&pat,config.PUNTO_MONTAJE);
-	string_append(&pat,"/Archivos/");
+	string_append(&pat,"/Archivos");
 	paths.Archivos = pat;
 
 	pat = string_new();
@@ -133,7 +133,7 @@ void destruirBitmap(t_bitarray *bitmap){
 void crearBloques(){
 	int i;
 	FILE *archivo;
-	for (i = 1; i <= metadata.CANTIDAD_BLOQUES; ++i) {
+	for (i = 0; i < metadata.CANTIDAD_BLOQUES; ++i) {
 		char* pat = string_new();
 		string_append(&pat,paths.Bloques);
 		string_append(&pat,string_itoa(i));
@@ -192,6 +192,9 @@ int leerArchivo(char *path, archivo_t *archivo){
 	}
 	if (config_has_property(config, "BLOQUES")){
 		archivo->BLOQUES = config_get_array_value(config,"BLOQUES");
+		int cant = 0;
+		for (cant = 0 ; archivo->BLOQUES[cant] ; cant++);
+		archivo->cantBloques = cant;
 	}else{
 		return -2; //Archivo corrupto
 	}
@@ -208,7 +211,7 @@ void escribirArchivo(char* path, archivo_t *archivo){
 	fprintf(arch, "TAMANIO=%i\n", archivo->TAMANIO);
 	fprintf(arch, "BLOQUES=[");
 	int i;
-	for (i = 0; archivo->BLOQUES[i]; ++i) {
+	for (i = 0; i < archivo->cantBloques ; ++i) {
 		if(i!=0){
 			fprintf(arch, ",");
 		}
@@ -293,8 +296,8 @@ int borrarArchivo(char *path)
 		puts("Error al borrar el archivo");
 		return -1;
 	}
-	int i=0;
-	while(archivo->BLOQUES[i]){
+	int i;
+	for (i = 0; i < archivo->cantBloques ; ++i) {
 		liberarBloque(strtol(archivo->BLOQUES[i],NULL,10));
 		printf("Bloque liberado: %s\n",archivo->BLOQUES[i]);
 		i++;
@@ -308,7 +311,7 @@ int borrarArchivo(char *path)
 	return 1;
 }
 
-char* obtenerDatos(char *path, int offset, int size)
+void* obtenerDatos(char *path, int offset, int size)
 {
 	archivo_t *archivo = newArchivo();
 	int res = leerArchivo(path, archivo);
@@ -321,18 +324,18 @@ char* obtenerDatos(char *path, int offset, int size)
 	int bloqueActual = offset / metadata.TAMANIO_BLOQUES; //Bloque inicial
 	int offsetBloque;
 	int bytesALeer = size;
-	char* buffer = (char*) malloc(sizeof(char)*size+1);
+	void* buffer = malloc(size);
 	while(bytesALeer){
 		offsetBloque = offset - bloqueActual * metadata.TAMANIO_BLOQUES;
 		char *pat = string_new();
 		string_append(&pat,paths.Bloques);
 		string_append(&pat,archivo->BLOQUES[bloqueActual]);
 		string_append(&pat,".bin");
-		FILE* archBloque = fopen(pat,"r");
+		FILE* archBloque = fopen(pat,"rb");
 		fseek(archBloque,offsetBloque,SEEK_SET);
 		int bytesLibres = metadata.TAMANIO_BLOQUES - offsetBloque;
 		int cant = (bytesALeer<=bytesLibres)? bytesALeer : bytesLibres;
-		fread(buffer+size-bytesALeer,sizeof(char),cant,archBloque);
+		fread(buffer+size-bytesALeer,1,cant,archBloque);
 		fclose(archBloque);
 		free(pat);
 		bytesALeer-=cant;
@@ -342,7 +345,7 @@ char* obtenerDatos(char *path, int offset, int size)
 	return buffer;
 }
 
-int guardarDatos(char *path, int offset, int size, char* buffer)
+int guardarDatos(char *path, int offset, int size, void* buffer)
 {
 	archivo_t *archivo = newArchivo();
 	int res = leerArchivo(path, archivo);
@@ -353,8 +356,7 @@ int guardarDatos(char *path, int offset, int size, char* buffer)
 	//Calculo bloques necesarios y los reservo
 	int tamanio = offset + size;
 	int bloquesNecesarios = (tamanio + metadata.TAMANIO_BLOQUES - 1) / metadata.TAMANIO_BLOQUES; // redondeo para arriba
-	int bloquesReservados = 0;
-	for (bloquesReservados = 0 ; archivo->BLOQUES[bloquesReservados] ; bloquesReservados++);
+	int bloquesReservados = archivo->cantBloques;
 	if(bloquesNecesarios>bloquesReservados){
 		int cantBloques = bloquesNecesarios-bloquesReservados;
 		int *bloques = buscarBloquesLibres(cantBloques);
@@ -364,7 +366,7 @@ int guardarDatos(char *path, int offset, int size, char* buffer)
 		}
 		int i;
 		char **arrBloques = (char**) malloc(sizeof(char*)*bloquesNecesarios);
-		for (i = 0; archivo->BLOQUES[i]; ++i) {
+		for (i = 0; i < archivo->cantBloques ; ++i) {
 			arrBloques[i] = archivo->BLOQUES[i];
 		}
 		int j;
@@ -375,6 +377,7 @@ int guardarDatos(char *path, int offset, int size, char* buffer)
 		}
 		free(archivo->BLOQUES);
 		archivo->BLOQUES=arrBloques;
+		archivo->cantBloques = bloquesNecesarios;
 	}
 	//Escribir datos en bloques
 	int bloqueActual = offset / metadata.TAMANIO_BLOQUES; //Bloque inicial
@@ -386,11 +389,15 @@ int guardarDatos(char *path, int offset, int size, char* buffer)
 		string_append(&pat,paths.Bloques);
 		string_append(&pat,archivo->BLOQUES[bloqueActual]);
 		string_append(&pat,".bin");
-		FILE* archBloque = fopen(pat,"r+");
+		FILE* archBloque = fopen(pat,"rb+");
+		if(archBloque == NULL){
+			puts("Error al guardar datos en bloques");
+			return -1;
+		}
 		fseek(archBloque,offsetBloque,SEEK_SET);
 		int bytesLibres = metadata.TAMANIO_BLOQUES - offsetBloque;
 		int cant = (bytesAEscribir<=bytesLibres)? bytesAEscribir : bytesLibres;
-		fwrite(buffer+size-bytesAEscribir,sizeof(char),cant,archBloque);
+		fwrite(buffer+size-bytesAEscribir,1,cant,archBloque);
 		fclose(archBloque);
 		free(pat);
 		bytesAEscribir-=cant;
@@ -462,7 +469,7 @@ void sockets(){
 					int res;
 					int offset;
 					int size;
-					char* datos;
+					void* datos;
 
 					switch (codAccion) {
 

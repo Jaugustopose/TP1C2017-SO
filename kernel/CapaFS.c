@@ -47,20 +47,20 @@ int agregarTablaProceso(int pid, int indiceTablaGlobal, char* permisos){
 	fileDescriptor->indiceTablaGlobal = indiceTablaGlobal;
 	fileDescriptor->permisos = string_duplicate(permisos);
 	fileDescriptor->offset = 0;
-	return list_add(tablaProceso, fileDescriptor);;
+	return list_add(tablaProceso, fileDescriptor)+2;
 }
 
 FD_t* obtenerFD(int pid, int fd){
 	t_list* tablaProceso = dictionary_get(tablasProcesos, string_itoa(pid));
-	return list_get(tablaProceso, fd);
+	return list_get(tablaProceso, fd-2);
 }
 
 void quitarTablaProceso(int pid, int fd){
 	t_list* tablaProceso = dictionary_get(tablasProcesos, string_itoa(pid));
-	FD_t* fileDescriptor = list_get(tablaProceso, fd);
+	FD_t* fileDescriptor = list_get(tablaProceso, fd-2);
 	free(fileDescriptor);
 	//Reemplazo en vez de eliminar para que no me cambie el indice de los demas
-	list_replace(tablaProceso,fd,NULL);
+	list_replace(tablaProceso,fd-2,NULL);
 }
 
 //*********************************Operaciones FS***************************
@@ -178,12 +178,19 @@ void escribirArchivo(int socketCpu, int socketFS){
 	int fd;
 	int pid;
 	int tamanio;
-	void* datos;
 	//Recibo datos del CPU
 	recv(socketCpu, &fd, sizeof(fd), 0);
 	recv(socketCpu, &pid, sizeof(fd), 0);
 	recv(socketCpu, &tamanio, sizeof(tamanio), 0);
+	void* datos = malloc(tamanio);
 	recv(socketCpu, datos, tamanio, 0);
+	if(fd==1){
+		//TODO: Mandar a imprimir a la consola correspondiente
+		fwrite(datos,1,tamanio,stdout);
+		printf("\n");
+		return;
+	}
+
 	FD_t* fileDescriptor = obtenerFD(pid, fd);
 
 	if(string_contains(fileDescriptor->permisos,"w")==NULL){
@@ -241,8 +248,8 @@ void borrarArchivo(int socketCPU, int socketFS){
 		//Error: No se puede borrar el archivo porque alguien mas lo tienen abierto
 		//TODO: Terminar el proceso.
 	}else{
-		quitarTablaGlobal(fileDescriptor);
-		quitarTablaProceso(pid, fd);
+		//quitarTablaGlobal(fileDescriptor);   VER SI HAY QUE SACARLO O NO
+		//quitarTablaProceso(pid, fd);
 		//Envio mensaje al FS
 		int codOperacion = accionBorrarArchivo;
 		int pathSize = string_length(globalFD->path)+1;

@@ -65,11 +65,11 @@ void enviar_direccion_y_valor_a_Memoria(t_puntero direccion, t_valor_variable va
 
 char* convertirFlags(t_banderas flags){
 	char* permisos = string_new();
-	if(flags.creacion);
+	if(flags.creacion)
 	string_append(&permisos,"c");
-	if(flags.escritura);
+	if(flags.escritura)
 	string_append(&permisos,"w");
-	if(flags.lectura);
+	if(flags.lectura)
 	string_append(&permisos,"r");
 	return permisos;
 }
@@ -598,9 +598,9 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 	int offset = 0;
 	memcpy(buffer, &codigoAccion, sizeof(int));
 	offset += sizeof(int);
-	memcpy(buffer, &fd, sizeof(int));
+	memcpy(buffer + offset, &fd, sizeof(int));
 	offset += sizeof(int);
-	memcpy(buffer, &pid, sizeof(int));
+	memcpy(buffer + offset, &pid, sizeof(int));
 	offset += sizeof(int);
 	memcpy(buffer + offset, &tamanio, sizeof(int));
 	offset += sizeof(int);
@@ -613,7 +613,7 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valor_variable tamanio)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "LEER");
-	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|, y un tamanio |%d|", descriptor_archivo, tamanio);
+	log_debug(debugLog, "La primitiva recibio el descriptor |%d|, un tamanio |%d|, y un puntero |%d|", descriptor_archivo, tamanio, informacion);
 
 	//Envio comando al kernel
 	int codigoAccion = accionObtenerDatosArchivo;
@@ -631,9 +631,15 @@ void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valo
 	memcpy(buffer + offset, &tamanio, sizeof(int));
 	send(kernel, buffer, tamanioBuffer, 0);
 
-	void *recibido = malloc(tamanio);
+	char *recibido = malloc(tamanio);
 	recv(kernel, recibido, tamanio, 0);
-	informacion = recibido;
+	//Envio datos a memoria
+	int i=0;
+	while(i<tamanio){
+		enviar_direccion_y_valor_a_Memoria(informacion+i, recibido[i]);
+		log_debug(debugLog, "Enviando a memoria. Pos: |%d| Valor: |%c|", informacion+i, recibido[i]);
+		i++;
+	}
 	loggearFinDePrimitiva("leer");
 }
 
