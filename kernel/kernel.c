@@ -409,6 +409,7 @@ void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMens
 
 
 }
+
 void sigusr1(int cpu){
 	t_proceso* proceso = obtenerProceso(cpu);
 
@@ -431,7 +432,6 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 		break;
 
 	case accionFinInstruccion:
-		//TODO:MUTEX
 		rafagaProceso(fdCliente);
 	break;
 
@@ -555,44 +555,42 @@ void destruirSemaforos() {
 
 /*********************************PLANIFICACION***********************************************************/
 
+
 void planificar()
 {
-	if(strcmp(config.ALGORITMO, FIFO) == 0){
-		planificarFIFO();
-	}
-	else if(strcmp(config.ALGORITMO, ROUND_ROBIN) == 0)
-	{
-		planificarRR();
-	}else
-	{
-		//TODO:MANEJAR ERROR DE HABER INGRESADO CUALQUIER COSA EN EL CONFIG
-	}
-
-}
-
-void planificarRR()
-{
-
-}
-
-void planificarFIFO()
-{
-
-
+	//Si no hay CPU's no se hace nada hasta que haya.
 	while (!queue_is_empty(colaReady) && !queue_is_empty(colaCPU)) {
 
-			//limpiarColaListos();
-			//limpiarColaCPU();
-//
-//		int codAccion = (int)accionContinuarProceso;
-//		int cpu = (int)queue_pop(colaCPU);
-//		void* buffer = malloc(sizeof(codAccion));
-//		memcpy(buffer, &codAccion, sizeof(codAccion)); //PRIMERO EL CODIGO
-//		send(cpu, buffer, sizeof(codAccion), 0);
-
-			// Si no se vaciaron las listas entonces los primeros de ambas listas son validos
 			if (!queue_is_empty(colaReady) && !queue_is_empty(colaCPU)){
+
 				ejecutarProceso((t_proceso*) queue_pop(colaReady),(int) queue_pop(colaCPU));
+
+			}else
+			{
+				if(queue_is_empty(colaReady))
+				{
+					//No hay proceso en memoria
+					if(!queue_is_empty(colaNew))
+					{
+						t_proceso* proceso = (t_proceso*)queue_pop(colaNew);
+						cambiarEstado(proceso, READY);
+						ejecutarProceso(proceso, (int)queue_pop(colaCPU));
+
+					}else
+					{
+
+						if(config.GRADO_MULTIPROG < list_size(listaDeProcesos))
+						{
+
+							t_consola* proximaConsola = desencolarConsola();
+							if(proximaConsola != NULL)
+							{
+								nuevoProceso(proximaConsola);
+							}
+						}
+					}
+
+				}
 			}
 	}
 

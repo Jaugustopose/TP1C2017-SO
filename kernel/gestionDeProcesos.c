@@ -185,6 +185,7 @@ void rafagaProceso(int cliente){
 	t_proceso* proceso = obtenerProceso(cliente);
 	proceso->rafagas++;
 	planificarExpulsion(proceso);
+
 }
 
 void continuarProceso(t_proceso* proceso) {
@@ -200,7 +201,8 @@ void continuarProceso(t_proceso* proceso) {
 }
 
 bool terminoQuantum(t_proceso* proceso) {
-	return (proceso->rafagas > config.QUANTUM);
+	return (bool)(strcmp(config.ALGORITMO, ROUND_ROBIN) == 0 &&
+					proceso->rafagas > config.QUANTUM);
 }
 
 void desasignarCPU(t_proceso* proceso) {
@@ -241,32 +243,39 @@ void expulsarProceso(t_proceso* proceso) {
 		}
 	desasignarCPU(proceso);
 
+	proceso->rafagas = 0;
+
 	free(pcbSerializado);
 }
 
 void planificarExpulsion(t_proceso* proceso) {
 
-	if(proceso->estado == BLOCK || (config.ALGORITMO == ROUND_ROBIN && terminoQuantum(proceso))) {
-	    expulsarProceso(proceso);
-	   return;
-	 }
+	bool seLeAcaboElQuantum = terminoQuantum(proceso);
 
-	if((proceso->estado == EXEC && (config.ALGORITMO == ROUND_ROBIN && terminoQuantum(proceso))) || proceso->abortado)
+	if(proceso->abortado)
 	{
 		expulsarProceso(proceso);
 	}
-	else{
-		continuarProceso(proceso);
-	}
-	if(proceso->abortado)
+	else if(proceso->estado == EXEC)
 	{
-		//TODO: LIBERAR RECURSOS, FINALIZAR PROCESO Y CONSOLA ASOCIADA
+		if(seLeAcaboElQuantum)
+		{
+			expulsarProceso(proceso);
+		}else
+		{
+			continuarProceso(proceso);
+		}
+	}else if(proceso->estado == BLOCK)
+	{
+		expulsarProceso(proceso);
 	}
 
 }
 
 void asignarCPU(t_proceso* proceso, int cpu) {
+
 	cambiarEstado(proceso, EXEC);
+
 	proceso->CpuDuenio = cpu;
 	proceso->rafagas = 0;
 	proceso->sigusr1 = false;

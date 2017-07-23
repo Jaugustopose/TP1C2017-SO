@@ -21,8 +21,8 @@
 #include "serializador.h"
 #include "estructurasCompartidas.h"
 #include "primitivas.h"
-#include <parser/parser.h>
-#include <parser/metadata_program.h>
+//#include <parser/parser.h>
+//#include <parser/metadata_program.h>
 #include <math.h>
 #include <signal.h>
 

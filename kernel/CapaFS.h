@@ -1,5 +1,5 @@
-#ifndef cpu_h
-#define cpu_h
+#ifndef CapaFS_h
+#define CapaFS_h
 
 #include <stdio.h>
 #include <stdlib.h>
