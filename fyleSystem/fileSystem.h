@@ -25,9 +25,11 @@
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/bitarray.h>
+#include <commons/log.h>
 
 #include "estructurasCompartidas.h"
 #include "cliente-servidor.h"
+#include "logger.h"
 
 typedef struct{
 	int PUERTO;

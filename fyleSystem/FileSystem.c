@@ -470,6 +470,8 @@ void sockets(){
 					int offset;
 					int size;
 					void* datos;
+					char* texto;
+					int i;
 
 					switch (codAccion) {
 
@@ -479,7 +481,8 @@ void sockets(){
 						recv(sockClie, path, largoPath, 0);
 						res = validarArchivo(path);
 						send(sockClie, &res, sizeof(res),0);
-						printf("Recibida solicitud de apertura de archivo: %s\n", path);
+						log_debug(debugLog, ANSI_COLOR_YELLOW "ABRIR");
+						log_debug(debugLog, "Path: %s", path);
 						free(path);
 						break;
 
@@ -489,7 +492,8 @@ void sockets(){
 						recv(sockClie, path, largoPath, 0);
 						res = borrarArchivo(path);
 						send(sockClie, &res, sizeof(res),0);
-						printf("Recibida solicitud de borrado de archivo: %s\n", path);
+						log_debug(debugLog, ANSI_COLOR_YELLOW "BORRAR");
+						log_debug(debugLog, "Path: %s", path);
 						free(path);
 						break;
 
@@ -499,7 +503,8 @@ void sockets(){
 						recv(sockClie, path, largoPath, 0);
 						res = crearArchivo(path);
 						send(sockClie, &res, sizeof(res),0);
-						printf("Recibida solicitud de creacion de archivo: %s\n", path);
+						log_debug(debugLog, ANSI_COLOR_YELLOW "CREAR");
+						log_debug(debugLog, "Path: %s", path);
 						free(path);
 						break;
 
@@ -509,6 +514,10 @@ void sockets(){
 						recv(sockClie, path, largoPath, 0);
 						recv(sockClie, &offset, sizeof(offset), 0);
 						recv(sockClie, &size, sizeof(size), 0);
+
+						log_debug(debugLog, ANSI_COLOR_YELLOW "LEER");
+						log_debug(debugLog, "Path: %s | Offset: %d | Size: %d", path, offset, size);
+
 						datos = obtenerDatos(path, offset, size);
 						if(datos==NULL){
 							int error = -1;
@@ -517,9 +526,16 @@ void sockets(){
 							int error = 1;
 							send(sockClie, &error, sizeof(int),0);
 							send(sockClie, datos, size,0);
+							printf("Datos leidos: ");
+							texto = datos;
+							for (i = 0; i < size; ++i) {
+								if(i==0)
+									printf("|");
+								printf("%d|",(int)texto[i]);
+							}
+							printf("\n");
 							free(datos);
 						}
-						printf("Recibida solicitud de lectura de archivo: %s\n", path);
 						free(path);
 						break;
 
@@ -531,16 +547,28 @@ void sockets(){
 						recv(sockClie, &size, sizeof(size), 0);
 						datos = malloc(size);
 						recv(sockClie, datos, size, 0);
+
+						log_debug(debugLog, ANSI_COLOR_YELLOW "ESCRIBIR");
+						log_debug(debugLog, "Path: %s | Offset: %d | Size: %d", path, offset, size);
+						printf("Datos a escribir: ");
+						texto = datos;
+						for (i = 0; i < size; ++i) {
+							if(i==0)
+								printf("|");
+							printf("%d|",(int)texto[i]);
+						}
+						printf("\n");
+
 						res = guardarDatos(path, offset, size, datos);
 						free(datos);
 						send(sockClie, &res, sizeof(res),0);
-						printf("Recibida solicitud de escritura de archivo: %s\n", path);
 						free(path);
 						break;
 
 
 					default:
-						printf("No reconozco el código de acción\n");
+						log_debug(debugLog, ANSI_COLOR_YELLOW "OPERACION DESCONOCIDA");
+						log_debug(debugLog, "Codigo de accion: %d", codAccion);
 						resultAccion = -13;
 						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
 					}
@@ -553,6 +581,9 @@ void sockets(){
 /***************************************MAIN FS*********************************/
 
 int main(void) {
+
+	crearLog(string_from_format("cpu_%d", getpid()), "CPU", 1);
+	log_debug(debugLog, "Iniciando proceso CPU, PID: %d.", getpid());
 
 	if(cargarConfiguracion()<0){
 		exit(EXIT_FAILURE);

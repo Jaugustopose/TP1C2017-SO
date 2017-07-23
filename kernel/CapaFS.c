@@ -167,7 +167,6 @@ void leerArchivo(int socketCpu, int socketFS){
 	if(res==1){
 		void* datos = malloc(tamanio);
 		recv(socketFS, datos, tamanio, 0);
-		fwrite(datos,1,tamanio,stdout);
 		send(socketCpu, datos, tamanio,0);
 	}else{
 		//TODO: Dar error
@@ -186,7 +185,13 @@ void escribirArchivo(int socketCpu, int socketFS){
 	recv(socketCpu, datos, tamanio, 0);
 	if(fd==1){
 		//TODO: Mandar a imprimir a la consola correspondiente
-		fwrite(datos,1,tamanio,stdout);
+		char *texto = datos;
+		int i;
+		for (i = 0; i < tamanio; ++i) {
+			if(i==0)
+				printf("Printf : |");
+			printf("%d|",(int)texto[i]);
+		}
 		printf("\n");
 		return;
 	}
