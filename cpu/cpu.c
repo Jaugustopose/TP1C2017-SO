@@ -33,7 +33,7 @@ void recibirQuantumSleep(){
 }
 
 bool finalizarEjecucion(){
-	return finalizarEjec && !ejecutar;
+	return finalizarEjec && !ejecutando;
 }
 
 bool hayOverflow(){
@@ -71,7 +71,7 @@ void finalizarProgramaVariableInvalida(){
 
 	//Falta: Destruir PCB
 
-	ejecutar = false;
+	ejecutando = false;
 	pcbNuevo = NULL;
 
 }
@@ -156,6 +156,8 @@ void conectarConKernel() {
 	printf("Conectado a Kernel");
 
 	send(kernel,&identidadCpu, sizeof(int),0);
+	recv(kernel, &algoritmo, sizeof(int32_t), 0);
+	printf("Algoritmo: %d", algoritmo);
 
 }
 
@@ -206,7 +208,7 @@ void obtenerPCB()
 
 void desalojarProceso()
 {
-	ejecutar = false;
+	ejecutando = false;
 
 	//Envio PCB al kernel
 	serializar_PCB(pcbNuevo, kernel, accionDesalojarProceso);
@@ -234,23 +236,13 @@ void finalizar_programa(bool normalmente){
 	free(accionEnviar);
 
 	destruir_PCB(pcbNuevo);
-	ejecutar = false;
+	ejecutando = false;
 	pcbNuevo = NULL;
 }
 
 void inicializarContexto()
 {
-	//TODO:Crear logs
-	//	crearLog(string_from_format("cpu_%d", getpid()),"CPU",0);
-	//	log_info(infoLog, "Iniciando proceso CPU, PID: %d.", getpid());
-	//
-	//	logger = log_create("cpu.log", "CPU", false, LOG_LEVEL_INFO);
-	//	debugLogger = log_create("cpu.log", "CPU", false, LOG_LEVEL_DEBUG);
-	//
-	//	log_info(logger, "Inicio CPU");
-	//	log_debug(debugLogger, "Inicio CPU");
-
-	ejecutar = true;
+	ejecutando = true;
 	finalizarEjec = false;
 	lanzarOverflowExep = false;
 	pcbNuevo = NULL;
@@ -284,7 +276,7 @@ void enviarSolicitudBytes(int pid, int pagina, int offset, int size) {
 
 	if (hayOverflow()) {
 		log_debug(debugLog, ANSI_COLOR_RED "OVERFLOW!");
-		ejecutar= false;
+		ejecutando= false;
 		//overflowException(overflow);
 	}
     free(solicitud);
@@ -320,7 +312,7 @@ void enviarAlmacenarBytes(int pid, int pagina, int offset, int size, t_valor_var
 
 	if (hayOverflow()) {
 		log_debug(debugLog, ANSI_COLOR_RED "OVERFLOW!");
-		ejecutar = false;
+		ejecutando = false;
 		//overflowException(overflow);
 	}
     free(solicitud);
@@ -449,7 +441,7 @@ void finalizar_proceso(bool terminaNormalmente)
 		memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
 		send(kernel, buffer, sizeof(codAccion), 0);
 
-		ejecutar = false;
+		ejecutando = false;
 		destruir_PCB(pcbNuevo);
 		pcbNuevo = NULL;
 
@@ -476,20 +468,17 @@ void parsear(char* sentencia)
 
 	if(sentenciaNoFinaliza(sentencia)){
 
-		int codAccion = accionFinInstruccion;
-		void* buffer = malloc(sizeof(int));
-		memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
-		send(kernel, buffer, sizeof(codAccion), 0);
+			int codAccion = accionFinInstruccion;
+			void* buffer = malloc(sizeof(int));
+			memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
+			send(kernel, buffer, sizeof(codAccion), 0);
 
-	}
-	else
-	{
-		bool terminaNormalmente = true;
-		finalizar_proceso(terminaNormalmente);
-	}
-
-
-
+		}
+		else
+		{
+			bool terminaNormalmente = true;
+			finalizar_proceso(terminaNormalmente);
+		}
 }
 
 void pedirSentencia()
@@ -521,13 +510,8 @@ void recibirOrdenes(char* accionRecibida)
 		case accionObtenerPCB: //Recibir nuevo PCB del Kernel
 			overflow = false;
 			lanzarOverflowExep = false;
+			ejecutando = true;
 			obtenerPCB();
-			//A MODO DE PRUEBA NOMAS, QUITAR LUEGO
-//			termina = false;
-//			while(!termina)
-//			{
-//				pedirSentencia();
-//			}
 			break;
 
 		case accionContinuarProceso: //Obtener y parsear sentencias
@@ -562,7 +546,7 @@ void recibirOrdenes(char* accionRecibida)
 void esperarProgramas()
 {
 	int32_t accionRecibida;
-	ejecutar = true;
+	ejecutando = true;
 
 		while (!finalizarEjecucion()) {
 
@@ -597,7 +581,7 @@ void handler(int sign) {
 	if (sign == SIGUSR1) {
 		printf("CHAAAAAU SIGUSR1!!!!\n");
 		log_debug(debugLog, "Me Boletearon!!");
-		if(!ejecutar){
+		if(!ejecutando){
 
 			//TODO: deberia avisarle a memoria?
 			int codAccion = accionQuantumInterrumpido;
@@ -624,7 +608,6 @@ int main(void){
 
 	crearLog(string_from_format("cpu_%d", getpid()), "CPU", 1);
 	log_debug(debugLog, "Iniciando proceso CPU, PID: %d.", getpid());
-
 	identidadCpu = SOYCPU;
 	cargarConfiguracion();
 	inicializarPrimitivas();

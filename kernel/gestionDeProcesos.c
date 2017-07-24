@@ -101,6 +101,14 @@ t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo, int tamanioScr
 	proceso->semaforo = NULL;
 	proceso->codigoPrograma = codigo;
 	proceso->tamanioScript = tamanioScript;
+	proceso->rafagas = 0;
+	proceso->rafagasTotales = 0;
+	proceso->privilegiadas = 0;
+	proceso->cantidadPaginasHeap = 0;
+	proceso->cantidadAlocaciones = 0;
+	proceso->bytesAlocados = 0;
+	proceso->cantidadLiberaciones = 0;
+	proceso->bytesLiberados = 0;
 
 	printf("Crear proceso - end\n");
 
@@ -187,6 +195,19 @@ void rafagaProceso(int cliente){
 	t_proceso* proceso = obtenerProceso(cliente);
 	proceso->rafagas++;
 	planificarExpulsion(proceso);
+
+//	int sigusr1;
+//	recv(cliente, &sigusr1, sizeof(int), 0);
+//	t_proceso* proceso = obtenerProceso(cliente);
+//	proceso->rafagas++;
+//	proceso->rafagasTotales++;
+//
+//	if(sigusr1 == 1)
+//	{
+//		proceso->sigusr1 = true;
+//	}
+//
+//	planificarExpulsion(proceso);
 
 }
 
@@ -292,6 +313,33 @@ void ejecutarProceso(t_proceso* proceso, int cpu) {
 	continuarProceso(proceso);
 }
 
+//void recibirFinalizacion(int cliente) {
+//	int tamanio;
+//	int sigusr1;
+//	recv(cliente, &tamanio, sizeof(tamanio), 0);
+//	void* pcbSerializado = malloc(tamanio);
+//	recv(cliente, pcbSerializado, tamanio, 0);
+//	recv(cliente, &sigusr1, sizeof(int), 0);
+//
+//	t_PCB* pcb = malloc(sizeof(t_PCB));
+//	deserializar_PCB(pcb, pcbSerializado);
+//	t_proceso* proceso = obtenerProceso(cliente);
+//	proceso->PCB = pcb;
+//
+//	if (proceso != NULL) {
+//
+//		if(sigusr1 == 1)
+//		{
+//			proceso->sigusr1 = true;
+//		}
+//
+//		if (!proceso->abortado)
+//		{
+//			finalizarProceso(proceso);
+//		}
+//	}
+//}
+
 void recibirFinalizacion(int cliente) {
 	t_proceso* proceso = obtenerProceso(cliente);
 	if (proceso != NULL) {
@@ -300,4 +348,168 @@ void recibirFinalizacion(int cliente) {
 			finalizarProceso(proceso);
 		}
 	}
+}
+/****************************************CONSOLA KERNEL*******************************************************/
+
+//Funcion nuestra, no de las commons
+void queue_iterate(t_queue* self, void (*closure)(void*)) {
+	t_link_element *element = self->elements->head;
+	while (element != NULL) {
+		closure(element->data);
+		element = element->next;
+	}
+}
+
+void imprimirPIDenCola(t_proceso* procesoEnCola){
+	char* nueva = string_from_format("PID:%d ",procesoEnCola->PCB->PID);
+	string_append(&strCola,nueva);
+	free(nueva);
+}
+
+void imprimirPIDenLista(t_proceso* procesoEnLista){
+	char* nueva = string_from_format("PID:%d ",procesoEnLista->PCB->PID);
+	string_append(&strLista, nueva);
+	free(nueva);
+}
+
+void imprimirColaReady()
+{
+	strCola = string_new();
+	queue_iterate(colaReady, (void*)imprimirPIDenCola);
+	log_info(infoLog,"Cola Ready =[%s]",strCola);
+	free(strCola);
+}
+
+void imprimirColaNew()
+{
+	strCola = string_new();
+	queue_iterate(colaNew, (void*)imprimirPIDenCola);
+	log_info(infoLog,"Cola New =[%s]",strCola);
+	free(strCola);
+}
+
+void imprimirColaBlock()
+{
+	strCola = string_new();
+	queue_iterate(colaBlock, (void*)imprimirPIDenCola);
+	log_info(infoLog,"Cola Block =[%s]",strCola);
+	free(strCola);
+}
+
+void imprimirColaExit()
+{
+	strCola = string_new();
+	queue_iterate(colaExit, (void*)imprimirPIDenCola);
+	log_info(infoLog,"Cola Exit =[%s]",strCola);
+	free(strCola);
+}
+
+void imprimirTodosLosProcesos()
+{
+	strCola = string_new();
+	queue_iterate(listaDeProcesos, (void*)imprimirPIDenCola);
+	log_info(infoLog,"Cola Exit =[%s]",strCola);
+	free(strCola);
+}
+
+void imprimir(t_proceso_estado estado){
+
+
+
+	switch(estado)
+	{
+		case NEW:
+			imprimirColaNew();
+		break;
+
+		case READY:
+			imprimirColaReady();
+		break;
+
+		case BLOCK:
+			imprimirColaBlock();
+		break;
+
+		case EXIT:
+			imprimirColaExit();
+		break;
+
+		default:
+			imprimirTodosLosProcesos();
+		break;
+
+	}
+}
+
+void rafagasPorProceso(t_proceso* unProceso)
+{
+	char* rafagas = string_from_format("PID:|%d|, Rafagas: |%d|",
+			unProceso->pidProceso,
+			unProceso->rafagasTotales);
+	string_append(&strRafagas, rafagas);
+
+	free(rafagas);
+}
+
+void imprimirRafagas()
+{
+	strRafagas = string_new();
+	list_iterate(listaDeProcesos, (void*)rafagasPorProceso);
+	log_info(infoLog,"Rafagas =[%s]", strRafagas);
+	free(strRafagas);
+}
+
+void privilegiadasPorProceso(t_proceso* unProceso)
+{
+	char* privilegiadas = string_from_format("PID: |%d|, Privilegiadas: |%d| ",
+							unProceso->pidProceso,
+							unProceso->privilegiadas);
+	string_append(&strRafagas, privilegiadas);
+	free(privilegiadas);
+}
+
+void imprimirPrivilegiadas()
+{
+	strPrivilegiadas = string_new();
+	list_iterate(listaDeProcesos, (void*)privilegiadasPorProceso);
+	log_info(infoLog,"Privilegiadas =[%s]", strPrivilegiadas);
+	free(strPrivilegiadas);
+}
+
+void alocacionHEAPPorProceso(t_proceso* unProceso)
+{
+	char* cantidadPaginasHeapAlocar = string_from_format("PID: |%d|, Cant. Paginas: |%d|, Alocar: |%d|, Bytes: |%d| ",
+								unProceso->pidProceso,
+			                    unProceso->cantidadPaginasHeap,
+								unProceso->cantidadAlocaciones,
+								unProceso->bytesAlocados);
+	string_append(&strPaginasHeapAlocar, cantidadPaginasHeapAlocar);
+	free(cantidadPaginasHeapAlocar);
+}
+
+void imprimirAlocacionPaginasHeap()
+{
+	strPaginasHeapAlocar = string_new();
+	list_iterate(listaDeProcesos, (void*)alocacionHEAPPorProceso);
+	log_info(infoLog,"Paginas Heap =[%s]", strPaginasHeapAlocar);
+	free(strPaginasHeapAlocar);
+}
+
+void liberacionHEAPPorProceso(t_proceso* unProceso)
+{
+	char* cantidadPaginasHeapLiberar = string_from_format("PID: |%d|, Cant. Paginas: |%d|, Liberar: |%d|, Bytes: |%d| ",
+								unProceso->pidProceso,
+			                    unProceso->cantidadPaginasHeap,
+								unProceso->cantidadLiberaciones,
+								unProceso->bytesLiberados);
+	string_append(&strPaginasHeapLiberar, cantidadPaginasHeapLiberar);
+	free(cantidadPaginasHeapLiberar);
+}
+
+void imprimirLiberacionPaginasHeap()
+{
+	strPaginasHeapLiberar = string_new();
+	list_iterate(listaDeProcesos, (void*)liberacionHEAPPorProceso);
+	log_info(infoLog,"Paginas Heap =[%s]", strPaginasHeapLiberar);
+	free(strPaginasHeapLiberar);
 }

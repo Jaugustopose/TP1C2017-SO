@@ -52,6 +52,12 @@ enum tipoDeCliente {
 	soyCPU = 2
 };
 
+enum algoritmoElegido {
+
+	SOY_RR = 1,
+	SOY_FIFO = 2
+};
+
 typedef enum identidad {
 
 	SOYCONSOLA = 0,
@@ -98,6 +104,13 @@ typedef struct {
 	int32_t estado;
 	t_PCB* PCB;
 	int32_t rafagas;
+	int32_t rafagasTotales;
+	int32_t privilegiadas;
+	int32_t cantidadPaginasHeap;
+	int32_t cantidadAlocaciones;
+	int32_t bytesAlocados;
+	int32_t cantidadLiberaciones;
+	int32_t bytesLiberados;
 	bool sigusr1;
 	bool abortado;
 	char* semaforo;

@@ -23,6 +23,7 @@
 #include <math.h>
 #include "kernel.h"
 
+
 t_list *listaPidHEAP; //elementos: pidHeap
 
 typedef struct heapMetadata{

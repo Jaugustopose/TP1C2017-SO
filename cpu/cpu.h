@@ -37,14 +37,16 @@ struct sockaddr_in dirKernel;
 int kernel;
 struct sockaddr_in dirMemoria;
 int memoria;
-bool ejecutar;
+bool ejecutando;
 bool finalizarEjec;
+bool haySigusr1;
 int overflow;
 bool lanzarOverflowExep;
 int tamanioPaginas;
 char* sentenciaPedida;
 //Espera este tiempo el CPU cuando termina de ejecutar una sentencia
 int quantumSleep;
+int algoritmo;
 
 
 struct configuracion{

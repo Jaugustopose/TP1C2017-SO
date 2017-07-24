@@ -122,6 +122,7 @@ void inicializarContexto() {
 	colaReady = queue_create();
 	colaExit = queue_create();
 	listaEjecucion = list_create();
+
 }
 
 int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
@@ -293,12 +294,13 @@ void Colocar_en_respectivo_fdset() {
 	case soyConsola:
 		FD_SET(sockClie, &bolsaConsolas); //agrego una nueva consola a la bolsa de consolas
 		printf("Se ha conectado una nueva consola \n");
-
 		break;
 
 	case soyCPU:
 		FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
 		queue_push(colaCPU, sockClie);
+		int algoritmo = (strcmp(config.ALGORITMO, FIFO) == 0)? SOY_FIFO : SOY_RR;
+		send(sockClie, &algoritmo, sizeof(int32_t), 0);
 		break;
 		printf("Se ha conectado un nuevo CPU  \n");
 	}
@@ -394,7 +396,6 @@ void sigusr1(int cpu){
 		//quitarCliente(cpu);
 		//limpiarColaCPU();
 	}
-	//clientes[cpu].atentido=false;
 }
 
 void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
