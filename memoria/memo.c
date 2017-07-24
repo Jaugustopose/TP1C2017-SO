@@ -669,7 +669,7 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 			log_info(memoLogger, "Retardo reconfigurado en %d milisegundos", config.retardo_memoria);
 			break;
 		case dumpCache:
-			printf("Codificar dumpCache!\n");
+			realizarDumpMemoriaCache();
 			break;
 		case dumpEstructurasDeMemoria:
 			realizarDumpEstructurasDeMemoria(tablaPaginasInvertida);
@@ -681,7 +681,7 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 			realizarDumpContenidoProceso(tablaPaginasInvertida);
 			break;
 		case flushCache:
-			printf("Codificar flushCache!\n");
+			flushMemoriaCache();
 			break;
 		case sizeMemoria:
 			obtenerSizeMemoria(tablaPaginasInvertida);
@@ -696,9 +696,29 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 }
 
 void flushMemoriaCache(){
-	memset(cache, '\0', tamanioCache); //TODO: Esto solo o la limpio de otra forma?
-	list_destroy_and_destroy_elements(entradasOcupadasCache,entrada_destroyer);
-	inicializar_Lista_Entradas_Libres_Cache(entradasLibresCache);
+	//wait(&semaforoCache);
+
+	if(!list_is_empty(entradasOcupadasCache))
+	{
+		list_clean_and_destroy_elements(entradasOcupadasCache,free);
+	}
+
+	if(!list_is_empty(entradasLibresCache))
+	{
+		list_clean_and_destroy_elements(entradasLibresCache,free);
+	}
+
+	list_destroy(entradasOcupadasCache);
+
+	list_destroy(entradasLibresCache);
+
+	free(cache);
+
+	inicializarCache();
+
+	//signal(&semaforoCache);
+
+	printf("Cache limpia\n");
 }
 
 int32_t entradas_Proceso_En_Cache(int32_t unPid)
