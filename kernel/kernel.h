@@ -109,11 +109,21 @@ t_queue* colaReady;
 t_queue* colaExec;
 t_queue* colaExit;
 t_queue* colaCPU;
-t_queue* colaConsola;
+t_queue* colaBlock;
 t_list* listaEjecucion;
 t_dictionary* tablaCompartidas;
 t_dictionary* tablaSemaforos;
 
+char* strCola;
+char* strLista;
+char* strRafagas;
+char* strPrivilegiadas;
+char* strPaginasHeapAlocar;
+char* strPaginasHeapLiberar;
+char* strAlocar;
+char* strLiberar;
+char* strBytesAlocados;
+char* stryBytesLiberados;
 //Prototipos
 int redondear(float numero);
 

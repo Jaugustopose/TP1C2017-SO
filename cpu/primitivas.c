@@ -65,11 +65,11 @@ void enviar_direccion_y_valor_a_Memoria(t_puntero direccion, t_valor_variable va
 
 char* convertirFlags(t_banderas flags){
 	char* permisos = string_new();
-	if(flags.creacion);
+	if(flags.creacion)
 	string_append(&permisos,"c");
-	if(flags.escritura);
+	if(flags.escritura)
 	string_append(&permisos,"w");
-	if(flags.lectura);
+	if(flags.lectura)
 	string_append(&permisos,"r");
 	return permisos;
 }
@@ -498,9 +498,12 @@ void liberar(t_puntero puntero)
 
 t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "ABRIR");
+	log_debug(debugLog, "La primitiva recibio la direccion: |%s|", direccion);
+
 	//Envio comando al kernel
 	int codigoAccion = accionAbrirArchivo;
-	int pid = (int) pcbNuevo->PID;
+	int pid = pcbNuevo->PID;
 	int tamanioPath = string_length(direccion) + 1;
 	char* permisos = convertirFlags(flags);
 	int tamanioPermisos = string_length(permisos) + 1;
@@ -509,7 +512,7 @@ t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 	int offset = 0;
 	memcpy(buffer, &codigoAccion, sizeof(int));
 	offset += sizeof(int);
-	memcpy(buffer, &pid, sizeof(int));
+	memcpy(buffer + offset, &pid, sizeof(int));
 	offset += sizeof(int);
 	memcpy(buffer + offset, &tamanioPath, sizeof(int));
 	offset += sizeof(int);
@@ -530,6 +533,9 @@ t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 
 void borrar(t_descriptor_archivo direccion)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "BORRAR");
+	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|", direccion);
+
 	//Envio comando al kernel
 	int codigoAccion = accionBorrarArchivo;
 	int fd= (int)direccion;
@@ -549,6 +555,9 @@ void borrar(t_descriptor_archivo direccion)
 
 void cerrar(t_descriptor_archivo descriptor_archivo)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "CERRAR");
+	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|", descriptor_archivo);
+
 	//Envio comando al kernel
 	int codigoAccion = accionCerrarArchivo;
 	int fd= (int)descriptor_archivo;
@@ -568,6 +577,9 @@ void cerrar(t_descriptor_archivo descriptor_archivo)
 
 void mover_cursor(t_descriptor_archivo descriptor_archivo, t_valor_variable posicion)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "MOVER CURSOR");
+	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|, y la posicion |%d|", descriptor_archivo, posicion);
+
 	//Envio comando al kernel
 	int codigoAccion = accionMoverCursor;
 	int fd= (int)descriptor_archivo;
@@ -589,6 +601,9 @@ void mover_cursor(t_descriptor_archivo descriptor_archivo, t_valor_variable posi
 
 void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "ESCRIBIR");
+	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|, y un tamanio |%d|", descriptor_archivo, tamanio);
+
 	//Envio comando al kernel
 	int codigoAccion = accionEscribir;
 	int fd = (int) descriptor_archivo;
@@ -598,9 +613,9 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 	int offset = 0;
 	memcpy(buffer, &codigoAccion, sizeof(int));
 	offset += sizeof(int);
-	memcpy(buffer, &fd, sizeof(int));
+	memcpy(buffer + offset, &fd, sizeof(int));
 	offset += sizeof(int);
-	memcpy(buffer, &pid, sizeof(int));
+	memcpy(buffer + offset, &pid, sizeof(int));
 	offset += sizeof(int);
 	memcpy(buffer + offset, &tamanio, sizeof(int));
 	offset += sizeof(int);
@@ -612,6 +627,9 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 
 void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valor_variable tamanio)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "LEER");
+	log_debug(debugLog, "La primitiva recibio el descriptor |%d|, un tamanio |%d|, y un puntero |%d|", descriptor_archivo, tamanio, informacion);
+
 	//Envio comando al kernel
 	int codigoAccion = accionObtenerDatosArchivo;
 	int fd= (int)descriptor_archivo;
@@ -628,8 +646,15 @@ void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valo
 	memcpy(buffer + offset, &tamanio, sizeof(int));
 	send(kernel, buffer, tamanioBuffer, 0);
 
-	recv(kernel, (void *)informacion, tamanio, 0);
-
+	char *recibido = malloc(tamanio);
+	recv(kernel, recibido, tamanio, 0);
+	//Envio datos a memoria
+	int i=0;
+	while(i<tamanio){
+		enviar_direccion_y_valor_a_Memoria(informacion+i, recibido[i]);
+		log_debug(debugLog, "Enviando a memoria. Pos: |%d| Valor: |%c|", informacion+i, recibido[i]);
+		i++;
+	}
 	loggearFinDePrimitiva("leer");
 }
 

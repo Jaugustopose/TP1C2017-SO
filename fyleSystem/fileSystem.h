@@ -25,9 +25,11 @@
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/bitarray.h>
+#include <commons/log.h>
 
 #include "estructurasCompartidas.h"
 #include "cliente-servidor.h"
+#include "logger.h"
 
 typedef struct{
 	int PUERTO;
@@ -43,6 +45,7 @@ typedef struct{
 typedef struct{
 	int TAMANIO;
 	char **BLOQUES;
+	int cantBloques;
 }archivo_t;
 
 typedef struct{
@@ -64,8 +67,8 @@ int sockClie; // Socket de escucha
 int validarArchivo(char *path);
 int crearArchivo(char *path);
 int borrarArchivo(char *path);
-char* obtenerDatos(char *path, int offset, int size);
-int guardarDatos(char *path, int offset, int size, char* buffer);
+void* obtenerDatos(char *path, int offset, int size);
+int guardarDatos(char *path, int offset, int size, void* buffer);
 
 
 #endif /* FILESYSTEM_H_ */
