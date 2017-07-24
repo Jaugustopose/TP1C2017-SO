@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include "estructurasCompartidas.h"
 #include <commons/log.h>
+#include <signal.h>
 
 
 

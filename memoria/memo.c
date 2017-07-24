@@ -175,8 +175,8 @@ void realizarDumpContenidoMemoriaCompleta(tablaPagina_t* tablaPaginasInvertida) 
 	char* bufferPagina = malloc(config.marco_size);
 	printf("Se procede a imprimir el contenido de cada marco:\n");
 	fprintf(dumpFile, "Se procede a imprimir el contenido de cada marco:\n");
-	pthread_mutex_lock(&lockMemoria);
 	pthread_mutex_lock(&lockTablaPaginas);
+	pthread_mutex_lock(&lockMemoria);
 	for (i = 0; i < config.marcos; i++) {
 		memcpy(bufferPagina, memoria + i * config.marco_size, config.marco_size);
 		printf("Marco: %d, pid: %d, pag: %d, contenido: %s\n", i,
@@ -221,8 +221,8 @@ void realizarDumpContenidoProceso(tablaPagina_t* tablaPaginasInvertida) {
 	while (true) {
 		marco = buscarMarco(pid, i, tablaPaginasInvertida);
 		if (marco != -10) {
-			pthread_mutex_lock(&lockMemoria);
 			pthread_mutex_lock(&lockTablaPaginas);
+			pthread_mutex_lock(&lockMemoria);
 			memcpy(bufferPagina, memoria + marco * config.marco_size, config.marco_size);
 			printf("pag: %d, marco: %d, contenido: %s\n", tablaPaginasInvertida[marco].nroPagina, marco, bufferPagina);
 			fprintf(dumpFile, "pag: %d, marco: %d, contenido: %s\n", tablaPaginasInvertida[marco].nroPagina, marco, bufferPagina);
@@ -894,7 +894,18 @@ void finalizar() {
 	free(memoria);
 }
 
+void sig_handler(int signo) {
+  if (signo == SIGINT) {
+	  printf("SIGINT interceptado. Finalizando... \n");
+	  //TODO IMPLEMENTAR LO NECESARIO PARA NO ROMPER A LOS OTROS PROCESOS
+	  exit(EXIT_SUCCESS);
+  }
+}
+
 int main(void) {
+
+	if (signal(SIGINT, sig_handler) == SIG_ERR)
+	  printf("Error al interceptar SIGINT\n");
 
 	/***********************************************************
 	***Si no existe el directorio de output lo crea*************/

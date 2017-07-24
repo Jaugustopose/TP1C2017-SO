@@ -299,9 +299,10 @@ void Colocar_en_respectivo_fdset() {
 	case soyCPU:
 		FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
 		queue_push(colaCPU, sockClie);
-		break;
 		printf("Se ha conectado un nuevo CPU  \n");
+		break;
 	}
+
 	if (sockClie > maxFd) {
 		// actualizar el máximo
 		maxFd = sockClie;
