@@ -100,7 +100,9 @@ int leerMetadata(){
 /***********************************BITMAP**************************************/
 
 void crearBitmap(){
-	char * bitarray = (char*) malloc(sizeof(char)* ((metadata.CANTIDAD_BLOQUES+8-1)/8)); //Redondeado para arriba
+	int cantidad = ((metadata.CANTIDAD_BLOQUES+8-1)/8); //Redondeado para arriba
+	char * bitarray = (char*) malloc(sizeof(char)* cantidad);
+	memset(bitarray,0,cantidad);
 	bitmap = bitarray_create_with_mode(bitarray,(metadata.CANTIDAD_BLOQUES+8-1)/8, LSB_FIRST);
 }
 
@@ -157,7 +159,7 @@ int* buscarBloquesLibres(int cantidad){
 			j++;
 		}
 	}
-	return (i == metadata.CANTIDAD_BLOQUES)? NULL : bloques;
+	return (j == cantidad)? bloques : NULL;
 }
 
 void liberarBloque(int index){
@@ -279,7 +281,7 @@ int crearArchivo(char *path)
 			}
 		}
 	}
-	bitarray_set_bit(bitmap,bloque[0]);
+	reservarBloque(bloque[0]);
 	escribirBitmap();
 	fprintf(archivo, "TAMANIO=0\n");
 	fprintf(archivo, "BLOQUES=[%i]", bloque[0]);
@@ -401,6 +403,7 @@ int guardarDatos(char *path, int offset, int size, void* buffer)
 		fclose(archBloque);
 		free(pat);
 		bytesAEscribir-=cant;
+		offset+=cant;
 		bloqueActual++;
 	}
 	//Escribo nuevo tamaño
@@ -582,8 +585,8 @@ void sockets(){
 
 int main(void) {
 
-	crearLog(string_from_format("cpu_%d", getpid()), "CPU", 1);
-	log_debug(debugLog, "Iniciando proceso CPU, PID: %d.", getpid());
+	crearLog(string_from_format("FS_%d", getpid()), "CPU", 1);
+	log_debug(debugLog, "Iniciando proceso FS, PID: %d.", getpid());
 
 	if(cargarConfiguracion()<0){
 		exit(EXIT_FAILURE);
