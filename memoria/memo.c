@@ -34,21 +34,21 @@ void cargarConfigFile() {
 	}
 	if(config_has_property(configMemo,"ENTRADAS_CACHE")){
 		config.entradas_cache = config_get_int_value(configMemo,"ENTRADAS_CACHE");
-		printf("config.ENTRADAS_CACHE: %d\n", config.entradas_cache);
+		log_info(memoConsoleLogger, "config.ENTRADAS_CACHE: %d", config.entradas_cache);
 	}
 	if(config_has_property(configMemo, "CACHE_X_PROC")){
 		config.cache_x_proc = config_get_int_value(configMemo, "CACHE_X_PROC");
-		printf("config.CACHE_X_PROC: %d\n", config.cache_x_proc);
+		log_info(memoConsoleLogger, "config.CACHE_X_PROC: %d", config.cache_x_proc);
 
 	}
-
 	if (config_has_property(configMemo, "RETARDO_MEMORIA")) {
 		config.retardo_memoria = config_get_int_value(configMemo, "RETARDO_MEMORIA");
 		log_info(memoConsoleLogger, "config.RETARDO_MEMORIA: %d", config.retardo_memoria);
 	}
 }
 
-/* Inicialización vector overflow. Cada posición tiene una lista enlazada que guarda números de frames.
+/* Inicialización vector overflow. Cada posición tiene una
+a enlazada que guarda números de frames.
  * Se llenará a medida que haya colisiones correspondientes a esa posición del vector. */
 void inicializarOverflow(int cantidad_de_marcos) {
 	overflow = malloc(sizeof(t_list*) * cantidad_de_marcos);
@@ -405,7 +405,7 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPag
  * codResult = int
  * bytesSolicitados = char*
  */
-char* solicitarBytes(int pid, int nroPagina, int offset, int tamanio, tablaPagina_t* tablaPaginasInvertida) {
+char* solicitarBytesMemoria(int pid, int nroPagina, int offset, int tamanio, tablaPagina_t* tablaPaginasInvertida) {
 	int codResult;
 	char* respuesta = malloc(tamanio + sizeof(codResult));
 	char* bytesSolicitados = malloc(tamanio);
@@ -695,26 +695,129 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	}
 }
 
-void copiar_Pagina_De_Memoria_A_Cache(const pedidoBytesMemoria_t* pedidoBytes, paramHiloDedicado* parametros, entradaCache_t* entradaCache, char* bytesSolicitados) {
-	bytesSolicitados = solicitarBytes(pedidoBytes->pid, pedidoBytes->nroPagina, 0, config.marco_size, parametros->tablaPaginasInvertida);
-	memcpy(entradaCache->contenido, bytesSolicitados, config.marco_size);
+void flushMemoriaCache(){
+	memset(cache, '\0', tamanioCache); //TODO: Esto solo o la limpio de otra forma?
+	list_destroy_and_destroy_elements(entradasOcupadasCache,entrada_destroyer);
+	inicializar_Lista_Entradas_Libres_Cache(entradasLibresCache);
 }
 
-void crear_Y_Agregar_EntradaOcupadaCache(const pedidoBytesMemoria_t* pedidoBytes, entradaCache_t* entradaLibre, entradaCache_t* entradaCache) {
-	entradaLibre = list_remove(entradasLibresCache,0);
-	entradaCache->pid = pedidoBytes->pid;
-	entradaCache->nroPagina = pedidoBytes->nroPagina;
-	entradaCache->contenido = entradaLibre->contenido;
-	list_add(entradasOcupadasCache, entradaCache);
+int32_t entradas_Proceso_En_Cache(int32_t unPid)
+{
+	int32_t i = 0;
+	int32_t cantidadEntradasProceso = 0;
+	entradaCache_t* unaEntrada;
+
+	for(i=0;i<list_size(entradasOcupadasCache);i++)
+	{
+		unaEntrada = list_get(entradasOcupadasCache,i);
+		if(unaEntrada->pid == unPid)
+			cantidadEntradasProceso ++;
+	}
+
+	return cantidadEntradasProceso;
 }
 
-void preparar_Data_Desde_Cache_Para_Enviar(int32_t resultAccion,
-		const pedidoBytesMemoria_t* pedidoBytes, char* bytesSolicitados,
-		entradaCache_t* entradaCache) {
-	memcpy(bytesSolicitados, &resultAccion, sizeof(resultAccion));
-	memcpy(bytesSolicitados + sizeof(resultAccion),
-			entradaCache->contenido + pedidoBytes->offset,
-			pedidoBytes->tamanio);
+int32_t obtener_Indice_Antiguedad_En_Cache(int32_t unPid) {  // Donde 0 es el mas viejo y list_size(entradasOcupadasCache) el mas nuevo.
+
+	int32_t i;
+	entradaCache_t* unaEntrada;
+
+	for(i=0;i<list_size(entradasOcupadasCache);i++)
+	{
+		unaEntrada = list_get(entradasOcupadasCache,i);
+		if((unaEntrada->pid) == unPid)
+			return i;
+	}
+
+	return -1; // Significa que no esta en cache
+}
+
+
+
+void inicializar_Lista_Entradas_Libres_Cache(t_list* entradasLibresCache){
+	int i;
+	entradaCache_t* unaEntrada;
+	for(i=0;i<config.entradas_cache;i++){
+		unaEntrada = malloc(sizeof(entradaCache_t));
+		unaEntrada->pid = -1;
+		unaEntrada->nroPagina = -1;
+		unaEntrada->contenido = cache + i*config.marco_size;
+		list_add(entradasLibresCache, unaEntrada);
+	}
+}
+
+void inicializarCache(){
+	tamanioCache = (config.marco_size * config.entradas_cache);
+	cache = malloc(tamanioCache);
+
+	entradasLibresCache = list_create();
+	entradasOcupadasCache = list_create();
+
+	inicializar_Lista_Entradas_Libres_Cache(entradasLibresCache);
+
+}
+
+bool proceso_Alcanzo_Max_Entradas_Cache(int32_t unPid) {
+
+	return (entradas_Proceso_En_Cache(unPid) == (config.cache_x_proc));
+}
+
+int32_t numero_Entrada_Ocupada_Cache(int32_t unPid, int32_t unNroPag){
+
+	uint32_t i;
+	entradaCache_t* unaEntrada;
+
+	for (i = 0; i < list_size(entradasOcupadasCache); i++) {
+		unaEntrada = list_get(entradasOcupadasCache,i);
+		if ((unaEntrada->pid == unPid) && (unaEntrada->nroPagina == unNroPag))
+			return i;
+	}
+	return -1;
+}
+
+char* solicitarBytesCache(int32_t unPid, int32_t unNroPag, int32_t unOffset, int32_t unTamanio, int32_t unIndiceCache){
+
+	int32_t codResult = EXIT_SUCCESS;
+	entradaCache_t* nuevaEntrada;
+	char* bufferAux = malloc(unTamanio);
+	char* respuesta = malloc(unTamanio + sizeof(int32_t));
+	memset(bufferAux, '\0', unTamanio);
+	memset(respuesta, '\0', unTamanio + sizeof(codResult));
+	nuevaEntrada = list_get(entradasOcupadasCache,unIndiceCache);
+	list_remove(entradasOcupadasCache, unIndiceCache);
+	list_add(entradasOcupadasCache, nuevaEntrada);
+	usleep(config.retardo_memoria * 1000);
+	memcpy(bufferAux,nuevaEntrada->contenido + unOffset, unTamanio);
+	memcpy(respuesta, &codResult,sizeof(codResult));
+	memcpy(respuesta + sizeof(codResult), bufferAux,unTamanio);
+	return respuesta;
+}
+
+void cargar_Nueva_Entrada_En_Cache(int32_t unPid, int32_t unNroPag, tablaPagina_t* tablaPaginasInvertida){
+
+		entradaCache_t* nuevaEntrada;
+		int32_t indice;
+
+		if(proceso_Alcanzo_Max_Entradas_Cache(unPid)){ //Proceso alcanza max cantidad de entradas en cache.
+
+			indice = obtener_Indice_Antiguedad_En_Cache(unPid);
+			nuevaEntrada = list_get(entradasOcupadasCache,indice);
+			list_remove(entradasOcupadasCache,indice);
+		}else{ //Proceso no alcanza max cantidad de entradas en cache.
+			if(! list_is_empty(entradasLibresCache)){ //Nueva entrada en cache. Todavía tengo espacio libre.
+				nuevaEntrada = list_get(entradasLibresCache,0);
+				list_remove(entradasLibresCache,0);
+			}else{//No tengo espacio en cache. Reemplazo por LRU una pag en cache de otro proceso.
+				nuevaEntrada = list_get(entradasOcupadasCache,0);
+				list_remove(entradasOcupadasCache,0);
+			}
+			nuevaEntrada->pid = unPid;
+		}
+		nuevaEntrada->nroPagina = unNroPag;
+		char* buffer = solicitarBytesMemoria(unPid,unNroPag,0,config.marco_size, tablaPaginasInvertida);
+		memcpy(nuevaEntrada->contenido,buffer,config.marco_size);
+		list_add(entradasOcupadasCache,nuevaEntrada);
+
 }
 
 void atenderHilo(paramHiloDedicado* parametros) {
@@ -743,16 +846,17 @@ void atenderHilo(paramHiloDedicado* parametros) {
 
 			int32_t resultAccion;
 			int32_t pidAFinalizar;
-			int32_t indicePidEnCache;
 			int32_t pagALiberar;
-			entradaCache_t* entradaCache;
-			entradaCache_t* entradaCacheAntigua;
-			entradaCache_t* entradaLibre;
+			int32_t indiceCache;
+			//int32_t indicePidEnCache;
+			//entradaCache_t* entradaCache;
+			//entradaCache_t* entradaCacheAntigua;
+			//entradaCache_t* entradaLibre;
 
-			//Función para el closure de find
+			/*//Función para el closure de find
 			bool _soy_pid_buscado_en_cache(entradaCache_t *p) {
 			return p->pid == pedidoBytes.pid;
-			}
+			}*/
 
 			switch (codAccion) {
 
@@ -801,6 +905,11 @@ void atenderHilo(paramHiloDedicado* parametros) {
 
 				log_info(memoLogger, "atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: %d", resultAccion);
 				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
+
+				//VERIFICO SI EXISTE DATA EN CACHE
+				if ((indiceCache = numero_Entrada_Ocupada_Cache(pedidoBytes.pid,pedidoBytes.nroPagina)) != -1){ //Esta en cache. Hay que actualizarla.
+					cargar_Nueva_Entrada_En_Cache(pedidoBytes.pid,pedidoBytes.nroPagina,parametros->tablaPaginasInvertida); //Decisión de diseño: Si actualizó páginas en MR también actualizó cache, por lo que esta utilizando la entrada y sería la última entrada utilizada (última en la cola))
+				}
 				free(pedidoAlmacenarBytes.buffer);
 				break;
 
@@ -813,108 +922,29 @@ void atenderHilo(paramHiloDedicado* parametros) {
 				log_info(memoLogger, "atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes");
 
 				//VERIFICO SI EXISTE DATA EN CACHE
+					if ((indiceCache = numero_Entrada_Ocupada_Cache(pedidoBytes.pid,pedidoBytes.nroPagina)) != -1){ //Tenia data en cache
+						bytesSolicitados = solicitarBytesCache(pedidoBytes.pid,pedidoBytes.nroPagina,pedidoBytes.offset,pedidoBytes.tamanio, indiceCache);
+						send(parametros->socketClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), 0);
+						free(bytesSolicitados);
 
-				if((indicePidEnCache = obtener_Indice_Antiguedad_En_Cache(pedidoBytes.pid)) != -1){ // Tengo al proceso en cache.
-					entradaCache = list_get(entradasOcupadasCache,indicePidEnCache);
-					if(entradaCache->nroPagina == pedidoBytes.nroPagina){ // También tengo a la página en cache.
+						break;
 
-						//Envío bytes solicitados desde la caché.
+					}else{ //Voy a buscar la data a memoria. Cargo una nueva entrada en cache.
+						bytesSolicitados = solicitarBytesMemoria(pedidoBytes.pid, pedidoBytes.nroPagina, pedidoBytes.offset, pedidoBytes.tamanio, parametros->tablaPaginasInvertida);
+						memcpy(&resultAccion, bytesSolicitados, sizeof(resultAccion));
+						send(parametros->socketClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), 0);
+						cargar_Nueva_Entrada_En_Cache(pedidoBytes.pid,pedidoBytes.nroPagina,parametros->tablaPaginasInvertida);
+						free(bytesSolicitados);
 
-						entradaCache = list_find(entradasOcupadasCache,_soy_pid_buscado_en_cache);
-						resultAccion = EXIT_SUCCESS; // No se si le queres poner algún número específico, Ale.
-						preparar_Data_Desde_Cache_Para_Enviar(resultAccion, &pedidoBytes, bytesSolicitados, entradaCache);
-
-					}else{ // Tengo al proceso pero no a la página solicitada. Reviso si alcanzó el máximo de entradas a cache para aplicar LRU local o global.
-
-						if(proceso_Alcanzo_Max_Entradas_Cache(pedidoBytes.pid)){
-
-							//Uso LRU sobre una de sus entradas previas.
-
-							entradaCacheAntigua = list_find(entradasOcupadasCache, _soy_pid_buscado_en_cache);
-							entradaCache->contenido = entradaCacheAntigua->contenido;
-							entradaCache->pid = pedidoBytes.pid;
-							entradaCache->nroPagina = pedidoBytes.nroPagina;
-
-							memset(entradaCacheAntigua->contenido, '\0',config.marco_size); // Borro lo que tenía en ese marco de caché.
-
-							list_add(entradasOcupadasCache, entradaCache);
-							list_remove_and_destroy_by_condition(entradasOcupadasCache,_soy_pid_buscado_en_cache, (void*)entrada_destroyer);
-
-							copiar_Pagina_De_Memoria_A_Cache(&pedidoBytes, parametros, entradaCache, bytesSolicitados);
-							resultAccion = EXIT_SUCCESS; // No se si le queres poner algún número específico, ale.
-							preparar_Data_Desde_Cache_Para_Enviar(resultAccion, &pedidoBytes, bytesSolicitados, entradaCache);
-
-						}else{ //Verifico Cache llena.
-
-							if (list_is_empty(entradasLibresCache)) {
-
-								//Uso LRU sobre entrada mas antigua (primera de la lista entradasOcupadasCache)
-
-								entradaCacheAntigua = list_remove(entradasOcupadasCache,0);
-
-								entradaCache->contenido = entradaCacheAntigua->contenido;
-								entradaCache->pid = pedidoBytes.pid;
-								entradaCache->nroPagina = pedidoBytes.nroPagina;
-
-								memset(entradaCacheAntigua->contenido, '\0', config.marco_size);
-								entrada_destroyer(entradaCacheAntigua);
-
-								list_add(entradasOcupadasCache, entradaCache);
-
-								copiar_Pagina_De_Memoria_A_Cache(&pedidoBytes,parametros,entradaCache,bytesSolicitados);
-								int32_t codResult = EXIT_SUCCESS; // No se si le queres poner algún número específico, ale.
-								preparar_Data_Desde_Cache_Para_Enviar(resultAccion, &pedidoBytes, bytesSolicitados, entradaCache);
-
-							}else{ // Cache no esta llena.
-
-								crear_Y_Agregar_EntradaOcupadaCache(&pedidoBytes, entradaLibre, entradaCache);
-								memset(entradaCache->contenido,'\0',config.marco_size); // Por las dudas. Modo cagón activado.
-								copiar_Pagina_De_Memoria_A_Cache(&pedidoBytes, parametros, entradaCache, bytesSolicitados);
-								resultAccion = EXIT_SUCCESS; // No se si le queres poner algún número específico, ale.
-								preparar_Data_Desde_Cache_Para_Enviar(resultAccion, &pedidoBytes, bytesSolicitados, entradaCache);
-							}
-						}
-					}
-
-				}else {
-
-					// Si lista entradasLibresCache no esta vacia, me traigo la página solicitada desde memoria y creo nodo para entradasOcupadasCache.
-					if (! list_is_empty(entradasLibresCache)) {
-
-						crear_Y_Agregar_EntradaOcupadaCache(&pedidoBytes, entradaLibre, entradaCache);
-						memset(entradaCache->contenido,'\0',config.marco_size); // Por las dudas. Modo cagón activado.
-						copiar_Pagina_De_Memoria_A_Cache(&pedidoBytes, parametros, entradaCache, bytesSolicitados);
-						resultAccion = EXIT_SUCCESS; // No se si le queres poner algún número específico, ale.
-						preparar_Data_Desde_Cache_Para_Enviar(resultAccion, &pedidoBytes, bytesSolicitados, entradaCache);
-
-						//TODO: ¿Falta verificación si quiere leer mas de 32 bytes? Eso implicaría traerme más de 32 bytes de memoria y sobrepasaría el config.marcos_size.
-					}else{
-						// Si lista entradasLibresCache esta vacia , uso LRU sobre entrada mas antigua (primera de la lista entradasOcupadasCache).
-
-						entradaCacheAntigua = list_remove(entradasOcupadasCache,0);
-
-						entradaCache->contenido = entradaCacheAntigua->contenido;
-						entradaCache->pid = pedidoBytes.pid;
-						entradaCache->nroPagina = pedidoBytes.nroPagina;
-
-						memset(entradaCacheAntigua->contenido, '\0', config.marco_size);
-						entrada_destroyer(entradaCacheAntigua);
-
-						list_add(entradasOcupadasCache, entradaCache);
-
-						copiar_Pagina_De_Memoria_A_Cache(&pedidoBytes,parametros,entradaCache,bytesSolicitados);
-						resultAccion = EXIT_SUCCESS; // No se si le queres poner algún número específico, ale.
-						preparar_Data_Desde_Cache_Para_Enviar(resultAccion, &pedidoBytes, bytesSolicitados, entradaCache);
+						break;
 
 					}
-				}
-
 
 				/*printf("Se procede a solicitar bytes\n");
-				bytesSolicitados = solicitarBytes(pedidoBytes.pid,
+				bytesSolicitados = solicitarBytesMemoria(pedidoBytes.pid,
 						pedidoBytes.nroPagina, pedidoBytes.offset,
 						pedidoBytes.tamanio, parametros->tablaPaginasInvertida);
-				memcpy(&resultAccion, bytesSolicitados, sizeof(resultAccion));*/
+				memcpy(&resultAccion, bytesSolicitados, sizeof(resultAccion));
 				log_info(memoLogger, "atenderHilo[solicitarBytesAccion] - Solicitud de solicitar bytes terminó con resultado de acción: %d", resultAccion);
 				log_info(memoLogger, "atenderHilo[solicitarBytesAccion] - Solicitar bytes devolvió los Bytes solicitados: %s",
 										bytesSolicitados + sizeof(resultAccion));
@@ -922,7 +952,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 						pedidoBytes.tamanio + sizeof(resultAccion), 0);
 				free(bytesSolicitados);
 
-				break;
+				break;*/
 
 			case finalizarProgramaAccion:
 				recv(parametros->socketClie, &pidAFinalizar, sizeof(pidAFinalizar), 0);
@@ -965,71 +995,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 	}
 }
 
-void flushMemoriaCache(){
-	memset(cache, '\0', tamanioCache); //TODO: Esto solo o la limpio de otra forma?
-	list_destroy_and_destroy_elements(entradasOcupadasCache,entrada_destroyer);
-	inicializar_Lista_Entradas_Libres_Cache(entradasLibresCache);
-}
 
-int32_t entradas_Proceso_En_Cache(int32_t unPid)
-{
-	int32_t i = 0;
-	int32_t cantidadEntradasProceso = 0;
-	entradaCache_t* unaEntrada;
-
-	for(i=0;i<list_size(entradasOcupadasCache);i++)
-	{
-		unaEntrada = list_get(entradasOcupadasCache,i);
-		if(unaEntrada->pid == unPid)
-			cantidadEntradasProceso ++;
-	}
-
-	return cantidadEntradasProceso;
-}
-
-bool proceso_Alcanzo_Max_Entradas_Cache(int32_t unPid) {
-
-	return (entradas_Proceso_En_Cache(unPid) == (config.cache_x_proc));
-}
-
-int32_t obtener_Indice_Antiguedad_En_Cache(int32_t unPid) {  // Donde 0 es el mas viejo y list_size(entradasOcupadasCache) el mas nuevo.
-
-	int32_t i;
-	entradaCache_t* unaEntrada;
-
-	for(i=0;i<list_size(entradasOcupadasCache);i++)
-	{
-		unaEntrada = list_get(entradasOcupadasCache,i);
-		if((unaEntrada->pid) == unPid)
-			return i;
-	}
-
-	return -1; // Significa que no esta en cache
-}
-
-
-
-void inicializar_Lista_Entradas_Libres_Cache(t_list* entradasLibresCache){
-	int i;
-	for(i=0;i<config.entradas_cache;i++){
-		entradaCache_t* unaEntrada;
-		unaEntrada-> pid = -1;
-		unaEntrada-> nroPagina = -1;
-		unaEntrada-> contenido = cache + i*config.marco_size;
-		list_add(entradasLibresCache, unaEntrada);
-	}
-}
-
-void inicializarCache(){
-	tamanioCache = (config.marco_size * config.entradas_cache);
-	cache = malloc(tamanioCache);
-
-	entradasLibresCache = list_create();
-	entradasOcupadasCache = list_create();
-
-	inicializar_Lista_Entradas_Libres_Cache(entradasLibresCache);
-
-}
 
 int main(void) {
 
@@ -1091,6 +1057,12 @@ int main(void) {
 	memcpy(memoria, tablaPaginasInvertida, tamanioTablaPagina);
 	//Fin inicialización memoria
 	log_info(memoLogger, "Memoria inicializada");
+
+	/***********************************************************/
+
+	//Inicialización memoria caché
+
+	inicializarCache();
 
 	/***********************************************************/
 

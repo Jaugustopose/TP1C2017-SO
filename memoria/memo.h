@@ -84,8 +84,8 @@ typedef struct parametrosHiloDedicado{
 }paramHiloDedicado;
 
 typedef struct administrativaCache {
-	int pid;
-	int nroPagina;
+	int32_t pid;
+	int32_t nroPagina;
 	void* contenido;
 
 }entradaCache_t;

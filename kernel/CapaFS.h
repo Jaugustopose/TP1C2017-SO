@@ -1,3 +1,6 @@
+#ifndef cpu_h
+#define cpu_h
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -11,6 +14,8 @@
 
 #include "estructurasCompartidas.h"
 
+#include "kernel.h"
+
 typedef struct{
 	char* permisos;
 	int offset;
@@ -21,3 +26,6 @@ typedef struct{
 	char* path;
 	int cantProcesos;
 }globalFD_t;
+
+
+#endif
