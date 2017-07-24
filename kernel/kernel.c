@@ -364,6 +364,7 @@ void pedirMemoria(t_proceso* proceso)
 
 }
 
+
 void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMensaje)
 {
 	printf("Procediendo a recibir tamaño script\n");
@@ -390,7 +391,8 @@ void sigusr1(int cpu){
 	t_proceso* proceso = obtenerProceso(cpu);
 
 	if (proceso!=NULL){
-		//proceso->sigusr1=true;
+		proceso->PCB = recibirPCBDeCPU(cpu);
+		proceso->sigusr1=true;
 	}
 	else{
 		//quitarCliente(cpu);
@@ -484,14 +486,16 @@ void crearSemaforos() {
 
 	int i = 0;
 	char* sem = string_substring_from(config.SEM_IDS[i],1);
+	char* semValue = string_substring_from(config.SEM_INIT[i],1);
 	while (config.SEM_IDS[i] != '\0') {
 
 		t_semaforo* semaforo = malloc(sizeof(t_semaforo));
-		semaforo->valorSemaforo = atoi(config.SEM_INIT[i]);
+		semaforo->valorSemaforo = atoi(semValue);
 		semaforo->colaSemaforo = queue_create();
 		dictionary_put(tablaSemaforos, sem, semaforo);
 		i++;
 		sem = config.SEM_IDS[i];
+		semValue = config.SEM_INIT[i];
 	}
 }
 

@@ -32,8 +32,8 @@ void recibirQuantumSleep(){
 
 }
 
-bool finalizarEjecucion(){
-	return finalizarEjec && !ejecutando;
+bool puedo_terminar(){
+	return terminar && !ejecutando;
 }
 
 bool hayOverflow(){
@@ -243,7 +243,7 @@ void finalizar_programa(bool normalmente){
 void inicializarContexto()
 {
 	ejecutando = true;
-	finalizarEjec = false;
+	terminar = false;
 	lanzarOverflowExep = false;
 	pcbNuevo = NULL;
 
@@ -435,11 +435,9 @@ void finalizar_proceso(bool terminaNormalmente)
 	{
 		log_debug(debugLog, ANSI_COLOR_GREEN "El proceso ansisop ejecutó su última instrucción." ANSI_COLOR_RESET);
 
-		//TODO: ENVIAR EL PCB PARA QUE LO METAN EN LA COLA DE EXIT
-		int codAccion = accionFinProceso;
-		void* buffer = malloc(sizeof(int));
-		memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
-		send(kernel, buffer, sizeof(codAccion), 0);
+		//EXIT CODE: Cierre normal
+		pcbNuevo->exitCode = 0;
+		serializar_PCB(pcbNuevo, kernel, accionFinProceso);
 
 		ejecutando = false;
 		destruir_PCB(pcbNuevo);
@@ -486,7 +484,7 @@ void pedirSentencia()
 	//Recibe del nucleo el quantum
 	recibirQuantumSleep();
 
-	if(!finalizarEjecucion()){
+	if(!puedo_terminar()){
 
 			int tamanio;
 			//Espera este tiempo antes de empezar con la proxima sentencia
@@ -502,7 +500,7 @@ void pedirSentencia()
 
 }
 
-void recibirOrdenes(char* accionRecibida)
+void recibirOrdenes(int32_t accionRecibida)
 {
 
 	switch((int)accionRecibida){
@@ -516,7 +514,7 @@ void recibirOrdenes(char* accionRecibida)
 
 		case accionContinuarProceso: //Obtener y parsear sentencias
 
-			if(!finalizarEjecucion()){
+			if(!puedo_terminar()){
 				pedirSentencia();
 			}
 			break;
@@ -548,7 +546,7 @@ void esperarProgramas()
 	int32_t accionRecibida;
 	ejecutando = true;
 
-		while (!finalizarEjecucion()) {
+		while (!puedo_terminar()) {
 
 			int bytes = recv(kernel, &accionRecibida, sizeof(int32_t), MSG_WAITALL);
 			recibirOrdenes(accionRecibida);
@@ -571,9 +569,13 @@ void loggearFinDePrimitiva(char* primitiva) {
 
 void finalizar_todo() {
 
+	log_info(infoLog,"Finalizando proceso cpu...");
+
 	close(kernel);
 	close(memoria);
 
+	log_info(infoLog,"CPU finalizó correctamente.");
+	//destruirLogs();
 	exit(EXIT_SUCCESS);
 }
 
@@ -584,23 +586,53 @@ void handler(int sign) {
 		if(!ejecutando){
 
 			//TODO: deberia avisarle a memoria?
-			int codAccion = accionQuantumInterrumpido;
-			void* buffer = malloc(sizeof(int));
-			memcpy(buffer, &codAccion, sizeof(codAccion));
-			send(kernel, buffer, sizeof(codAccion), 0);
+//			int codAccion = accionQuantumInterrumpido;
+//			void* buffer = malloc(sizeof(int));
+//			memcpy(buffer, &codAccion, sizeof(codAccion));
+//			send(kernel, buffer, sizeof(codAccion), 0);
 
-			finalizar_proceso(false);
+			serializar_PCB(pcbNuevo, kernel, accionQuantumInterrumpido);
+			//finalizar_proceso(false);
+			finalizar_todo();
 
 		}else{
-			termina = true;
+			terminar = true;
+			log_info(infoLog, "Esperando a que termine la ejecucion del programa actual...");
 
-			int codAccion = accionQuantumInterrumpido;
-			void* buffer = malloc(sizeof(int));
-			memcpy(buffer, &codAccion, sizeof(codAccion));
-			send(kernel, buffer, sizeof(codAccion), 0);
+//			int codAccion = accionQuantumInterrumpido;
+//			void* buffer = malloc(sizeof(int));
+//			memcpy(buffer, &codAccion, sizeof(codAccion));
+//			send(kernel, buffer, sizeof(codAccion), 0);
+
+			serializar_PCB(pcbNuevo, kernel, accionQuantumInterrumpido);
 		}
 	}
 }
+//void finalizar_CPU()
+//{
+//
+//}
+
+//void finalizar_programa(int32_t cierre)
+//{
+//	switch(cierre)
+//	{
+//		case CasoOverflow:
+//
+//
+//		break;
+//
+//		case CasoVariableInvalida:
+//
+//
+//		break;
+//
+//		case CasoCierreNormal:
+//
+//
+//		break;
+//	}
+//}
 
 int main(void){
 
@@ -608,17 +640,18 @@ int main(void){
 
 	crearLog(string_from_format("cpu_%d", getpid()), "CPU", 1);
 	log_debug(debugLog, "Iniciando proceso CPU, PID: %d.", getpid());
+
 	identidadCpu = SOYCPU;
+
 	cargarConfiguracion();
 	inicializarPrimitivas();
 	inicializarContexto();
 	conectarConKernel();
     conectarConMemoria();
     tamanioPaginas = obtenerTamanioPagina(memoria);
-   //tamanioPaginas = 32;
-  //PARA PRUEBAS SOLO:pedirSentencia();
-   esperarProgramas();
-   // destruirLogs();
+
+    esperarProgramas();
+    finalizar_todo();
 
 	return EXIT_SUCCESS;
 }

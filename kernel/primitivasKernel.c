@@ -2,10 +2,10 @@
 
 void recibirWait(int cliente)
 {
-	char* serialTamanio = malloc(sizeof(int32_t));
+	void* serialTamanio = malloc(sizeof(int32_t));
 	recv(cliente, serialTamanio, sizeof(int32_t), 0);
 	int32_t tamanio = char4ToInt(serialTamanio);
-	void* semid = malloc(tamanio);
+	char* semid = malloc(tamanio);
 	recv(cliente, semid, tamanio, 0);
 
 	primitivaWait(cliente, semid);
@@ -17,7 +17,7 @@ void recibirSignal(int cliente)
 	void* serialTamanio = malloc(sizeof(int32_t));
 	recv(cliente, serialTamanio, sizeof(int32_t), 0);
 	int32_t tamanio = char4ToInt(serialTamanio);
-	void* semid = malloc(tamanio);
+	char* semid = malloc(tamanio);
 	recv(cliente, semid, tamanio, 0);
 
 	primitivaSignal(cliente, semid);
@@ -26,6 +26,9 @@ void recibirSignal(int cliente)
 
 void primitivaSignal(int cliente, char* semaforoID)
 {
+	t_proceso* proceso = obtenerProceso(cliente);
+	proceso->privilegiadas++;
+
 	t_semaforo* semaforo = (t_semaforo*)dictionary_get(tablaSemaforos, semaforoID);
 
 		if (!queue_is_empty(semaforo->colaSemaforo)) {
@@ -37,11 +40,13 @@ void primitivaSignal(int cliente, char* semaforoID)
 			semaforo->valorSemaforo++;
 		}
 
-		//clientes[cliente].atentido=false;
 }
 
 void primitivaWait(int cliente, char* semaforoID)
 {
+	t_proceso* proceso = obtenerProceso(cliente);
+	proceso->privilegiadas++;
+
 	t_semaforo* semaforo = (t_semaforo*)dictionary_get(tablaSemaforos, semaforoID);
 
 	if (semaforo->valorSemaforo > 0){
@@ -49,8 +54,6 @@ void primitivaWait(int cliente, char* semaforoID)
 	}else{
 		bloquearProcesoSem(cliente, semaforoID);
 	}
-
-	//clientes[cliente].atentido=false;
 }
 
 void obtenerValorCompartida(int cliente)
@@ -63,6 +66,10 @@ void obtenerValorCompartida(int cliente)
 	recv(cliente, compartidaSerial, tamanio, 0);
 	char* compartida = string_from_format("!%s",compartidaSerial);
 	int valor = devolverCompartida(compartida);
+
+	t_proceso* proceso = obtenerProceso(cliente);
+	proceso->privilegiadas++;
+
 	if(valor != -1)
 	{
 		char* valorSerial = intToChar4(valor);
@@ -87,6 +94,9 @@ void obtenerAsignarCompartida(int cliente){
 	int32_t valorNuevo;
 	recv(cliente, &valorNuevo, sizeof(int32_t), 0);
 	int32_t resultado = asignarCompartida(compartida, valorNuevo, cliente);
+
+	t_proceso* proceso = obtenerProceso(cliente);
+	proceso->privilegiadas++;
 
 	if(resultado != -1)
 	{
@@ -146,6 +156,9 @@ void atenderSolicitudMemoriaDinamica()
 	recv(fdCliente, &pid, sizeof(int),0);
 	recv(fdCliente, &espacioSolicitado, sizeof(int),0);
 
+	t_proceso* proceso = buscarProcesoPorPID(pid);
+	proceso->privilegiadas++;
+
 	int puntero = alocarMemoria(espacioSolicitado, pid);
 
 	send(fdCliente, &puntero, sizeof(int), 0);
@@ -159,6 +172,9 @@ void atenderLiberacionMemoriaDinamica()
 	recv(fdCliente, &pid, sizeof(int),0);
 	recv(fdCliente, &punteroRecibido, sizeof(int),0);
 	recv(fdCliente, &cantPaginasCodigo, sizeof(int),0);
+
+	t_proceso* proceso = buscarProcesoPorPID(pid);
+	proceso->privilegiadas++;
 
 	int result = liberarMemoria(punteroRecibido, pid, cantPaginasCodigo);
 	send(fdCliente, &result, sizeof(int32_t),0);

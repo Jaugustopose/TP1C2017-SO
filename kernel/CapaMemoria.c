@@ -102,6 +102,9 @@ void solicitarPagina(int pid)
     	list_add(pidElemento->paginas, paginaNueva);
     }
 
+    t_proceso* proceso = buscarProcesoPorPID(pid);
+    proceso->cantidadPaginasHeap++;
+
 }
 
 t_paginaHeap* getPaginaConEspacio(t_pidHeap* pidElement, int pid, int espacio)
@@ -158,6 +161,9 @@ t_puntero alocar(int pid, int espacio)
 	}
 
 	list_iterate(elementoPagina->bloques,(void*)calcularPosicion);
+
+    t_proceso* proceso = buscarProcesoPorPID(pid);
+    proceso->bytesAlocados = proceso->bytesAlocados + espacio + 5;
 
 	//Devuelve una posicion absoluta tomando en cuenta PAGINAS DE STACK, de HEAP y OFFSET de bloques.
 	//Es resonsabilidad de las primitivas de CPU sumarle las paginas de codigo.
@@ -285,6 +291,9 @@ int liberarMemoria(t_puntero puntero, int pid, int cantPaginasCodigo)
    bloque->isFree = true;
    pagina->tamDisponible = pagina->tamDisponible + bloque->size;
 
+	t_proceso* proceso = buscarProcesoPorPID(pagina->pid);
+	proceso->bytesLiberados = proceso->bytesLiberados + bloque->size;
+
 	if(bloquesTodosFree(pagina))
 	{
 		liberarPagina(pagina, puntero, cantPaginasCodigo);
@@ -314,6 +323,9 @@ void liberarPagina(t_paginaHeap* pagina, int puntero, int cantPaginasCodigo)
 	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), 0);
 	int overflow = char4ToInt(stackOverflow);
 	free(stackOverflow);
+
+	t_proceso* proceso = buscarProcesoPorPID(pagina->pid);
+	proceso->cantidadPaginasHeap--;
 
 }
 

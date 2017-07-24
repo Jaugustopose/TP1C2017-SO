@@ -29,7 +29,6 @@
 t_log *logger;
 t_log *debugLogger;
 
-bool termina;
 
 //GLOBALES
 int identidadCpu;
@@ -37,8 +36,11 @@ struct sockaddr_in dirKernel;
 int kernel;
 struct sockaddr_in dirMemoria;
 int memoria;
+
+//Puedo terminar
 bool ejecutando;
-bool finalizarEjec;
+bool terminar;
+
 bool haySigusr1;
 int overflow;
 bool lanzarOverflowExep;
@@ -48,6 +50,11 @@ char* sentenciaPedida;
 int quantumSleep;
 int algoritmo;
 
+typedef enum t_tipos_cierre {
+	CasoOverflow = 1,
+	CasoVariableInvalida = 2,
+	CasoCierreNormal = 3
+}t_tipos_cierre;
 
 struct configuracion{
 	char* IP_MEMORIA;

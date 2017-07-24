@@ -201,18 +201,18 @@ void ir_al_label(t_nombre_etiqueta label)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "IR_AL_LABEL");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
-	log_debug(debugLog, "La primitiva recibio el label: |%c| ", label);
+	log_debug(debugLog, "La primitiva recibio el label: |%d| ", label);
 
 	t_puntero_instruccion posPrimeraInstruccionUtil = -1;
 
-	if (existeLabel(label)) {
+	//if (existeLabel(label)) {
 		posPrimeraInstruccionUtil = metadata_buscar_etiqueta(label, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
-	}
-	else
-	{
-		//ERRROR!
-		//devuelve posPrimeraInstruccionUtil = -1
-	}
+//	}
+//	else
+//	{
+//		//ERRROR!
+//		//devuelve posPrimeraInstruccionUtil = -1
+//	}
 	log_debug(debugLog, "Se actualiza el PC del PCB a: |%d| ", posPrimeraInstruccionUtil);
 	actualizarPC(pcbNuevo, posPrimeraInstruccionUtil);
 
@@ -236,15 +236,7 @@ void finalizar()
 
 	int elementos = stack_tamanio(stack);
 
-	if(elementos == 0)
-	{
-		termina = true;
-		//finalizarProceso(true);
-	}
-
-	actualizarPC(pcbNuevo, retorno);
-
-	log_debug(debugLog, "Se actualiza el PC del PCB a: |%d|. Retorno. ", retorno);
+	//actualizarPC(pcbNuevo, retorno);
 
 	loggearFinDePrimitiva("finalizar");
 
@@ -413,15 +405,16 @@ void wait(t_nombre_semaforo identificador_semaforo)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "WAIT");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
-	log_debug(debugLog, "El semaforo es: |%c|.", identificador_semaforo);
+	log_debug(debugLog, "El semaforo es: |%s|.", identificador_semaforo);
 
+	char* nombreSemaforo = identificador_semaforo;
 	int codigoAccion = accionWait;
-	int tamanioNombreSem = strlen(identificador_semaforo) + 1;
+	int tamanioNombreSem = strlen(nombreSemaforo) + 1;
 
 	void* buffer = malloc(sizeof(int32_t)*2 + tamanioNombreSem);
 	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
 	memcpy(buffer + sizeof(codigoAccion), &tamanioNombreSem, sizeof(tamanioNombreSem));
-	memcpy(buffer + sizeof(codigoAccion) + sizeof(tamanioNombreSem), identificador_semaforo, tamanioNombreSem);
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(tamanioNombreSem), nombreSemaforo, tamanioNombreSem);
 
 	send(kernel, buffer, sizeof(int32_t)*2 + tamanioNombreSem, 0);
 
@@ -435,8 +428,9 @@ void primitiva_signal(t_nombre_semaforo identificador_semaforo)
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "El semaforo es: |%c|.", identificador_semaforo);
 
+	char* nombreSemaforo = identificador_semaforo;
 	int codigoAccion = accionSignal;
-	enviarTamanioYString(codigoAccion, kernel, identificador_semaforo);
+	enviarTamanioYString(codigoAccion, kernel, nombreSemaforo);
 	loggearFinDePrimitiva("signal");
 }
 

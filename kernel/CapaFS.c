@@ -66,6 +66,10 @@ void quitarTablaProceso(int pid, int fd){
 //*********************************Operaciones FS***************************
 
 void crearArchivo(int Pid, char* path, char* permisos, int socketCpu, int socketFS){
+
+	t_proceso* proceso = buscarProcesoPorPID(Pid);
+	proceso->privilegiadas++;
+
 	//Envio mensaje al FS
 	int codOperacion = accionCrearArchivo;
 	int pathSize = string_length(path)+1;
@@ -102,6 +106,10 @@ void abrirArchivo(int socketCpu, int socketFS){
 	recv(socketCpu, path, tamanioPath, 0);
 	recv(socketCpu, permisos, tamanioPermisos, 0);
 
+
+	t_proceso* proceso = buscarProcesoPorPID(pid);
+	proceso->privilegiadas++;
+
 	//Envio mensaje al FS
 	int codOperacion = accionAbrirArchivo;
 	// Tamanio paquete = codOperacion + pathSize + path
@@ -127,6 +135,8 @@ void abrirArchivo(int socketCpu, int socketFS){
 			return;
 		}else{
 			//TODO: Error Archivo no existe
+			//ACA METER send(socketCpu, &RES, sizeof(fd),0); y ese res tiene que ser -2
+			//Primitiva abrir en CPU lo detecta como -2 => exit code y sale del programa.
 			return;
 		}
 		//TODO: Error el archivo esta corrupto
@@ -143,8 +153,13 @@ void leerArchivo(int socketCpu, int socketFS){
 	recv(socketCpu, &tamanio, sizeof(tamanio), 0);
 	FD_t* fileDescriptor = obtenerFD(pid, fd);
 
+	t_proceso* proceso = buscarProcesoPorPID(pid);
+	proceso->privilegiadas++;
+
 	if(string_contains(fileDescriptor->permisos,"r")==NULL){
 		//TODO Dar Error de permisos y terminar el proceso
+		//ACA METER send(socketCpu, &RES, sizeof(fd),0); y ese res tiene que ser -2
+		//Primitiva abrir en CPU lo detecta como -3 => exit code y sale del programa.
 		return;
 	}
 	globalFD_t* globalFD = list_get(tablaGlobalArchivos, fileDescriptor->indiceTablaGlobal);
@@ -196,10 +211,15 @@ void escribirArchivo(int socketCpu, int socketFS){
 		return;
 	}
 
+	t_proceso* proceso = buscarProcesoPorPID(pid);
+	proceso->privilegiadas++;
+
 	FD_t* fileDescriptor = obtenerFD(pid, fd);
 
 	if(string_contains(fileDescriptor->permisos,"w")==NULL){
 		//TODO Dar Error de permisos y terminar el proceso
+		//ACA METER send(socketCpu, &RES, sizeof(fd),0); y ese res tiene que ser -4
+		//Primitiva abrir en CPU lo detecta como -4 => exit code y sale del programa.
 		return;
 	}
 	globalFD_t* globalFD = list_get(tablaGlobalArchivos, fileDescriptor->indiceTablaGlobal);
@@ -235,6 +255,10 @@ void cerrarArchivo(int socketCpu, int socketFS){
 	recv(socketCpu, &fd, sizeof(fd), 0);
 	recv(socketCpu, &pid, sizeof(pid), 0);
 	FD_t* fileDescriptor = obtenerFD(pid, fd);
+
+	t_proceso* proceso = buscarProcesoPorPID(pid);
+	proceso->privilegiadas++;
+
 	//TODO: Recibir informacion desde el CPU
 	quitarTablaGlobal(fileDescriptor);
 	quitarTablaProceso(pid, fd);
@@ -247,6 +271,9 @@ void borrarArchivo(int socketCPU, int socketFS){
 	recv(socketCPU, &fd, sizeof(fd), 0);
 	recv(socketCPU, &pid, sizeof(pid), 0);
 	FD_t* fileDescriptor = obtenerFD(pid, fd);
+
+	t_proceso* proceso = buscarProcesoPorPID(pid);
+	proceso->privilegiadas++;
 
 	globalFD_t* globalFD = list_get(tablaGlobalArchivos, fileDescriptor->indiceTablaGlobal);
 	if(globalFD->cantProcesos>1){
@@ -286,5 +313,9 @@ void moverCursor(int socketCPU, int socketFS){
 	recv(socketCPU, &pid, sizeof(pid), 0);
 	recv(socketCPU, &offset, sizeof(offset), 0);
 	FD_t* fileDescriptor = obtenerFD(pid, fd);
+
+	t_proceso* proceso = buscarProcesoPorPID(pid);
+	proceso->privilegiadas++;
+
 	fileDescriptor->offset=offset;
 }

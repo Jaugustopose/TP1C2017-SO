@@ -79,6 +79,17 @@ t_proceso* obtenerProceso(int cliente){
 	return proceso;
 }
 
+t_proceso* buscarProcesoPorPID(int PID){
+
+	bool buscarPID(t_proceso* unProceso)
+	{
+		return unProceso->pidProceso == PID;
+	}
+
+	t_proceso* procesoBuscado = list_find(listaDeProcesos,(void*)buscarPID);
+	return procesoBuscado;
+}
+
 void stack_PCB_main(t_PCB* pcb){
 
 	//Mete el contexto de la funcion main al stack
@@ -125,6 +136,7 @@ void finalizarProceso(t_proceso* proceso)
 	cambiarEstado(proceso,EXIT);
 
 	//TODO: ELIMINAR ARCHIVOS ABIERTOS QUE TENGAMOS!!!!
+	liberarRecursos(proceso);
 
 	if (proceso->semaforo != NULL){
 			t_semaforo* semaforo = dictionary_get(tablaSemaforos,proceso);
@@ -138,8 +150,9 @@ void finalizarProceso(t_proceso* proceso)
 		return unProceso->PCB->PID == proceso->PCB->PID;
 	}
 
+	//TODO:CONVIENE DEJARLO PARA EL HISTORICO DE PROCESOS.
 	//Lo saco de la lista de procesos. Queda su PCB en la cola de exit para historico
-	list_remove_and_destroy_by_condition(listaDeProcesos,(void*)esElProcesoBuscado, (void*)destructorProcesos);
+	//list_remove_and_destroy_by_condition(listaDeProcesos,(void*)esElProcesoBuscado, (void*)destructorProcesos);
 }
 
 void bloquearProcesoSem(int cliente, char* semid) {
@@ -194,21 +207,8 @@ void rafagaProceso(int cliente){
 
 	t_proceso* proceso = obtenerProceso(cliente);
 	proceso->rafagas++;
+	proceso->rafagasTotales++;
 	planificarExpulsion(proceso);
-
-//	int sigusr1;
-//	recv(cliente, &sigusr1, sizeof(int), 0);
-//	t_proceso* proceso = obtenerProceso(cliente);
-//	proceso->rafagas++;
-//	proceso->rafagasTotales++;
-//
-//	if(sigusr1 == 1)
-//	{
-//		proceso->sigusr1 = true;
-//	}
-//
-//	planificarExpulsion(proceso);
-
 }
 
 void continuarProceso(t_proceso* proceso) {
@@ -241,6 +241,19 @@ void actualizarPCB(t_proceso* proceso, t_PCB* PCB) { //
 	proceso->PCB = PCB;
 }
 
+t_PCB* recibirPCBDeCPU(int cpu)
+{
+	 int tamanio;
+	 recv(cpu, &tamanio, sizeof(int), 0);
+	 void* pcbSerializado = malloc(tamanio);
+
+	 recv(cpu, pcbSerializado, tamanio, 0);
+	 t_PCB* pcb = malloc(sizeof(t_PCB));
+	 deserializar_PCB(pcb, pcbSerializado);
+
+	return pcb;
+}
+
 void expulsarProceso(t_proceso* proceso) {
 
 	int codAccion = accionDesalojarProceso;
@@ -271,26 +284,45 @@ void expulsarProceso(t_proceso* proceso) {
 	free(pcbSerializado);
 }
 
+void liberarRecursos(t_proceso* proceso)
+{
+	int codAccion = finalizarProgramaAccion;
+	int pidParaLiberar = proceso->pidProceso;
+	int result;
+
+	void* buffer = malloc(sizeof(int32_t)*3);
+	memcpy(buffer, &codAccion, sizeof(codAccion));
+	memcpy(buffer + sizeof(codAccion), &pidParaLiberar, sizeof(pidParaLiberar));
+
+	send(memoria, buffer, sizeof(codAccion) + sizeof(pidParaLiberar), 0);
+	recv(memoria, &result, sizeof(int32_t), 0);
+
+}
+
 void planificarExpulsion(t_proceso* proceso) {
 
 	bool seLeAcaboElQuantum = terminoQuantum(proceso);
 
-	if(proceso->abortado)
+
+    if(proceso->estado == EXEC)
 	{
-		expulsarProceso(proceso);
-	}
-	else if(proceso->estado == EXEC)
-	{
-		if(seLeAcaboElQuantum)
+		if(seLeAcaboElQuantum || proceso->abortado)
 		{
 			expulsarProceso(proceso);
 		}else
 		{
 			continuarProceso(proceso);
 		}
-	}else if(proceso->estado == BLOCK)
+	}
+    else if(proceso->estado == BLOCK)
 	{
 		expulsarProceso(proceso);
+	}
+
+	if(proceso->abortado)
+	{
+		liberarRecursos(proceso);
+		finalizarProceso(proceso);
 	}
 
 }
@@ -341,15 +373,61 @@ void ejecutarProceso(t_proceso* proceso, int cpu) {
 //}
 
 void recibirFinalizacion(int cliente) {
+
 	t_proceso* proceso = obtenerProceso(cliente);
 	if (proceso != NULL) {
-		if (!proceso->abortado)
-		{
+		proceso->PCB = recibirPCBDeCPU(cliente);
+//		if (!proceso->abortado)
+//		{
 			finalizarProceso(proceso);
-		}
+	//	}
 	}
 }
 /****************************************CONSOLA KERNEL*******************************************************/
+
+void recibirAccionDelUsuarioKernel(int32_t orden)
+{
+	while(1)
+	{
+		switch(orden)
+		{
+			case listadoProcesoCompleto:
+						break;
+
+			case totalRafagas:
+						break;
+
+			case totalPrivilegiadas:
+						break;
+
+			case verTablaArchivosAbiertos:
+						break;
+
+			case totalPaginasHeap:
+				//Esta accion se subdivide en otras dos
+						break;
+
+			case verTablaGlobalArchivos:
+						break;
+
+			case modificarGradoMultiprog:
+						break;
+
+			case finalizarProcesoDesdeKernel:
+						break;
+
+			case detenerPlanificacion:
+						break;
+		}
+	}
+}
+
+void modificarGradoDeMultiprogramacion(int nuevoGradoMulti)
+{
+	//Lei en un ISSUE que se empieza a laburar gradualmente con el nuevo grado.
+	//No hay que hacer nada raro como salir a matar procesos si el numero nuevo es menor.
+	config.GRADO_MULTIPROG = nuevoGradoMulti;
+}
 
 //Funcion nuestra, no de las commons
 void queue_iterate(t_queue* self, void (*closure)(void*)) {
@@ -512,4 +590,10 @@ void imprimirLiberacionPaginasHeap()
 	list_iterate(listaDeProcesos, (void*)liberacionHEAPPorProceso);
 	log_info(infoLog,"Paginas Heap =[%s]", strPaginasHeapLiberar);
 	free(strPaginasHeapLiberar);
+}
+
+void imprimirTablaGlobalDeArchivos(int pid)
+{
+	t_proceso* proceso = buscarProcesoPorPID(pid);
+	//TODO:LUCAS, hay que traer la tabla de archivos abiertos del proceso
 }
