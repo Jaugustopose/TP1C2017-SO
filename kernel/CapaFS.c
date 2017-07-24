@@ -47,28 +47,28 @@ int agregarTablaProceso(int pid, int indiceTablaGlobal, char* permisos){
 	fileDescriptor->indiceTablaGlobal = indiceTablaGlobal;
 	fileDescriptor->permisos = string_duplicate(permisos);
 	fileDescriptor->offset = 0;
-	return list_add(tablaProceso, fileDescriptor);;
+	return list_add(tablaProceso, fileDescriptor)+2;
 }
 
 FD_t* obtenerFD(int pid, int fd){
 	t_list* tablaProceso = dictionary_get(tablasProcesos, string_itoa(pid));
-	return list_get(tablaProceso, fd);
+	return list_get(tablaProceso, fd-2);
 }
 
 void quitarTablaProceso(int pid, int fd){
 	t_list* tablaProceso = dictionary_get(tablasProcesos, string_itoa(pid));
-	FD_t* fileDescriptor = list_get(tablaProceso, fd);
+	FD_t* fileDescriptor = list_get(tablaProceso, fd-2);
 	free(fileDescriptor);
 	//Reemplazo en vez de eliminar para que no me cambie el indice de los demas
-	list_replace(tablaProceso,fd,NULL);
+	list_replace(tablaProceso,fd-2,NULL);
 }
 
 //*********************************Operaciones FS***************************
 
-void crearArchivo(int Pid, char* path, char* permisos, int socketCpu){
+void crearArchivo(int Pid, char* path, char* permisos, int socketCpu, int socketFS){
 	//Envio mensaje al FS
 	int codOperacion = accionCrearArchivo;
-	int pathSize = string_length(path);
+	int pathSize = string_length(path)+1;
 	// Tamanio paquete = codOperacion + pathSize + path
 	int packetSize = pathSize + sizeof(int)*2;
 	void *buffer = malloc(packetSize);
@@ -80,7 +80,7 @@ void crearArchivo(int Pid, char* path, char* permisos, int socketCpu){
 	//Recibo respuesta
 	int res;
 	recv(socketFS, &res, sizeof(res), 0);
-	if(res==0){
+	if(res==1){
 		int indiceTablaGlobal = agregarTablaGlobal(path);
 		int fd = agregarTablaProceso(Pid, indiceTablaGlobal, permisos);
 		send(socketCpu, &fd, sizeof(fd),0);
@@ -91,16 +91,16 @@ void crearArchivo(int Pid, char* path, char* permisos, int socketCpu){
 
 void abrirArchivo(int socketCpu, int socketFS){
 	int pid;
-	char* path;
-	char* permisos;
 	int tamanioPath;
 	int tamanioPermisos;
 	//Recibo datos del CPU
 	recv(socketCpu, &pid, sizeof(pid), 0);
 	recv(socketCpu, &tamanioPath, sizeof(tamanioPath), 0);
 	recv(socketCpu, &tamanioPermisos, sizeof(tamanioPermisos), 0);
-	recv(socketCpu, &path, tamanioPath, 0);
-	recv(socketCpu, &permisos, tamanioPermisos, 0);
+	char* path = malloc(tamanioPath);
+	char* permisos = malloc(tamanioPermisos);
+	recv(socketCpu, path, tamanioPath, 0);
+	recv(socketCpu, permisos, tamanioPermisos, 0);
 
 	//Envio mensaje al FS
 	int codOperacion = accionAbrirArchivo;
@@ -113,17 +113,17 @@ void abrirArchivo(int socketCpu, int socketFS){
 	send(socketFS, buffer, packetSize,0);
 	free(buffer);
 	//Recibo respuesta
-	int res;
+	int res=-1;
 	recv(socketFS, &res, sizeof(res), 0);
 	//Analizar respuesta y enviar a CPU
-	if(res==0){
+	if(res==1){
 		int indiceTablaGlobal = agregarTablaGlobal(path);
 		int fd = agregarTablaProceso(pid, indiceTablaGlobal, permisos);
 		send(socketCpu, &fd, sizeof(fd),0);
 	}else{
 		// Si no existe el archivo pero tenemos permisos de creacion se lo manda a crear
 		if(res==-1 && string_contains(permisos, "c")){
-			crearArchivo(pid, path, permisos, socketCpu);
+			crearArchivo(pid, path, permisos, socketCpu, socketFS);
 			return;
 		}else{
 			//TODO: Error Archivo no existe
@@ -150,7 +150,7 @@ void leerArchivo(int socketCpu, int socketFS){
 	globalFD_t* globalFD = list_get(tablaGlobalArchivos, fileDescriptor->indiceTablaGlobal);
 	//Envio mensaje al FS
 	int codOperacion = accionObtenerDatosArchivo;
-	int pathSize = string_length(globalFD->path);
+	int pathSize = string_length(globalFD->path)+1;
 	// Tamanio paquete = codOperacion + pathSize + path + offset + tamanio
 	int packetSize = pathSize + sizeof(int)*4;
 	void *buffer = malloc(packetSize);
@@ -164,10 +164,10 @@ void leerArchivo(int socketCpu, int socketFS){
 	//Recibo respuesta
 	int res;
 	recv(socketFS, &res, sizeof(res), 0);
-	if(res==0){
-		char* datos = malloc(tamanio);
+	if(res==1){
+		void* datos = malloc(tamanio);
 		recv(socketFS, datos, tamanio, 0);
-		//TODO: Enviar respuesta a la CPU
+		send(socketCpu, datos, tamanio,0);
 	}else{
 		//TODO: Dar error
 	}
@@ -177,12 +177,25 @@ void escribirArchivo(int socketCpu, int socketFS){
 	int fd;
 	int pid;
 	int tamanio;
-	void* datos;
 	//Recibo datos del CPU
 	recv(socketCpu, &fd, sizeof(fd), 0);
 	recv(socketCpu, &pid, sizeof(fd), 0);
 	recv(socketCpu, &tamanio, sizeof(tamanio), 0);
+	void* datos = malloc(tamanio);
 	recv(socketCpu, datos, tamanio, 0);
+	if(fd==1){
+		//TODO: Mandar a imprimir a la consola correspondiente
+		char *texto = datos;
+		int i;
+		for (i = 0; i < tamanio; ++i) {
+			if(i==0)
+				printf("Printf : |");
+			printf("%d|",(int)texto[i]);
+		}
+		printf("\n");
+		return;
+	}
+
 	FD_t* fileDescriptor = obtenerFD(pid, fd);
 
 	if(string_contains(fileDescriptor->permisos,"w")==NULL){
@@ -192,7 +205,7 @@ void escribirArchivo(int socketCpu, int socketFS){
 	globalFD_t* globalFD = list_get(tablaGlobalArchivos, fileDescriptor->indiceTablaGlobal);
 	//Envio mensaje al FS
 	int codOperacion = accionEscribir;
-	int pathSize = string_length(globalFD->path);
+	int pathSize = string_length(globalFD->path)+1;
 	// Tamanio paquete = codOperacion + pathSize + path + offset + tamanio + datos
 	int packetSize = pathSize + sizeof(int)*4 + tamanio;
 	void *buffer = malloc(packetSize);
@@ -208,7 +221,7 @@ void escribirArchivo(int socketCpu, int socketFS){
 	int res;
 	recv(socketFS, &res, sizeof(res), 0);
 	//Analizar respuesta y enviar a CPU
-	if(res==0){
+	if(res==1){
 		//TODO: OK
 	}else{
 		//TODO: -1 error al escribir el archivo
@@ -240,11 +253,11 @@ void borrarArchivo(int socketCPU, int socketFS){
 		//Error: No se puede borrar el archivo porque alguien mas lo tienen abierto
 		//TODO: Terminar el proceso.
 	}else{
-		quitarTablaGlobal(fileDescriptor);
-		quitarTablaProceso(pid, fd);
+		//quitarTablaGlobal(fileDescriptor);   VER SI HAY QUE SACARLO O NO
+		//quitarTablaProceso(pid, fd);
 		//Envio mensaje al FS
 		int codOperacion = accionBorrarArchivo;
-		int pathSize = string_length(globalFD->path);
+		int pathSize = string_length(globalFD->path)+1;
 		// Tamanio paquete = codOperacion + pathSize + path
 		int packetSize = pathSize + sizeof(int)*2;
 		void *buffer = malloc(packetSize);
@@ -256,7 +269,7 @@ void borrarArchivo(int socketCPU, int socketFS){
 		//Recibo respuesta
 		int res;
 		recv(socketFS, &res, sizeof(res), 0);
-		if(res==0){
+		if(res==1){
 			//OK
 		}else{
 			//TODO: Error al borrar el archivo
