@@ -1,4 +1,5 @@
 #include "kernel.h"
+#include "funcionesKernel.h"
 
 /********************************** INICIALIZACIONES *****************************************************/
 
@@ -66,16 +67,40 @@ void cargarConfiguracion() {
 	}
 	if (config_has_property(configKernel, "SEM_IDS")) {
 		config.SEM_IDS = config_get_array_value(configKernel, "SEM_IDS");
-		printf("SEM_IDS: %s\n", config.SEM_IDS);
+		printf("SEM_IDS: ");
+		char **sem = config.SEM_IDS;
+		int i;
+		for (i = 0; sem[i]; ++i) {
+			if(i!=0)
+				printf("|");
+			printf("%s",sem[i]);
+		}
+		printf("\n");
 	}
 	if (config_has_property(configKernel, "SEM_INIT")) {
 		config.SEM_INIT = config_get_array_value(configKernel, "SEM_INIT");
-		printf("SEM_INIT: %s\n", config.SEM_INIT);
+		printf("SEM_INIT: ");
+		char **sem = config.SEM_INIT;
+		int i;
+		for (i = 0; sem[i]; ++i) {
+			if(i!=0)
+				printf("|");
+			printf("%s",sem[i]);
+		}
+		printf("\n");
 	}
 	if (config_has_property(configKernel, "SHARED_VARS")) {
 		config.SHARED_VARS = config_get_array_value(configKernel,
 				"SHARED_VARS");
-		printf("SHARED_VARS: %s\n", config.SHARED_VARS);
+		printf("SHARED_VARS: ");
+		char **sem = config.SHARED_VARS;
+		int i;
+		for (i = 0; sem[i]; ++i) {
+			if(i!=0)
+				printf("|");
+			printf("%s",sem[i]);
+		}
+		printf("\n");
 	}
 	if (config_has_property(configKernel, "STACK_SIZE")) {
 			config.STACK_SIZE = config_get_int_value(configKernel,
@@ -225,19 +250,6 @@ void comprobarSockets(int maxSock, fd_set* read_fds) {
 	}
 }
 
-int redondear(float numero) {
-		int resultado;
-		if((numero - (int)numero) !=0){
-			numero++;
-			resultado = (int) numero;
-		}else {
-			resultado = (int)numero;
-		}
-
-		printf("%d\n",resultado); /* prints !!!Hello World!!! */
-		return resultado;
-}
-
 void interactuar_con_usuario() {
 
 	printf(
@@ -298,7 +310,7 @@ void Colocar_en_respectivo_fdset() {
 
 	case soyCPU:
 		FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
-		queue_push(colaCPU, sockClie);
+		encolarCPU(colaCPU, sockClie);
 		int algoritmo = (strcmp(config.ALGORITMO, FIFO) == 0)? SOY_FIFO : SOY_RR;
 		send(sockClie, &algoritmo, sizeof(int32_t), 0);
 		break;
@@ -544,7 +556,7 @@ void planificar()
 		//Chequeo de Ready a exec
 		if (!queue_is_empty(colaReady) && !queue_is_empty(colaCPU)){
 
-			ejecutarProceso((t_proceso*) queue_pop(colaReady),(int)queue_pop(colaCPU));
+			ejecutarProceso((t_proceso*) queue_pop(colaReady),desencolarCPU(colaCPU));
 		}
 
 
@@ -615,7 +627,7 @@ int main(void) {
 	listen_w(sockServ);
 
 	//Conectar con memoria
-     memoria = socket(AF_INET, SOCK_STREAM, 0);
+    memoria = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in direccionServ;
 	direccionServ.sin_family = AF_INET;
 	direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red

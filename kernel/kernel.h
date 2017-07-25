@@ -124,8 +124,6 @@ char* strAlocar;
 char* strLiberar;
 char* strBytesAlocados;
 char* stryBytesLiberados;
-//Prototipos
-int redondear(float numero);
 
 
 #endif

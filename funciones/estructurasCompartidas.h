@@ -157,5 +157,8 @@ typedef struct pedidoSolicitudPaginasStruct {
 	int32_t cantidadPaginas;
 } pedidoSolicitudPaginas_t;
 
+//Prototipos
+void destruir_PCB(t_PCB* pcb);
+
 
 #endif /* ESTRUCTURASCOMPARTIDAS_H_ */

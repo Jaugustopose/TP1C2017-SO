@@ -16,7 +16,7 @@
 #include <parser/metadata_program.h>
 #include <math.h>
 
-
+void desasignarCPU(t_proceso* proceso);
 
 
 #endif /* GESTIONDEPROCESOS_H_ */
