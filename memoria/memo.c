@@ -681,7 +681,7 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 			realizarDumpContenidoProceso(tablaPaginasInvertida);
 			break;
 		case flushCache:
-			flushMemoriaCache();
+			realizarFlushMemoriaCache();
 			break;
 		case sizeMemoria:
 			obtenerSizeMemoria(tablaPaginasInvertida);
@@ -695,8 +695,8 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	}
 }
 
-void flushMemoriaCache(){
-	//wait(&semaforoCache);
+void realizarFlushMemoriaCache(){
+
 
 	if(!list_is_empty(entradasOcupadasCache))
 	{
@@ -835,7 +835,7 @@ void cargar_Nueva_Entrada_En_Cache(int32_t unPid, int32_t unNroPag, tablaPagina_
 		}
 		nuevaEntrada->nroPagina = unNroPag;
 		char* buffer = solicitarBytesMemoria(unPid,unNroPag,0,config.marco_size, tablaPaginasInvertida);
-		memcpy(nuevaEntrada->contenido,buffer,config.marco_size);
+		memcpy(nuevaEntrada->contenido,buffer+sizeof(int32_t),config.marco_size);
 		list_add(entradasOcupadasCache,nuevaEntrada);
 
 }
