@@ -1,5 +1,19 @@
+#include <commons/config.h>
+#include <commons/string.h>
+#include <commons/collections/dictionary.h>
+#include <commons/collections/queue.h>
+#include <commons/collections/list.h>
+#include <parser/parser.h>
+#include <parser/metadata_program.h>
+#include <math.h>
+
 #include "gestionDeProcesos.h"
 #include "funcionesKernel.h"
+#include "deserializador.h"
+#include "serializador.h"
+#include "estructurasCompartidas.h"
+#include "logger.h"
+
 
 static bool matrizEstados[5][5] = {
 //		     		NEW    READY  EXEC   BLOCK  EXIT
@@ -324,6 +338,11 @@ void asignarCPU(t_proceso* proceso, int cpu) {
 	proceso->CpuDuenio = cpu;
 	proceso->rafagas = 0;
 	proceso->sigusr1 = false;
+}
+
+void enviarPCBaCPU(t_PCB* pcb, int cpu, int32_t accion)
+{
+	serializar_PCB(pcb, cpu, accion);
 }
 
 void ejecutarProceso(t_proceso* proceso, int cpu) {

@@ -2,12 +2,13 @@
 #ifndef ESTRUCTURASCOMPARTIDAS_H_
 #define ESTRUCTURASCOMPARTIDAS_H_
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <commons/collections/list.h>
 #include <commons/collections/dictionary.h>
 #include <parser/parser.h>
 #include <parser/metadata_program.h>
+
+#include <sys/socket.h>
+
 
 enum tipoMensaje {
 	inicializarProgramaAccion = 1,
@@ -75,7 +76,7 @@ enum algoritmoElegido {
 	SOY_FIFO = 2
 };
 
-typedef enum identidad {
+enum identidad {
 
 	SOYCONSOLA = 0,
 	SOYKERNEL = 1,
@@ -158,7 +159,21 @@ typedef struct pedidoSolicitudPaginasStruct {
 } pedidoSolicitudPaginas_t;
 
 //Prototipos
-void destruir_PCB(t_PCB* pcb);
 
+t_stack* stack_crear();
+t_elemento_stack* stack_elemento_crear();
+void stack_elemento_destruir(t_elemento_stack* elem);
+void stack_destruir(t_stack* stack);
+t_elemento_stack* stack_obtener(t_stack* stack, int indice);
+t_elemento_stack* stack_head(t_stack* stack);
+t_elemento_stack* stack_pop(t_stack* stack);
+void stack_push(t_stack* stack, t_elemento_stack* elem);
+int stack_tamanio_memoria(t_stack* stack);
+int stack_tamanio(t_stack* stack);
+t_pedido* stack_proximo_pedido(t_stack* stack, int tamanioPagina, int cantidadPaginasCodigo);
+void destruir_PCB(t_PCB* pcb);
+char* leerTamanioYMensaje(int sock);
+void enviarTamanioYString(int codigoAccion, int sock, char* mensaje);
+void enviarTamanioYSerial(int codigoAccion, int sock, int tamanio, char* mensaje);
 
 #endif /* ESTRUCTURASCOMPARTIDAS_H_ */

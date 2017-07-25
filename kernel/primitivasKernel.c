@@ -1,4 +1,10 @@
 #include "kernel.h"
+#include "gestionDeProcesos.h"
+
+void primitivaWait(int cliente, char* semaforoID);
+void primitivaSignal(int cliente, char* semaforoID);
+int devolverCompartida(char* compartida);
+int asignarCompartida(char* compartida, int valor, int cliente);
 
 void recibirWait(int cliente)
 {

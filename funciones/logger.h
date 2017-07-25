@@ -22,5 +22,10 @@ t_log *warningLog;
 t_log *infoLog;
 t_log *traceLog;
 
+void crearLog(char* nombreLog, char* nombreProceso, int muestraPantalla);
+void desactivarLogs();
+void reactivarLogs();
+void destruirLogs();
+
 
 #endif /* LOGGER_H_ */

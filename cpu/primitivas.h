@@ -14,8 +14,8 @@
 #include <unistd.h>
 #include <commons/config.h>
 #include <commons/string.h>
-//#include <parser/parser.h>
-//#include <parser/metadata_program.h>
+#include <parser/parser.h>
+#include <parser/metadata_program.h>
 #include <commons/collections/dictionary.h>
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
@@ -56,5 +56,6 @@ void retornar(t_valor_variable unaVariable);
 void wait(t_nombre_semaforo identificador_semaforo);
 void primitiva_signal(t_nombre_semaforo identificador_semaforo);
 
+void inicializarPrimitivas();
 
 #endif /* PRIMITIVAS_H_ */

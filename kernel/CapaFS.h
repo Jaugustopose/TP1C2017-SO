@@ -1,19 +1,6 @@
 #ifndef CapaFS_h
 #define CapaFS_h
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
-#include <sys/socket.h>
-
-#include <commons/config.h>
-#include <commons/string.h>
-#include <commons/collections/list.h>
-#include <commons/collections/dictionary.h>
-#include "kernel.h"
-#include "estructurasCompartidas.h"
-
 typedef struct{
 	char* permisos;
 	int offset;
@@ -24,5 +11,12 @@ typedef struct{
 	char* path;
 	int cantProcesos;
 }globalFD_t;
+
+void abrirArchivo(int socketCpu, int socketFS);
+void leerArchivo(int socketCpu, int socketFS);
+void escribirArchivo(int socketCpu, int socketFS);
+void cerrarArchivo(int socketCpu, int socketFS);
+void borrarArchivo(int socketCPU, int socketFS);
+void moverCursor(int socketCPU, int socketFS);
 
 #endif

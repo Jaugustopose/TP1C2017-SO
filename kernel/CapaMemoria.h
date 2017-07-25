@@ -12,17 +12,15 @@
 #include <string.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <math.h>
+
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/collections/dictionary.h>
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
-#include "logger.h"
-#include "serializador.h"
-#include "estructurasCompartidas.h"
-#include <math.h>
-#include "kernel.h"
 
+#include "parser/parser.h"
 
 t_list *listaPidHEAP; //elementos: pidHeap
 
@@ -49,6 +47,25 @@ typedef struct pidHeap{
 int32_t pid;
  t_list *paginas; //elementos: pagina
 }t_pidHeap;
+
+bool solicitudValida(int espacioSolicitado);
+t_pidHeap* getPID(int pid);
+t_paginaHeap* getPagina(t_pidHeap* pidElement, int nroPag);
+t_bloque* getBloque(t_paginaHeap* pagina, int indice);
+int getLastNroPag(int pid);
+void solicitarPagina(int pid);
+t_paginaHeap* getPaginaConEspacio(t_pidHeap* pidElement, int pid, int espacio);
+t_bloque* getBloqueConEspacio(t_paginaHeap* pagina, int espacio);
+t_puntero alocar(int pid, int espacio);
+t_puntero alocarMemoria(int espacioSolicitado, int pid);
+void bloquesDestroyer(t_bloque* bloque);
+void paginasDestroyer(t_paginaHeap* pagina);
+void liberarPaginaEstructura(t_paginaHeap* paginaALiberar, t_pidHeap* pidElement);
+bool bloquesTodosFree(t_paginaHeap* pagina);
+int calcularIndiceBloque(t_paginaHeap* pagina, int offset);
+int liberarMemoria(t_puntero puntero, int pid, int cantPaginasCodigo);
+void liberarPagina(t_paginaHeap* pagina, int puntero, int cantPaginasCodigo);
+int32_t defragmentar(t_paginaHeap* pagina);
 
 
 

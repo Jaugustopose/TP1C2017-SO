@@ -23,7 +23,7 @@
 
 */
 
-void* deserializar(int sock);
+
 
 /*
 	recv(sock, &id, 4, 0); //Aca recibo la identidad del mensaje (archivo, texto, programa, etc)
@@ -55,7 +55,17 @@ void* deserializar(int sock);
 
 	return buffer;
 }*/
+void* deserializar(int sock);
 void* deserializar_archivo(int sock);
+int deserializar_lista(t_list* destino, char* origen, int pesoElemento);
+int deserializar_pedido(t_pedido* destino, char* origen);
+int deserializar_sentencia(t_sentencia* destino, char* origen);
+int deserializar_int(int* destino, char* origen);
+int deserializar_t_puntero(t_puntero* destino, char* origen);
+int deserializar_stack_elem(t_elemento_stack* elemStack, char* origen);
+int deserializar_stack(t_stack* destino, char* origen);
+int deserializar_diccionario(t_dictionary* destino, char* origen, int pesoData);
+int deserializar_indice_etiquetas(char* destino, char* origen, int tamanio);
 void* deserializar_PCB(t_PCB* pcbUlt, char* pcbSerializado);
 
 #endif /* DESERIALIZADOR_H_ */

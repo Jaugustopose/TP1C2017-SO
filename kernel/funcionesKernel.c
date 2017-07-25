@@ -6,6 +6,7 @@
  */
 #include <commons/collections/queue.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 int redondear(float numero) {
 		int resultado;

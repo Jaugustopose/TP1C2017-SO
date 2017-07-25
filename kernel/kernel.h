@@ -28,7 +28,6 @@
 #include "estructurasCompartidas.h"
 #include "cliente-servidor.h"
 #include <pthread.h>
-#include "gestionDeProcesos.h"
 #include <sys/inotify.h>
 #include "CapaMemoria.h"
 #include "CapaFS.h"
@@ -93,7 +92,7 @@ int sockClie; // Socket a la escucha
 int maxFd; // Numero del ultimo socket creado (maximo file descriptor)
 int yes;
 int cantBytes; // La cantidad de bytes. Lo voy a usar para saber cuantos bytes me mandaron.
-int addrlen; // El tamaño de la direccion del cliente
+socklen_t addrlen; // El tamaño de la direccion del cliente
 int identidadCliente;
 int fdCliente, j; // Variables para recorrer los sockets (mandar mensajes o detectar datos con el select)
 int tamanioPag;

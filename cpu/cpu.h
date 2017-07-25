@@ -69,5 +69,12 @@ t_PCB* pcbNuevo;
 t_stack* stack;
 int cantidadPagCodigo;
 
+void finalizar_programa(bool normalmente);
+void enviarSolicitudBytes(int pid, int pagina, int offset, int size);
+void enviarAlmacenarBytes(int pid, int pagina, int offset, int size, t_valor_variable valor);
+void finalizarProgramaVariableInvalida();
+void loggearFinDePrimitiva(char* primitiva);
+void actualizarPC(t_PCB* pcb, t_puntero_instruccion pc);
+
 
 #endif

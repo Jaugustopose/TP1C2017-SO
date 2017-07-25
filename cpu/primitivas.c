@@ -1,6 +1,5 @@
 #include "primitivas.h"
 
-
 bool esParametro(t_nombre_variable variable) {
 //El enunciado aclara por que hacemos esto en el apendice de ANSISOP
 	return (variable >= '0' && variable <= '9');

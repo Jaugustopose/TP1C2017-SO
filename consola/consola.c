@@ -1,6 +1,7 @@
 #include "consola.h"
 #include "cliente-servidor.h"
 #include "serializador.h"
+#include "estructurasCompartidas.h"
 
 
 void recibir_mensajes_en_socket(int socket) {
@@ -11,7 +12,7 @@ void recibir_mensajes_en_socket(int socket) {
  			perror("Ha ocurrido un error al recibir un mensaje");
  			exit(EXIT_FAILURE);
  		} else if (bytesRecibidos == 0) {
- 			printf("Se terminó la conexión en el socket \n", socket);
+ 			printf("Se terminó la conexión en el socket %d\n", socket);
  			close(socket);
  			exit(EXIT_FAILURE);
  		} else {
@@ -230,7 +231,7 @@ void imprimirPIDs(int pid){
 
 void imprimirProgramasEnEjecucion(){
 	programasExec = string_new();
-	list_iterate(&listaPIDs,(void*)imprimirPIDs);
+	list_iterate(listaPIDs,(void*)imprimirPIDs);
 	printf("PIDs Impresos: %s", programasExec);
 	free(programasExec);
 }

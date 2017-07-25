@@ -1,6 +1,8 @@
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "estructurasCompartidas.h"
-
+#include "serializador.h"
 
 
 /***********OPERACIONES STACK*************************/
@@ -37,7 +39,7 @@ t_elemento_stack* stack_head(t_stack* stack){
 	return stack_obtener(stack, stack_tamanio(stack)-1);
 }
 
-t_elemento_stack* stack_pop(t_stack* stack) {
+t_elemento_stack* stack_pop(t_stack* stack){
 	return (t_elemento_stack*)list_remove((t_list*)stack, stack_tamanio(stack)-1);
 }
 

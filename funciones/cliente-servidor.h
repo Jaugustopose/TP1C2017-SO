@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <commons/string.h>
+#include <string.h>
 
 int crearSocket();
 void reusarSocket(int sockServ, int yes);
