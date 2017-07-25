@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include "estructurasCompartidas.h"
 #include <commons/log.h>
+#include <signal.h>
 
 
 
@@ -65,6 +66,10 @@ t_list* entradasOcupadasCache;
 t_log *memoLogger;
 t_log *memoConsoleLogger;
 char* directorioOutputMemoria = "output";
+char* memoriaLogFileName = "memoria";
+pthread_mutex_t lockMemoria;
+pthread_mutex_t lockTablaPaginas;
+pthread_mutex_t lockColisiones;
 
 
 enum accionConsolaMemoria {
