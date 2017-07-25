@@ -1,7 +1,6 @@
 
 #include "cpu.h"
-
-
+#include "deserializador.h"
 
 char* lecturaLargoMensajeASerializar(int sock){
 
@@ -319,6 +318,10 @@ void enviarAlmacenarBytes(int pid, int pagina, int offset, int size, t_valor_var
 	}
 }
 
+int longitudSentencia(t_sentencia* sentencia) {
+	return (int)(sentencia->fin - sentencia->inicio);
+}
+
 t_sentencia* obtenerSentenciaRelativa(int* paginaInicioSentencia) {
 
 	t_sentencia* sentenciaAbsoluta = list_get(pcbNuevo->indiceCodigo, pcbNuevo->contadorPrograma);
@@ -335,9 +338,7 @@ t_sentencia* obtenerSentenciaRelativa(int* paginaInicioSentencia) {
 	return sentenciaRel;
 }
 
-int longitudSentencia(t_sentencia* sentencia) {
-	return (int)(sentencia->fin - sentencia->inicio);
-}
+
 
 int esPaginaCompleta(int longitudRestante) {
 	return longitudRestante >= tamanioPaginas;

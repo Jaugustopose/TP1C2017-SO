@@ -1,4 +1,18 @@
+#include <commons/config.h>
+#include <commons/string.h>
+#include <commons/collections/dictionary.h>
+#include <commons/collections/queue.h>
+#include <commons/collections/list.h>
+#include <parser/parser.h>
+#include <parser/metadata_program.h>
+#include <math.h>
+
 #include "gestionDeProcesos.h"
+#include "funcionesKernel.h"
+#include "deserializador.h"
+#include "serializador.h"
+#include "estructurasCompartidas.h"
+#include "logger.h"
 
 
 static bool matrizEstados[5][5] = {
@@ -9,18 +23,6 @@ static bool matrizEstados[5][5] = {
 		/* BLOCK */{ false, true, true, false, true },
 		/* EXIT  */{ false, false, false, false, false }
 };
-
-//Nuestra. Dada una cola, te saca un elemento y te devuelve una nueva sin ese elemento
-t_queue* queue_remove(t_queue* queue, void* toRemove){
-	t_queue* queueNew = queue_create();
-	while(!queue_is_empty(queue)){
-		void* data = queue_pop(queue);
-		if (data!=toRemove)
-			queue_push(queueNew,data);
-	}
-	queue_destroy(queue);
-	return queueNew;
-}
 
 void transformarCodigoToMetadata(t_proceso* proceso)
 {
@@ -93,9 +95,9 @@ t_proceso* buscarProcesoPorPID(int PID){
 void stack_PCB_main(t_PCB* pcb){
 
 	//Mete el contexto de la funcion main al stack
-	t_elemento_stack* main = stack_elemento_crear();
-	main->pos = 0;
-	stack_push(pcb->stackPointer, main);
+	t_elemento_stack* stackMain = stack_elemento_crear();
+	stackMain->pos = 0;
+	stack_push(pcb->stackPointer, stackMain);
 }
 
 t_proceso* crearProceso(int pid, int consolaDuenio, char* codigo, int tamanioScript)
@@ -230,7 +232,7 @@ bool terminoQuantum(t_proceso* proceso) {
 
 void desasignarCPU(t_proceso* proceso) {
 	if (!proceso->sigusr1){
-		queue_push(colaCPU, (void*)proceso->CpuDuenio);
+		encolarCPU(colaCPU, proceso->CpuDuenio);
 	}
 
 	proceso->CpuDuenio = -1;
@@ -336,6 +338,11 @@ void asignarCPU(t_proceso* proceso, int cpu) {
 	proceso->CpuDuenio = cpu;
 	proceso->rafagas = 0;
 	proceso->sigusr1 = false;
+}
+
+void enviarPCBaCPU(t_PCB* pcb, int cpu, int32_t accion)
+{
+	serializar_PCB(pcb, cpu, accion);
 }
 
 void ejecutarProceso(t_proceso* proceso, int cpu) {

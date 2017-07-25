@@ -9,7 +9,9 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <sys/unistd.h>
 //#include "deserializador.h"
+#include "estructurasCompartidas.h"
 #include "serializador.h"
 #include "cliente.h"
 

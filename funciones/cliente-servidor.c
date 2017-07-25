@@ -23,7 +23,7 @@ void bind_w(int sockServ, const struct sockaddr_in* mi_addr) {
 	int bin;
 	 bin = bind(sockServ, (struct sockaddr*) &*mi_addr, sizeof(struct sockaddr));
 	 if (bin == -1) {
-		 printf("Error al tratar de bindear");
+		 printf("Error al tratar de bindear\n");
 		 	exit(1);
 	 }
 }

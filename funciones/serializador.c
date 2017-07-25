@@ -8,8 +8,16 @@
 
 #include <stdio.h>
 #include <sys/socket.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <commons/collections/dictionary.h>
+#include <commons/collections/queue.h>
+#include <commons/collections/list.h>
+
 #include "serializador.h"
-#include "estructurasCompartidas.h"
+#include "deserializador.h"
+
 
 
 void* serializar(t_header cabeza, void* contenidoDelMensaje) {

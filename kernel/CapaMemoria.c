@@ -1,5 +1,12 @@
 #include "CapaMemoria.h"
 
+#include "logger.h"
+#include "serializador.h"
+#include "estructurasCompartidas.h"
+#include "kernel.h"
+#include "serializador.h"
+#include "gestionDeProcesos.h"
+
 //De esos 10: 5 para su propio heapMetadata y otros 5 para el bloque que siempre esta en la lista.
 bool solicitudValida(int espacioSolicitado)
 {

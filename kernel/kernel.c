@@ -1,4 +1,12 @@
 #include "kernel.h"
+#include "funcionesKernel.h"
+#include "gestionDeProcesos.h"
+#include "CapaFS.h"
+#include "primitivasKernel.h"
+
+void crearSemaforos();
+void crearCompartidas();
+void iniciarVigilanciaConfiguracion();
 
 /********************************** INICIALIZACIONES *****************************************************/
 
@@ -66,16 +74,40 @@ void cargarConfiguracion() {
 	}
 	if (config_has_property(configKernel, "SEM_IDS")) {
 		config.SEM_IDS = config_get_array_value(configKernel, "SEM_IDS");
-		printf("SEM_IDS: %s\n", config.SEM_IDS);
+		printf("SEM_IDS: ");
+		char **sem = config.SEM_IDS;
+		int i;
+		for (i = 0; sem[i]; ++i) {
+			if(i!=0)
+				printf("|");
+			printf("%s",sem[i]);
+		}
+		printf("\n");
 	}
 	if (config_has_property(configKernel, "SEM_INIT")) {
 		config.SEM_INIT = config_get_array_value(configKernel, "SEM_INIT");
-		printf("SEM_INIT: %s\n", config.SEM_INIT);
+		printf("SEM_INIT: ");
+		char **sem = config.SEM_INIT;
+		int i;
+		for (i = 0; sem[i]; ++i) {
+			if(i!=0)
+				printf("|");
+			printf("%s",sem[i]);
+		}
+		printf("\n");
 	}
 	if (config_has_property(configKernel, "SHARED_VARS")) {
 		config.SHARED_VARS = config_get_array_value(configKernel,
 				"SHARED_VARS");
-		printf("SHARED_VARS: %s\n", config.SHARED_VARS);
+		printf("SHARED_VARS: ");
+		char **sem = config.SHARED_VARS;
+		int i;
+		for (i = 0; sem[i]; ++i) {
+			if(i!=0)
+				printf("|");
+			printf("%s",sem[i]);
+		}
+		printf("\n");
 	}
 	if (config_has_property(configKernel, "STACK_SIZE")) {
 			config.STACK_SIZE = config_get_int_value(configKernel,
@@ -219,23 +251,10 @@ int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffe
 }
 
 void comprobarSockets(int maxSock, fd_set* read_fds) {
-	if (select(maxSock + 1, &read_fds, NULL, NULL, NULL) == -1) { //Compruebo los sockets al mismo tiempo. Los NULL son para los writefds, exceptfds y el timeval.
+	if (select(maxSock + 1, read_fds, NULL, NULL, NULL) == -1) { //Compruebo los sockets al mismo tiempo. Los NULL son para los writefds, exceptfds y el timeval.
 		perror("select");
 		exit(1);
 	}
-}
-
-int redondear(float numero) {
-		int resultado;
-		if((numero - (int)numero) !=0){
-			numero++;
-			resultado = (int) numero;
-		}else {
-			resultado = (int)numero;
-		}
-
-		printf("%d\n",resultado); /* prints !!!Hello World!!! */
-		return resultado;
 }
 
 void interactuar_con_usuario() {
@@ -298,7 +317,7 @@ void Colocar_en_respectivo_fdset() {
 
 	case soyCPU:
 		FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
-		queue_push(colaCPU, sockClie);
+		encolarCPU(colaCPU, sockClie);
 		int algoritmo = (strcmp(config.ALGORITMO, FIFO) == 0)? SOY_FIFO : SOY_RR;
 		send(sockClie, &algoritmo, sizeof(int32_t), 0);
 		break;
@@ -335,11 +354,6 @@ void conexion_de_cliente_finalizada() {
 	close(fdCliente); // Si se perdio la conexion, la cierro.
 }
 
-void enviarPCBaCPU(t_PCB* pcb, int cpu, int32_t accion)
-{
-	serializar_PCB(pcb, cpu, accion);
-}
-
 void pedirMemoria(t_proceso* proceso)
 {
 	//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
@@ -365,8 +379,9 @@ void pedirMemoria(t_proceso* proceso)
 }
 
 
-void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMensaje)
+void Accion_envio_script(int memoria, int consola, int idMensaje)
 {
+	int tamanioScript;
 	printf("Procediendo a recibir tamaño script\n");
 	recv(consola, &tamanioScript, sizeof(int32_t), 0);
 	printf("Tamaño del script: %d\n", tamanioScript);
@@ -400,7 +415,7 @@ void sigusr1(int cpu){
 	}
 }
 
-void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria, int socketFS) {
+void atender_accion_cpu(int idMensaje, int memoria, int socketFS) {
 
 	switch (idMensaje) {
 
@@ -471,12 +486,12 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria, int socke
 	}
 }
 
-void atender_accion_consola(int idMensaje, int tamanioScript, int memoria, int consola) {
+void atender_accion_consola(int idMensaje, int memoria, int consola) {
 
 	switch (idMensaje) {
 
 	case envioScript:
-		Accion_envio_script(tamanioScript, memoria, consola, idMensaje);
+		Accion_envio_script(memoria, consola, idMensaje);
 
 	}
 }
@@ -516,7 +531,7 @@ void destruirCompartida(int* compartida) {
 }
 
 void destruirCompartidas() {
-	dictionary_destroy_and_destroy_elements(tablaCompartidas, destruirCompartida);
+	dictionary_destroy_and_destroy_elements(tablaCompartidas, (void*)destruirCompartida);
 }
 
 void destruirSemaforo(t_semaforo* semaforo) {
@@ -525,7 +540,7 @@ void destruirSemaforo(t_semaforo* semaforo) {
 }
 
 void destruirSemaforos() {
-	dictionary_destroy_and_destroy_elements(tablaSemaforos, destruirSemaforo);
+	dictionary_destroy_and_destroy_elements(tablaSemaforos, (void*)destruirSemaforo);
 }
 
 /*********************************PLANIFICACION***********************************************************/
@@ -544,7 +559,7 @@ void planificar()
 		//Chequeo de Ready a exec
 		if (!queue_is_empty(colaReady) && !queue_is_empty(colaCPU)){
 
-			ejecutarProceso((t_proceso*) queue_pop(colaReady),(int)queue_pop(colaCPU));
+			ejecutarProceso((t_proceso*) queue_pop(colaReady),desencolarCPU(colaCPU));
 		}
 
 
@@ -615,7 +630,7 @@ int main(void) {
 	listen_w(sockServ);
 
 	//Conectar con memoria
-     memoria = socket(AF_INET, SOCK_STREAM, 0);
+    memoria = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in direccionServ;
 	direccionServ.sin_family = AF_INET;
 	direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red
@@ -677,7 +692,6 @@ int main(void) {
 					// gestionar datos de un cliente
 
 					int idMensaje;
-					int tamanioScript;
 
 					if ((cantBytes = recv(fdCliente, &idMensaje, sizeof(int32_t), 0))
 							<= 0) {
@@ -694,11 +708,11 @@ int main(void) {
 
 						if (FD_ISSET(fdCliente, &bolsaConsolas)) { // EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UNA CONSOLA.
 
-							atender_accion_consola(idMensaje, tamanioScript, memoria, fdCliente);
+							atender_accion_consola(idMensaje, memoria, fdCliente);
 						}
 						if (FD_ISSET(fdCliente, &bolsaCpus)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UN CPU
 
-							atender_accion_cpu(idMensaje, tamanioScript, memoria, socketFS); //Argumentos que le paso muy probablemente cambien
+							atender_accion_cpu(idMensaje, memoria, socketFS); //Argumentos que le paso muy probablemente cambien
 						}
 					}
 				}
