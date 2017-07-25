@@ -172,6 +172,7 @@ void imprimeMenuUsuario()
 
 void* pidePathAlUsuario(char* path)
 {
+
   programa = fopen(path,"rb");
   if(programa == NULL){
 	  return NULL;

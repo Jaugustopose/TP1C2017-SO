@@ -1,5 +1,6 @@
 #include "CapaMemoria.h"
 
+//De esos 10: 5 para su propio heapMetadata y otros 5 para el bloque que siempre esta en la lista.
 bool solicitudValida(int espacioSolicitado)
 {
 	return (espacioSolicitado <= (tamanioPag - 10));
@@ -36,7 +37,7 @@ t_bloque* getBloque(t_paginaHeap* pagina, int indice)
 
   return entrada;
 }
-
+//
 //OJO:Paginas que arrancan a numerarse en 0
 int getLastNroPag(int pid)
 {
@@ -74,7 +75,7 @@ void solicitarPagina(int pid)
 	t_paginaHeap *paginaNueva = malloc(sizeof(t_paginaHeap));
 	paginaNueva->pid = pid;
 	paginaNueva->nro = getLastNroPag(pid);
-	paginaNueva->tamDisponible = tamanioPag - 5;
+	paginaNueva->tamDisponible = tamanioPag - 10;
 	paginaNueva->bloques = list_create();
 
 	t_bloque *bloqueInicial = malloc(sizeof(t_bloque));
@@ -103,7 +104,6 @@ void solicitarPagina(int pid)
 
 }
 
-
 t_paginaHeap* getPaginaConEspacio(t_pidHeap* pidElement, int pid, int espacio)
 {
 	bool porPIDYTamanio(t_paginaHeap* entrada){
@@ -113,7 +113,6 @@ t_paginaHeap* getPaginaConEspacio(t_pidHeap* pidElement, int pid, int espacio)
   t_paginaHeap* pagina = list_find(pidElement->paginas, (void*) porPIDYTamanio);
   return pagina;
 }
-
 
 t_bloque* getBloqueConEspacio(t_paginaHeap* pagina, int espacio)
 {
@@ -134,7 +133,6 @@ t_puntero alocar(int pid, int espacio)
 
 	t_bloque* bloqueNuevo = malloc(sizeof(t_bloque));
 	bloqueNuevo->indice = bloque->indice;
-//	bloqueNuevo->metadata = malloc(sizeof(t_heapMetadata));
 	bloqueNuevo->size = espacio;
 	bloqueNuevo->isFree = false;
 
@@ -191,10 +189,9 @@ t_puntero alocarMemoria(int espacioSolicitado, int pid)
 				}else
 				{
 					//es posible desfragmentar?
-					if(true)
+					int32_t tamanioRecuperado = defragmentar(pagina);
+					if(tamanioRecuperado >= espacioSolicitado)
 					{
-						//Es posible desfragmentar
-						//TODO:desfragmentar()
 						return alocar(pid, espacioSolicitado);
 					}else
 					{
@@ -257,11 +254,11 @@ bool bloquesTodosFree(t_paginaHeap* pagina)
 
 int calcularIndiceBloque(t_paginaHeap* pagina, int offset)
 {
-	int bytes = 0;
+	int bytes = 5;
 	int indice = 0;
 	void calculaIndice(t_bloque* bloque)
 	{
-		if(bytes <= offset)
+		if(bytes < offset)
 		{
 			bytes = bytes +( 5 + bloque->size);
 			indice++;
@@ -286,15 +283,16 @@ int liberarMemoria(t_puntero puntero, int pid, int cantPaginasCodigo)
 
    t_bloque* bloque = getBloque(pagina, indice);
    bloque->isFree = true;
+   pagina->tamDisponible = pagina->tamDisponible + bloque->size;
 
 	if(bloquesTodosFree(pagina))
 	{
 		liberarPagina(pagina, puntero, cantPaginasCodigo);
 		liberarPaginaEstructura(pagina, pidElement);
 	}
+
 	return 1;
 }
-
 
 //LLega con la cantidad de paginas de codigo?
 void liberarPagina(t_paginaHeap* pagina, int puntero, int cantPaginasCodigo)
@@ -308,7 +306,7 @@ void liberarPagina(t_paginaHeap* pagina, int puntero, int cantPaginasCodigo)
 
 	memcpy(buffer, &codAccion, sizeof(codAccion));
 	memcpy(buffer + sizeof(codAccion), &pidLiberar, sizeof(pidLiberar));
-	memcpy(buffer + sizeof(nroPagina), &nroPagina, sizeof(nroPagina));
+	memcpy(buffer + sizeof(codAccion) + sizeof(nroPagina), &nroPagina, sizeof(nroPagina));
 
 	send(memoria, buffer, sizeof(int)*3, 0);
 
@@ -318,3 +316,74 @@ void liberarPagina(t_paginaHeap* pagina, int puntero, int cantPaginasCodigo)
 	free(stackOverflow);
 
 }
+
+int32_t defragmentar(t_paginaHeap* pagina)
+{
+
+	/*DESFRAGMENTAR busca en una lista de bloques la primer secuencia de bloques contigua.
+	 * Se guarda el tamaño que puede recuperar y la posicion donde hacerlo.
+	 * Se crea un nuevo bloque con ese tamaño en esa posicion y se lo marca como libre.
+	 * Se renombran los indices de la lista de bloques para que vuelvan a estar incrementales.
+	 * Se actualiza el tamaño de paginas.
+	 * Los casos salvabales son: bloques contiguos.
+	 * Si hay 3 secuencias contiguas no consecutivas en una misma pagina, se llamara a la funcion defragmentar 3 veces
+	 */
+
+	int32_t indiceInicial = 0;
+	int32_t indiceFinal = 0;
+	int32_t posicionInicial= 0;
+	int32_t posicionFinal= 0;
+	int32_t bytes = 0;
+	bool hayUnaSecuenciaContigua = true;
+
+	void encontrarSecuenciaDeBloques(t_bloque* bloque)
+		{
+			if(hayUnaSecuenciaContigua)
+			{
+				if(bloque->isFree && indiceInicial != 0)
+				{
+					posicionInicial = bytes;
+					indiceInicial = bloque->indice;
+				}else if(bloque->isFree)
+				{
+					posicionFinal = bytes + 5 + bloque->size;
+					indiceFinal = bloque->indice;
+					hayUnaSecuenciaContigua = true;
+				}
+
+				bytes = bytes +5+ bloque->size;
+		  }
+		}
+	bool esEliminable(t_bloque* unBloque)
+	{
+		return ((unBloque->indice >= posicionInicial) &&  (unBloque->indice <= posicionFinal));
+	}
+	list_iterate(pagina->bloques,(void*)encontrarSecuenciaDeBloques);
+
+	list_remove_and_destroy_by_condition(pagina->bloques,(void*)esEliminable, (void*)bloquesDestroyer);
+
+	t_bloque* bloqueNuevo = malloc(sizeof(t_bloque));
+	bloqueNuevo->indice = indiceInicial; //CAMBIAAAAAR
+	bloqueNuevo->isFree = true;
+	bloqueNuevo->size = bytes - 5;
+
+	list_add_in_index(pagina->bloques, bloqueNuevo->indice, bloqueNuevo);
+
+	int start = 0;
+
+
+	void actualizaIndice(t_bloque* unBloque)
+	{
+		unBloque->indice = 0;
+		start++;
+	}
+	list_iterate(pagina->bloques,(void*)actualizaIndice);
+
+	pagina->tamDisponible = pagina->tamDisponible + bytes - 5;
+
+	int32_t tamanioNuevoDisponible = bytes - 5;
+	return tamanioNuevoDisponible;
+
+}
+
+

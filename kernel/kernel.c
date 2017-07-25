@@ -121,24 +121,24 @@ void inicializarContexto() {
 	colaNew = queue_create();
 	colaReady = queue_create();
 	colaExit = queue_create();
-	colaConsola = queue_create();
+	listaEjecucion = list_create();
+
 }
 
 int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
-	int codigoAccion = 1;
+
+	int codigoAccion = inicializarProgramaAccion;
 	pedidoSolicitudPaginas_t pedidoPaginas;
 	pedidoPaginas.pid = idProceso;
 	pedidoPaginas.cantidadPaginas = paginas;
 	printf("Sizeof pedidoPaginas: %d\n", sizeof(pedidoPaginas));
-	void* buffer = serializarMemoria(codigoAccion, &pedidoPaginas,
-			sizeof(pedidoPaginas));
+	void* buffer = serializarMemoria(codigoAccion, &pedidoPaginas, sizeof(pedidoPaginas));
 	send(cliente, buffer, sizeof(codigoAccion) + sizeof(pedidoPaginas), 0);
 	free(buffer);
 	//Reservo para recibir un int con el resultAccion
 	int resultAccion;
 	recv(cliente, &resultAccion, sizeof(int), 0);
-	printf("inicializarPrograma resultó con código de acción: %d\n",
-			resultAccion);
+	printf("inicializarPrograma resultó con código de acción: %d\n",resultAccion);
 
 	return resultAccion;
 }
@@ -294,12 +294,13 @@ void Colocar_en_respectivo_fdset() {
 	case soyConsola:
 		FD_SET(sockClie, &bolsaConsolas); //agrego una nueva consola a la bolsa de consolas
 		printf("Se ha conectado una nueva consola \n");
-
 		break;
 
 	case soyCPU:
 		FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
 		queue_push(colaCPU, sockClie);
+		int algoritmo = (strcmp(config.ALGORITMO, FIFO) == 0)? SOY_FIFO : SOY_RR;
+		send(sockClie, &algoritmo, sizeof(int32_t), 0);
 		printf("Se ha conectado un nuevo CPU  \n");
 		break;
 
@@ -340,76 +341,52 @@ void enviarPCBaCPU(t_PCB* pcb, int cpu, int32_t accion)
 	serializar_PCB(pcb, cpu, accion);
 }
 
-void agregarNuevaConsola(char* buff, int32_t consola, int tamanioScript)
+void pedirMemoria(t_proceso* proceso)
 {
-	t_consola* consolaNueva = malloc(sizeof(t_consola));
-	consolaNueva->consolaID = consola;
-	consolaNueva->codigoPrograma = buff;
-	consolaNueva->tamanioScript = tamanioScript;
-	queue_push(colaConsola, consolaNueva);
-}
+	//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
+	int paginasASolicitar = redondear((float) proceso->tamanioScript /(float) tamanioPag);
+	int resultadoAccionInicializar = pedido_Inicializar_Programa(memoria,paginasASolicitar, proceso->pidProceso);
+	if (resultadoAccionInicializar == 0) {//Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
 
-t_consola* desencolarConsola()
-{
-	return (t_consola*)queue_pop(colaConsola);
-}
-
-void nuevoProceso(t_consola* consola)
-{
-	identificadorProceso++;
-		t_proceso* proceso = crearProceso(identificadorProceso, consola->consolaID, (char*)consola->codigoPrograma);
-
-		list_add(listaDeProcesos, proceso); //Agregar un proceso a esa bendita lista
-
-		send(consola->consolaID, &identificadorProceso, sizeof(int32_t),0);
-		//CALCULO Y SOLICITO LAS PAGINAS QUE NECESITA EL SCRIPT//
-		int paginasASolicitar = redondear((float) consola->tamanioScript /(float) tamanioPag);
-		int resultadoAccionInicializar = pedido_Inicializar_Programa(memoria,paginasASolicitar, proceso -> PCB->PID);
-		if (resultadoAccionInicializar == 0) {//Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
-
-		//Meto proceso en la cola de nuevos, implica que hay grado de multiprogramacion disponible
-		queue_push(colaNew, proceso);
-
+		proceso->PCB = crearPCB(proceso, paginasASolicitar);
 		printf("Se procede a preparar solicitud almacenar para enviar\n");
-		proceso -> PCB->cantidadPaginas = paginasASolicitar;
-		int resultadoAccionAlmacenar = enviarSolicitudAlmacenarBytes(memoria, proceso, consola->codigoPrograma, consola->tamanioScript);
-		if (resultadoAccionAlmacenar == 0) {
-			proceso = (t_proceso*)queue_pop(colaNew);
-			cambiarEstado(proceso, READY);
+
+		int resultadoAccionAlmacenar = enviarSolicitudAlmacenarBytes(memoria, proceso, proceso->codigoPrograma, proceso->tamanioScript);
+
+			if (resultadoAccionAlmacenar == 0) {
+				cambiarEstado(proceso, READY);
+				proceso->PCB->cantidadPaginas = paginasASolicitar;
+			 }
 		}
+	else{
 
-		proceso->PCB->cantidadPaginas = paginasASolicitar;
+		printf("El proceso no pudo ingresar a la cola de New ya que excede el grado de multiprogramacion\n");
+	}
 
-		//VERIFICAR
-		free(consola);
- }
 }
 
 void Accion_envio_script(int tamanioScript, int memoria, int consola, int idMensaje)
 {
-
 	printf("Procediendo a recibir tamaño script\n");
-		recv(consola, &tamanioScript, sizeof(int32_t), 0);
+	recv(consola, &tamanioScript, sizeof(int32_t), 0);
 	printf("Tamaño del script: %d\n", tamanioScript);
-		char* buff = malloc(tamanioScript + 1);
-		recv(fdCliente, buff, tamanioScript, 0);
+	char* buff = malloc(tamanioScript + 1);
+	recv(fdCliente, buff, tamanioScript, 0);
 	printf("el valor de cadena es: %.*s\n", tamanioScript, buff);
 
-	agregarNuevaConsola(buff, consola, tamanioScript);
+    identificadorProceso++;
+	t_proceso* proceso = crearProceso(identificadorProceso, consola, (char*)buff, tamanioScript);
+    list_add(listaDeProcesos, proceso);
+    queue_push(colaNew, proceso);
+    send(consola, &identificadorProceso, sizeof(int32_t),0);
 
-	if (config.GRADO_MULTIPROG >= list_size(listaDeProcesos)) {
-			t_consola* proximaConsola = desencolarConsola();
-			if(proximaConsola != NULL)
-			{
-				nuevoProceso(proximaConsola);
-			}
-		}else{
-
-			printf("El proceso no pudo ingresar a la cola de New ya que excede el grado de multiprogramacion\n");
+	if (config.GRADO_MULTIPROG > queue_size(colaReady) && !queue_is_empty(colaNew)) {
+		t_proceso* proceso = (t_proceso*)queue_pop(colaNew);
+		pedirMemoria(proceso);
 	}
 
-
 }
+
 void sigusr1(int cpu){
 	t_proceso* proceso = obtenerProceso(cpu);
 
@@ -420,10 +397,9 @@ void sigusr1(int cpu){
 		//quitarCliente(cpu);
 		//limpiarColaCPU();
 	}
-	//clientes[cpu].atentido=false;
 }
 
-void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
+void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria, int socketFS) {
 
 	switch (idMensaje) {
 
@@ -432,17 +408,12 @@ void atender_accion_cpu(int idMensaje, int tamanioScript, int memoria) {
 		break;
 
 	case accionFinInstruccion:
-		//TODO:MUTEX
 		rafagaProceso(fdCliente);
 	break;
 
 	case accionFinProceso:
 		recibirFinalizacion(fdCliente);
 	break;
-
-//	case accionQuantumInterrumpido:
-//
-//	break;
 
 	case accionAsignarValorCompartida:
 		obtenerAsignarCompartida(fdCliente);
@@ -556,46 +527,23 @@ void destruirSemaforos() {
 
 /*********************************PLANIFICACION***********************************************************/
 
+
 void planificar()
 {
-	if(strcmp(config.ALGORITMO, FIFO) == 0){
-		planificarFIFO();
-	}
-	else if(strcmp(config.ALGORITMO, ROUND_ROBIN) == 0)
-	{
-		planificarRR();
-	}else
-	{
-		//TODO:MANEJAR ERROR DE HABER INGRESADO CUALQUIER COSA EN EL CONFIG
-	}
-
-}
-
-void planificarRR()
-{
-
-}
-
-void planificarFIFO()
-{
+		//Chequeo de New a Ready
+		if(config.GRADO_MULTIPROG > queue_size(colaReady) && !queue_is_empty(colaNew))
+		{
+			t_proceso* proceso = (t_proceso*)queue_pop(colaNew);
+			pedirMemoria(proceso);
+		}
 
 
-	while (!queue_is_empty(colaReady) && !queue_is_empty(colaCPU)) {
+		//Chequeo de Ready a exec
+		if (!queue_is_empty(colaReady) && !queue_is_empty(colaCPU)){
 
-			//limpiarColaListos();
-			//limpiarColaCPU();
-//
-//		int codAccion = (int)accionContinuarProceso;
-//		int cpu = (int)queue_pop(colaCPU);
-//		void* buffer = malloc(sizeof(codAccion));
-//		memcpy(buffer, &codAccion, sizeof(codAccion)); //PRIMERO EL CODIGO
-//		send(cpu, buffer, sizeof(codAccion), 0);
+			ejecutarProceso((t_proceso*) queue_pop(colaReady),(int)queue_pop(colaCPU));
+		}
 
-			// Si no se vaciaron las listas entonces los primeros de ambas listas son validos
-			if (!queue_is_empty(colaReady) && !queue_is_empty(colaCPU)){
-				ejecutarProceso((t_proceso*) queue_pop(colaReady),(int) queue_pop(colaCPU));
-			}
-	}
 
 }
 
@@ -746,7 +694,7 @@ int main(void) {
 						}
 						if (FD_ISSET(fdCliente, &bolsaCpus)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UN CPU
 
-							atender_accion_cpu(idMensaje, tamanioScript, memoria); //Argumentos que le paso muy probablemente cambien
+							atender_accion_cpu(idMensaje, tamanioScript, memoria, socketFS); //Argumentos que le paso muy probablemente cambien
 						}
 					}
 				}

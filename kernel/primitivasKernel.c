@@ -138,17 +138,6 @@ int asignarCompartida(char* compartida, int valor, int cliente) {
 	}
 }
 
-void primitivaReservar(int espacioSolicitado)
-{
-//TODO:IMPLEMENTAR MANEJO HEAP
-
-}
-
-void primitivaLiberar(int puntero)
-{
-//TODO:IMPLEMENTAR MANEJO HEAP
-}
-
 void atenderSolicitudMemoriaDinamica()
 {
 	int espacioSolicitado;
@@ -171,6 +160,6 @@ void atenderLiberacionMemoriaDinamica()
 	recv(fdCliente, &punteroRecibido, sizeof(int),0);
 	recv(fdCliente, &cantPaginasCodigo, sizeof(int),0);
 
-	liberarMemoria(punteroRecibido, pid, cantPaginasCodigo);
-
+	int result = liberarMemoria(punteroRecibido, pid, cantPaginasCodigo);
+	send(fdCliente, &result, sizeof(int32_t),0);
 }

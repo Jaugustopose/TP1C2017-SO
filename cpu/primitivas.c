@@ -65,11 +65,11 @@ void enviar_direccion_y_valor_a_Memoria(t_puntero direccion, t_valor_variable va
 
 char* convertirFlags(t_banderas flags){
 	char* permisos = string_new();
-	if(flags.creacion);
+	if(flags.creacion)
 	string_append(&permisos,"c");
-	if(flags.escritura);
+	if(flags.escritura)
 	string_append(&permisos,"w");
-	if(flags.lectura);
+	if(flags.lectura)
 	string_append(&permisos,"r");
 	return permisos;
 }
@@ -79,6 +79,7 @@ char* convertirFlags(t_banderas flags){
 t_puntero obtener_posicion_de(t_nombre_variable variable) {
 
 	log_debug(debugLog, ANSI_COLOR_YELLOW "OBTENER_POSICION_DE");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio la VARIABLE: |%c| ", variable);
 
 	t_puntero posicionAbsoluta = 0;
@@ -116,6 +117,7 @@ t_puntero obtener_posicion_de(t_nombre_variable variable) {
 t_puntero definir_variable(t_nombre_variable variable) {
 
 	log_debug(debugLog, ANSI_COLOR_YELLOW "DEFINIR_VARIABLE");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio la VARIABLE: |%c| ", variable);
 	//t_pedido* direccion = stack_proximo_pedido(stack, tamanioPaginas);
 
@@ -143,6 +145,7 @@ t_puntero definir_variable(t_nombre_variable variable) {
 t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "DEREFERENCIAR_VARIABLE");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio la direccion: |%d| ", direccion_variable);
 
 	t_valor_variable valor = 0;
@@ -183,6 +186,7 @@ t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 void asignar(t_puntero direccion_variable, t_valor_variable valor)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "ASIGNAR");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio la direccion: |%d|, con el valor: |%d| ", direccion_variable, valor);
 
 	//Manda pedido a memoria
@@ -196,6 +200,7 @@ void asignar(t_puntero direccion_variable, t_valor_variable valor)
 void ir_al_label(t_nombre_etiqueta label)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "IR_AL_LABEL");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio el label: |%c| ", label);
 
 	t_puntero_instruccion posPrimeraInstruccionUtil = -1;
@@ -220,6 +225,7 @@ void finalizar()
 {
 
 	log_debug(debugLog, ANSI_COLOR_YELLOW "FINALIZAR");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 
 	t_elemento_stack* head = stack_pop(stack);
 
@@ -248,6 +254,7 @@ void finalizar()
 t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableCompartida)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "OBTENER_VALOR_COMPARTIDA");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "Se pide a kernel el valor de la variable: |%s| ", nombreVariableCompartida);
 
 	t_valor_variable valorCompartida;
@@ -274,6 +281,7 @@ t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableComp
 t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableCompartida, t_valor_variable valorCompartida)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "ASIGNAR_VALOR_COMPARTIDA");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "Se pide a kernel asignar: |%d| a la variable: |%s| ", valorCompartida, nombreVariableCompartida);
 
 	t_valor_variable valorAsignado;
@@ -310,6 +318,7 @@ t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableComp
 void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "LLAMAR_SIN_RETORNO");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "Se llama a la funcion |%c| ", etiqueta);
 
 	t_puntero_instruccion posicionFuncion = metadata_buscar_etiqueta(etiqueta, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
@@ -338,6 +347,7 @@ void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "LLAMAR_CON_RETORNO");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "Se llama a la funcion: |%s| y se retornara luego a: |%d| ", etiqueta, donde_retornar);
 
 	t_puntero_instruccion posicionFuncion = metadata_buscar_etiqueta(etiqueta, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
@@ -367,6 +377,7 @@ void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
 void retornar(t_valor_variable unaVariable)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "RETORNAR");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "Se retorna: |%d|.", unaVariable);
 
 	t_elemento_stack* head = stack_pop(stack);
@@ -401,6 +412,7 @@ void retornar(t_valor_variable unaVariable)
 void wait(t_nombre_semaforo identificador_semaforo)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "WAIT");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "El semaforo es: |%c|.", identificador_semaforo);
 
 	int codigoAccion = accionWait;
@@ -420,6 +432,7 @@ void wait(t_nombre_semaforo identificador_semaforo)
 void primitiva_signal(t_nombre_semaforo identificador_semaforo)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "SIGNAL");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "El semaforo es: |%c|.", identificador_semaforo);
 
 	int codigoAccion = accionSignal;
@@ -430,6 +443,7 @@ void primitiva_signal(t_nombre_semaforo identificador_semaforo)
 t_puntero reservar(t_valor_variable espacio)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "RESERVAR");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio para reservar: |%d| de espacio.", espacio);
 	int codigoAccion = accionReservarHeap;
 	int pid = pcbNuevo->PID;
@@ -454,6 +468,7 @@ t_puntero reservar(t_valor_variable espacio)
 void liberar(t_puntero puntero)
 {
 	log_debug(debugLog, ANSI_COLOR_YELLOW "LIBERAR");
+	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio el puntero: |%d| para liberar.", puntero);
 
 	int codigoAccion = accionLiberarHeap;
@@ -483,9 +498,12 @@ void liberar(t_puntero puntero)
 
 t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "ABRIR");
+	log_debug(debugLog, "La primitiva recibio la direccion: |%s|", direccion);
+
 	//Envio comando al kernel
 	int codigoAccion = accionAbrirArchivo;
-	int pid = (int) pcbNuevo->PID;
+	int pid = pcbNuevo->PID;
 	int tamanioPath = string_length(direccion) + 1;
 	char* permisos = convertirFlags(flags);
 	int tamanioPermisos = string_length(permisos) + 1;
@@ -494,7 +512,7 @@ t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 	int offset = 0;
 	memcpy(buffer, &codigoAccion, sizeof(int));
 	offset += sizeof(int);
-	memcpy(buffer, &pid, sizeof(int));
+	memcpy(buffer + offset, &pid, sizeof(int));
 	offset += sizeof(int);
 	memcpy(buffer + offset, &tamanioPath, sizeof(int));
 	offset += sizeof(int);
@@ -515,6 +533,9 @@ t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 
 void borrar(t_descriptor_archivo direccion)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "BORRAR");
+	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|", direccion);
+
 	//Envio comando al kernel
 	int codigoAccion = accionBorrarArchivo;
 	int fd= (int)direccion;
@@ -534,6 +555,9 @@ void borrar(t_descriptor_archivo direccion)
 
 void cerrar(t_descriptor_archivo descriptor_archivo)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "CERRAR");
+	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|", descriptor_archivo);
+
 	//Envio comando al kernel
 	int codigoAccion = accionCerrarArchivo;
 	int fd= (int)descriptor_archivo;
@@ -553,6 +577,9 @@ void cerrar(t_descriptor_archivo descriptor_archivo)
 
 void mover_cursor(t_descriptor_archivo descriptor_archivo, t_valor_variable posicion)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "MOVER CURSOR");
+	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|, y la posicion |%d|", descriptor_archivo, posicion);
+
 	//Envio comando al kernel
 	int codigoAccion = accionMoverCursor;
 	int fd= (int)descriptor_archivo;
@@ -574,6 +601,9 @@ void mover_cursor(t_descriptor_archivo descriptor_archivo, t_valor_variable posi
 
 void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "ESCRIBIR");
+	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|, y un tamanio |%d|", descriptor_archivo, tamanio);
+
 	//Envio comando al kernel
 	int codigoAccion = accionEscribir;
 	int fd = (int) descriptor_archivo;
@@ -583,9 +613,9 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 	int offset = 0;
 	memcpy(buffer, &codigoAccion, sizeof(int));
 	offset += sizeof(int);
-	memcpy(buffer, &fd, sizeof(int));
+	memcpy(buffer + offset, &fd, sizeof(int));
 	offset += sizeof(int);
-	memcpy(buffer, &pid, sizeof(int));
+	memcpy(buffer + offset, &pid, sizeof(int));
 	offset += sizeof(int);
 	memcpy(buffer + offset, &tamanio, sizeof(int));
 	offset += sizeof(int);
@@ -597,6 +627,9 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 
 void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valor_variable tamanio)
 {
+	log_debug(debugLog, ANSI_COLOR_YELLOW "LEER");
+	log_debug(debugLog, "La primitiva recibio el descriptor |%d|, un tamanio |%d|, y un puntero |%d|", descriptor_archivo, tamanio, informacion);
+
 	//Envio comando al kernel
 	int codigoAccion = accionObtenerDatosArchivo;
 	int fd= (int)descriptor_archivo;
@@ -613,8 +646,15 @@ void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valo
 	memcpy(buffer + offset, &tamanio, sizeof(int));
 	send(kernel, buffer, tamanioBuffer, 0);
 
-	recv(kernel, (void *)informacion, tamanio, 0);
-
+	char *recibido = malloc(tamanio);
+	recv(kernel, recibido, tamanio, 0);
+	//Envio datos a memoria
+	int i=0;
+	while(i<tamanio){
+		enviar_direccion_y_valor_a_Memoria(informacion+i, recibido[i]);
+		log_debug(debugLog, "Enviando a memoria. Pos: |%d| Valor: |%c|", informacion+i, recibido[i]);
+		i++;
+	}
 	loggearFinDePrimitiva("leer");
 }
 
