@@ -13,6 +13,7 @@
 #include "serializador.h"
 #include "estructurasCompartidas.h"
 #include "logger.h"
+#include "CapaFS.h"
 
 
 static bool matrizEstados[5][5] = {
@@ -137,7 +138,7 @@ void finalizarProceso(t_proceso* proceso)
 {
 	cambiarEstado(proceso,EXIT);
 
-	//TODO: ELIMINAR ARCHIVOS ABIERTOS QUE TENGAMOS!!!!
+	liberarRecursosFS(proceso->PCB->PID);
 	liberarRecursos(proceso);
 
 	if (proceso->semaforo != NULL){

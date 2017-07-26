@@ -78,6 +78,22 @@ void quitarTablaProceso(int pid, int fd){
 	list_replace(tablaProceso,fd-2,NULL);
 }
 
+void liberarRecursosFS(int pid){
+	t_list* tablaProceso = dictionary_get(tablasProcesos, string_itoa(pid));
+	if(tablaProceso==NULL){
+		return;
+	}
+	int i;
+	for (i = 0; i < list_size(tablaProceso); ++i) {
+		FD_t* fileDescriptor = list_get(tablaProceso, i);
+		globalFD_t* globalFD = list_get(tablaGlobalArchivos,fileDescriptor->indiceTablaGlobal);
+		globalFD->cantProcesos--;
+		free(fileDescriptor);
+	}
+	dictionary_remove(tablasProcesos, string_itoa(pid));
+	list_destroy(tablaProceso);
+}
+
 //*********************************Operaciones FS***************************
 
 void crearArchivo(int Pid, char* path, char* permisos, int socketCpu, int socketFS){
@@ -103,8 +119,11 @@ void crearArchivo(int Pid, char* path, char* permisos, int socketCpu, int socket
 		int indiceTablaGlobal = agregarTablaGlobal(path);
 		int fd = agregarTablaProceso(Pid, indiceTablaGlobal, permisos);
 		send(socketCpu, &fd, sizeof(fd),0);
-	}else{
+	}else if(res==-1){
+
 		//TODO: -1 no hay bloques libres -2 no se pudo crear el archivo
+	}else if(res==-2){
+
 	}
 }
 
@@ -261,7 +280,6 @@ void escribirArchivo(int socketCpu, int socketFS){
 	}else{
 		//TODO: -1 error al escribir el archivo
 	}
-	//TODO: Enviar peticion al FS y enviar respuesta a la CPU
 }
 
 void cerrarArchivo(int socketCpu, int socketFS){
