@@ -277,8 +277,10 @@ void expulsarProceso(t_proceso* proceso) {
 
 	actualizarPCB(proceso, pcb);
 
-		if (!proceso->abortado && proceso->estado == EXEC){
+		if (!proceso->abortado){
 			cambiarEstado(proceso, READY);
+		}else{
+			cambiarEstado(proceso, EXIT);
 		}
 	desasignarCPU(proceso);
 
@@ -604,4 +606,9 @@ void imprimirTablaGlobalDeArchivos(int pid)
 {
 	t_proceso* proceso = buscarProcesoPorPID(pid);
 	//TODO:LUCAS, hay que traer la tabla de archivos abiertos del proceso
+}
+
+void exit_code_proceso(t_proceso* proceso, int32_t exitCode)
+{
+
 }

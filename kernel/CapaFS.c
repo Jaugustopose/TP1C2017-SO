@@ -230,6 +230,10 @@ void escribirArchivo(int socketCpu, int socketFS){
 	recv(socketCpu, &fd, sizeof(fd), 0);
 	recv(socketCpu, &pid, sizeof(fd), 0);
 	recv(socketCpu, &tamanio, sizeof(tamanio), 0);
+
+	t_proceso* proceso = buscarProcesoPorPID(pid);
+	proceso->privilegiadas++;
+
 	void* datos = malloc(tamanio);
 	recv(socketCpu, datos, tamanio, 0);
 	if(fd==1){
@@ -241,12 +245,23 @@ void escribirArchivo(int socketCpu, int socketFS){
 				printf("Printf : |");
 			printf("%d|",(int)texto[i]);
 		}
+
+//		int tamanio = strlen(texto) + 1;
+//			int codAccion = accionImprimirTextoConsola;
+//			void* buffer = malloc(sizeof(codAccion)+ sizeof(pid)+ sizeof(tamanio) + tamanio);
+//
+//			memcpy(buffer, &codAccion, sizeof(int32_t));
+//			memcpy(buffer + sizeof(int32_t),&pid, sizeof(int32_t));
+//			memcpy(buffer + sizeof(int32_t)*2,&tamanio, sizeof(int32_t));
+//			memcpy(buffer + sizeof(int32_t)*3 + tamanio, texto, tamanio);
+//
+//			send(proceso->ConsolaDuenio, buffer, sizeof(int32_t)*3 + tamanio, 0);
+
+
 		printf("\n");
 		return;
 	}
 
-	t_proceso* proceso = buscarProcesoPorPID(pid);
-	proceso->privilegiadas++;
 
 	FD_t* fileDescriptor = obtenerFD(pid, fd);
 

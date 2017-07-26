@@ -38,6 +38,8 @@
 const char* FIFO;
 const char* ROUND_ROBIN;
 
+pthread_mutex_t mutexUMC, mutexClientes, mutexEstados, mutexPlanificacion;
+
 //Estructuras y enum
 typedef struct configuracion {
 

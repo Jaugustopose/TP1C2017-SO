@@ -277,7 +277,7 @@ void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProces
 	for (fdClienteCont = 0; fdClienteCont < list_size(listaConProcesos); fdClienteCont++) {
 		t_proceso* proceso = list_get(listaConProcesos, fdClienteCont);
 		if (proceso -> ConsolaDuenio == fileDescriptor) {
-			proceso -> PCB->exitCode = -6;
+			proceso -> PCB->exitCode = -6; //TODO hace enum
 			queue_push(colaExit, proceso);
 		}
 
@@ -672,6 +672,7 @@ int main(void) {
 		};
 
 		for (fdCliente = 0; fdCliente <= maxFd; fdCliente++) {
+		//pthread_mutex_lock(&mutexClientes);
 			if (FD_ISSET(fdCliente, &read_fds)) { // Me fijo si tengo datos listos para leer
 				if (fdCliente == sockServ) { //si entro en este "if", significa que tengo datos.
 
@@ -716,9 +717,12 @@ int main(void) {
 					}
 				}
 			}
+	//	pthread_mutex_unlock(&mutexClientes);
 		}
 
-		planificar();
+		//pthread_mutex_lock(&mutexPlanificacion);
+			planificar();
+	//	pthread_mutex_unlock(&mutexPlanificacion);
 	}
 	return 0;
 }
