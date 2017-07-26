@@ -373,7 +373,12 @@ void pedirMemoria(t_proceso* proceso)
 		}
 	else{
 
-		printf("El proceso no pudo ingresar a la cola de New ya que excede el grado de multiprogramacion\n");
+		//Le creo el PCB solo para el exit code. Turbio, pero real.
+		proceso->PCB = crearPCB(proceso, paginasASolicitar);
+		proceso->PCB->exitCode = ERROR_RECURSOS;
+		cambiarEstado(proceso, EXIT);
+		list_add(listaDeProcesos, proceso);
+
 	}
 
 }
@@ -430,6 +435,10 @@ void atender_accion_cpu(int idMensaje, int memoria, int socketFS) {
 	case accionFinProceso:
 		recibirFinalizacion(fdCliente);
 	break;
+
+	case accionError:
+		recibirFinalizacionErronea(fdCliente);
+	 break;
 
 	case accionAsignarValorCompartida:
 		obtenerAsignarCompartida(fdCliente);

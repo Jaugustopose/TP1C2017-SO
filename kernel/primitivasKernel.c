@@ -165,6 +165,7 @@ void atenderSolicitudMemoriaDinamica()
 	t_proceso* proceso = buscarProcesoPorPID(pid);
 	proceso->privilegiadas++;
 
+	//Puede devolver un puntero negativo, pero se ocupara la CPU de darse cuenta
 	int puntero = alocarMemoria(espacioSolicitado, pid);
 
 	send(fdCliente, &puntero, sizeof(int), 0);

@@ -59,7 +59,7 @@ int getLastNroPag(int pid)
 	return numeroNuevo;
 }
 
-void solicitarPagina(int pid)
+int solicitarPagina(int pid)
 {
 	void* buffer = malloc(sizeof(int) + sizeof(pedidoSolicitudPaginas_t));
 
@@ -73,10 +73,17 @@ void solicitarPagina(int pid)
 
 	send(memoria, buffer, sizeof(codAccion) + sizeof(pedidoSolicitudPaginas_t), 0);
 
-	char* stackOverflow = malloc(sizeof(int));
-	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), 0);
-	int overflow = char4ToInt(stackOverflow);
-	free(stackOverflow);
+	char* result = malloc(sizeof(int));
+	int bytesRecibidos = recv(memoria, result, sizeof(int), 0);
+	int resultado = char4ToInt(result);
+
+	if(resultado == -11)
+	{
+		return -11;
+	}else
+	{
+
+	free(result);
 	free(buffer);
 
 	t_paginaHeap *paginaNueva = malloc(sizeof(t_paginaHeap));
@@ -111,6 +118,9 @@ void solicitarPagina(int pid)
 
     t_proceso* proceso = buscarProcesoPorPID(pid);
     proceso->cantidadPaginasHeap++;
+
+    return 0;
+	}
 
 }
 
@@ -209,28 +219,43 @@ t_puntero alocarMemoria(int espacioSolicitado, int pid)
 					}else
 					{
 						//NO ES POSIBLE DESFRAGMENTAR
-						solicitarPagina(pid);
-						return alocar(pid, espacioSolicitado);
+						int result = solicitarPagina(pid);
+						if(result == -11){
+								return result;
+						}else
+							{
+							return alocar(pid, espacioSolicitado);
+						}
 					}
 				}
 
 			}else
 			{
-				solicitarPagina(pid);
-				int valor = alocar(pid, espacioSolicitado);
-				return valor;
+
+				int result = solicitarPagina(pid);
+				if(result == -11){
+					return result;
+				}else{
+					return alocar(pid, espacioSolicitado);
+				}
 			}
 
 		}else
 		{
-			solicitarPagina(pid);
-			return alocar(pid, espacioSolicitado);
+			int result = solicitarPagina(pid);
+
+			if(result == -11){
+				return result;
+			}else
+			{
+				return alocar(pid, espacioSolicitado);
+			}
 		}
 	}
 	else
 	{
 		//RECHAZO: Solicitud invalida
-		return -1;
+		return -8;
 	}
 }
 

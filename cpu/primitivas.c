@@ -5,7 +5,7 @@ bool esParametro(t_nombre_variable variable) {
 	return (variable >= '0' && variable <= '9');
 }
 
-int nombreToInt(t_nombre_variable variable){
+int32_t nombreToInt(t_nombre_variable variable){
 	return variable - '0';
 }
 
@@ -13,7 +13,7 @@ bool esVariableDeclarada(t_elemento_stack* item, t_nombre_variable* variable) {
 	return dictionary_has_key(item->identificadores, variable);
 }
 
-int tipo_variable(t_nombre_variable variable, t_elemento_stack* head) {
+int32_t tipo_variable(t_nombre_variable variable, t_elemento_stack* head) {
 	char* cadena = string_from_format("%c",variable);
 
 	if (esVariableDeclarada(head, cadena)) {
@@ -29,35 +29,20 @@ int tipo_variable(t_nombre_variable variable, t_elemento_stack* head) {
 	return NOEXISTE;
 }
 
-bool existeLabel(t_nombre_etiqueta label) {
-	return metadata_buscar_etiqueta(label, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
-}
-
-void validarOverflow(t_puntero direccion) {
-
-	//Agrego el desplazamiento por las paginas ya ocupadas por el codigo
-	int pagina = (int)(direccion/tamanioPaginas) + cantidadPagCodigo;
-	int offset = direccion % tamanioPaginas;
-	int size = sizeof(int);
-	int pid = pcbNuevo->PID;
-
-	enviarSolicitudBytes(pid,pagina,offset,size);
-}
-
 void enviarDireccionAMemoria(t_puntero direccion) {
-	int pagina = (int)(direccion/tamanioPaginas) + cantidadPagCodigo; //Agrego el desplazamiento por las paginas ya ocupadas por el codigo
-	int offset = direccion % tamanioPaginas;
-	int size = sizeof(int);
-	int pid = pcbNuevo->PID;
+	int32_t pagina = (int32_t)(direccion/tamanioPaginas) + cantidadPagCodigo; //Agrego el desplazamiento por las paginas ya ocupadas por el codigo
+	int32_t offset = direccion % tamanioPaginas;
+	int32_t size = sizeof(int32_t);
+	int32_t pid = pcbNuevo->PID;
 
 	enviarSolicitudBytes(pid, pagina, offset, size);
 }
 
 void enviar_direccion_y_valor_a_Memoria(t_puntero direccion, t_valor_variable valor) {
-	int pagina = (int)(direccion/tamanioPaginas) + cantidadPagCodigo; //Agrego el desplazamiento por las paginas ya ocupadas por el codigo
-	int offset = direccion % tamanioPaginas;
-	int size = sizeof(int);
-	int pid = pcbNuevo->PID;
+	int32_t pagina = (int32_t)(direccion/tamanioPaginas) + cantidadPagCodigo; //Agrego el desplazamiento por las paginas ya ocupadas por el codigo
+	int32_t offset = direccion % tamanioPaginas;
+	int32_t size = sizeof(int32_t);
+	int32_t pid = pcbNuevo->PID;
 
 	enviarAlmacenarBytes(pid, pagina, offset, size, valor);
 }
@@ -102,7 +87,7 @@ t_puntero obtener_posicion_de(t_nombre_variable variable) {
 	if (posicionAbsoluta != (t_puntero)-1) {
 			posicionAbsoluta = (posicionRelativa->nroPagina*tamanioPaginas) + posicionRelativa->offset;
 	} else {
-		finalizarProgramaVariableInvalida();
+		finalizar_proceso(false,false);
 	}
 
 	log_debug(debugLog, "La pos_relativa es pagina: |%d|, offset: |%d| ", posicionRelativa->nroPagina, posicionRelativa->offset);
@@ -156,11 +141,9 @@ t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 		//manda pedidoa memoria
 		enviarDireccionAMemoria(direccion_variable);
 
-	//	if(!hayOverflow()){
-
 			//recibe valor de memoria
-			char* bufferValor = malloc(sizeof(int));
-			int valorRecibido = recv(memoria, bufferValor, sizeof(int), 0);
+			char* bufferValor = malloc(sizeof(int32_t));
+			int32_t valorRecibido = recv(memoria, bufferValor, sizeof(int32_t), 0);
 			if (valorRecibido <= 0)
 			{
 				perror("recv devolvio un numero menor que cero");
@@ -176,10 +159,6 @@ t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 
 			return valor;
 
-//		}
-//		else{
-//			return overflowException(overflow);
-//		}
 }
 
 void asignar(t_puntero direccion_variable, t_valor_variable valor)
@@ -204,14 +183,8 @@ void ir_al_label(t_nombre_etiqueta label)
 
 	t_puntero_instruccion posPrimeraInstruccionUtil = -1;
 
-	//if (existeLabel(label)) {
-		posPrimeraInstruccionUtil = metadata_buscar_etiqueta(label, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
-//	}
-//	else
-//	{
-//		//ERRROR!
-//		//devuelve posPrimeraInstruccionUtil = -1
-//	}
+	posPrimeraInstruccionUtil = metadata_buscar_etiqueta(label, pcbNuevo->indiceEtiquetas, pcbNuevo->etiquetasSize);
+
 	log_debug(debugLog, "Se actualiza el PC del PCB a: |%d| ", posPrimeraInstruccionUtil);
 	actualizarPC(pcbNuevo, posPrimeraInstruccionUtil);
 
@@ -233,7 +206,7 @@ void finalizar()
 
 	stack_elemento_destruir(head);
 
-	int elementos = stack_tamanio(stack);
+	int32_t elementos = stack_tamanio(stack);
 
 	//actualizarPC(pcbNuevo, retorno);
 
@@ -249,9 +222,9 @@ t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableComp
 	log_debug(debugLog, "Se pide a kernel el valor de la variable: |%s| ", nombreVariableCompartida);
 
 	t_valor_variable valorCompartida;
-	int codigoAccion = accionObtenerValorCompartida;
+	int32_t codigoAccion = accionObtenerValorCompartida;
 
-	int tamanioNombreCom = strlen(nombreVariableCompartida) + 1;
+	int32_t tamanioNombreCom = strlen(nombreVariableCompartida) + 1;
 
 	void* buffer = malloc(sizeof(int32_t)*2 + tamanioNombreCom);
 	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
@@ -260,7 +233,7 @@ t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableComp
 
 	send(kernel, buffer, sizeof(int32_t)*2 + tamanioNombreCom, 0);
 
-	recv(kernel, &valorCompartida, sizeof(int), 0);
+	recv(kernel, &valorCompartida, sizeof(int32_t), 0);
 
 	log_debug(debugLog, "El valor es: |%d| ", valorCompartida);
 	loggearFinDePrimitiva("obtener_valor_compartida");
@@ -277,9 +250,9 @@ t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableComp
 
 	t_valor_variable valorAsignado;
 
-	int codigoAccion = accionAsignarValorCompartida;
+	int32_t codigoAccion = accionAsignarValorCompartida;
 
-	int tamanioNombreCom = strlen(nombreVariableCompartida) + 1;
+	int32_t tamanioNombreCom = strlen(nombreVariableCompartida) + 1;
 
 	void* buffer = malloc(sizeof(int32_t)*3 + tamanioNombreCom);
 	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
@@ -316,7 +289,7 @@ void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 	t_elemento_stack* newHead = stack_elemento_crear();
 
 	//dondeRetornar
-	int posicion = pcbNuevo->contadorPrograma;
+	int32_t posicion = pcbNuevo->contadorPrograma;
 	newHead->posRetorno = ++posicion;
 
 	log_debug(debugLog, "Se retorna a la posicion |%d| ", posicion);
@@ -345,9 +318,9 @@ void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
 
 	t_elemento_stack* newHead = stack_elemento_crear();
 
-	newHead->valRetorno.nroPagina = (int)(donde_retornar/tamanioPaginas) + cantidadPagCodigo;
+	newHead->valRetorno.nroPagina = (int32_t)(donde_retornar/tamanioPaginas) + cantidadPagCodigo;
 	newHead->valRetorno.offset = donde_retornar % tamanioPaginas;
-	newHead->valRetorno.size = sizeof(int);
+	newHead->valRetorno.size = sizeof(int32_t);
 
 	//dondeRetornar
 	newHead->posRetorno = pcbNuevo->contadorPrograma;
@@ -407,8 +380,8 @@ void wait(t_nombre_semaforo identificador_semaforo)
 	log_debug(debugLog, "El semaforo es: |%s|.", identificador_semaforo);
 
 	char* nombreSemaforo = identificador_semaforo;
-	int codigoAccion = accionWait;
-	int tamanioNombreSem = strlen(nombreSemaforo) + 1;
+	int32_t codigoAccion = accionWait;
+	int32_t tamanioNombreSem = strlen(nombreSemaforo) + 1;
 
 	void* buffer = malloc(sizeof(int32_t)*2 + tamanioNombreSem);
 	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
@@ -428,7 +401,7 @@ void primitiva_signal(t_nombre_semaforo identificador_semaforo)
 	log_debug(debugLog, "El semaforo es: |%c|.", identificador_semaforo);
 
 	char* nombreSemaforo = identificador_semaforo;
-	int codigoAccion = accionSignal;
+	int32_t codigoAccion = accionSignal;
 	enviarTamanioYString(codigoAccion, kernel, nombreSemaforo);
 	loggearFinDePrimitiva("signal");
 }
@@ -438,19 +411,24 @@ t_puntero reservar(t_valor_variable espacio)
 	log_debug(debugLog, ANSI_COLOR_YELLOW "RESERVAR");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio para reservar: |%d| de espacio.", espacio);
-	int codigoAccion = accionReservarHeap;
-	int pid = pcbNuevo->PID;
-	int espacioParaAlocar = espacio;
+	int32_t codigoAccion = accionReservarHeap;
+	int32_t pid = pcbNuevo->PID;
+	int32_t espacioParaAlocar = espacio;
 
 	void* buffer = malloc(sizeof(int32_t)*3);
 	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
 	memcpy(buffer + sizeof(codigoAccion), &pid, sizeof(pid));
-	memcpy(buffer + sizeof(codigoAccion) + sizeof(int), &espacioParaAlocar, sizeof(pid));
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(int32_t), &espacioParaAlocar, sizeof(pid));
 
 	send(kernel, buffer, sizeof(int32_t)*3, 0);
 
-	int puntero;
-	recv(kernel, &puntero, sizeof(int), 0);
+	int32_t puntero;
+	recv(kernel, &puntero, sizeof(int32_t), 0);
+
+	if(puntero < 0)
+	{
+		lanzar_excepcion(pcbNuevo, puntero);
+	}
 
 	log_debug(debugLog, "La primitiva recibio el puntero: |%d| .", puntero);
 	loggearFinDePrimitiva("reservar");
@@ -464,21 +442,21 @@ void liberar(t_puntero puntero)
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio el puntero: |%d| para liberar.", puntero);
 
-	int codigoAccion = accionLiberarHeap;
-	int pid = pcbNuevo->PID;
-	int punteroALiberar = puntero;
-	int cantPagCodigo = pcbNuevo->cantidadPaginas;
+	int32_t codigoAccion = accionLiberarHeap;
+	int32_t pid = pcbNuevo->PID;
+	int32_t punteroALiberar = puntero;
+	int32_t cantPagCodigo = pcbNuevo->cantidadPaginas;
 
 	void* buffer = malloc(sizeof(int32_t)*4);
 	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
 	memcpy(buffer + sizeof(codigoAccion), &pid, sizeof(pid));
-	memcpy(buffer + sizeof(codigoAccion) + sizeof(int), &punteroALiberar, sizeof(punteroALiberar));
-	memcpy(buffer + sizeof(codigoAccion) + sizeof(int) + sizeof(punteroALiberar), &cantPagCodigo, sizeof(cantPagCodigo));
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(int32_t), &punteroALiberar, sizeof(punteroALiberar));
+	memcpy(buffer + sizeof(codigoAccion) + sizeof(int32_t) + sizeof(punteroALiberar), &cantPagCodigo, sizeof(cantPagCodigo));
 
 	send(kernel, buffer, sizeof(int32_t)*4, 0);
 
-	int respuesta = 0;
-	recv(kernel, &respuesta, sizeof(int), 0);
+	int32_t respuesta = 0;
+	recv(kernel, &respuesta, sizeof(int32_t), 0);
 	if(respuesta == 1)
 	{
 		loggearFinDePrimitiva("liberar");
@@ -495,29 +473,29 @@ t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 	log_debug(debugLog, "La primitiva recibio la direccion: |%s|", direccion);
 
 	//Envio comando al kernel
-	int codigoAccion = accionAbrirArchivo;
-	int pid = pcbNuevo->PID;
-	int tamanioPath = string_length(direccion) + 1;
+	int32_t codigoAccion = accionAbrirArchivo;
+	int32_t pid = pcbNuevo->PID;
+	int32_t tamanioPath = string_length(direccion) + 1;
 	char* permisos = convertirFlags(flags);
-	int tamanioPermisos = string_length(permisos) + 1;
-	int tamanioBuffer = sizeof(int)*4 + tamanioPath + tamanioPermisos;
+	int32_t tamanioPermisos = string_length(permisos) + 1;
+	int32_t tamanioBuffer = sizeof(int32_t)*4 + tamanioPath + tamanioPermisos;
 	void* buffer = malloc(tamanioBuffer);
-	int offset = 0;
-	memcpy(buffer, &codigoAccion, sizeof(int));
-	offset += sizeof(int);
-	memcpy(buffer + offset, &pid, sizeof(int));
-	offset += sizeof(int);
-	memcpy(buffer + offset, &tamanioPath, sizeof(int));
-	offset += sizeof(int);
-	memcpy(buffer + offset, &tamanioPermisos, sizeof(int));
-	offset += sizeof(int);
+	int32_t offset = 0;
+	memcpy(buffer, &codigoAccion, sizeof(int32_t));
+	offset += sizeof(int32_t);
+	memcpy(buffer + offset, &pid, sizeof(int32_t));
+	offset += sizeof(int32_t);
+	memcpy(buffer + offset, &tamanioPath, sizeof(int32_t));
+	offset += sizeof(int32_t);
+	memcpy(buffer + offset, &tamanioPermisos, sizeof(int32_t));
+	offset += sizeof(int32_t);
 	memcpy(buffer + offset, direccion, tamanioPath);
 	offset += tamanioPath;
 	memcpy(buffer + offset, permisos, tamanioPermisos);
 	send(kernel, buffer, tamanioBuffer, 0);
 
-	int fd;
-	recv(kernel, &fd, sizeof(int), 0);
+	int32_t fd;
+	recv(kernel, &fd, sizeof(int32_t), 0);
 
 	return fd;
 
@@ -530,17 +508,17 @@ void borrar(t_descriptor_archivo direccion)
 	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|", direccion);
 
 	//Envio comando al kernel
-	int codigoAccion = accionBorrarArchivo;
-	int fd= (int)direccion;
-	int pid = (int) pcbNuevo->PID;
-	int tamanioBuffer = sizeof(int)*3;
+	int32_t codigoAccion = accionBorrarArchivo;
+	int32_t fd= (int32_t)direccion;
+	int32_t pid = (int32_t) pcbNuevo->PID;
+	int32_t tamanioBuffer = sizeof(int32_t)*3;
 	void* buffer = malloc(tamanioBuffer);
-	int offset = 0;
-	memcpy(buffer, &codigoAccion, sizeof(int));
-	offset += sizeof(int);
-	memcpy(buffer + offset, &fd, sizeof(int));
-	offset += sizeof(int);
-	memcpy(buffer + offset, &pid, sizeof(int));
+	int32_t offset = 0;
+	memcpy(buffer, &codigoAccion, sizeof(int32_t));
+	offset += sizeof(int32_t);
+	memcpy(buffer + offset, &fd, sizeof(int32_t));
+	offset += sizeof(int32_t);
+	memcpy(buffer + offset, &pid, sizeof(int32_t));
 	send(kernel, buffer, tamanioBuffer, 0);
 
 	loggearFinDePrimitiva("borrar");
@@ -552,17 +530,17 @@ void cerrar(t_descriptor_archivo descriptor_archivo)
 	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|", descriptor_archivo);
 
 	//Envio comando al kernel
-	int codigoAccion = accionCerrarArchivo;
-	int fd= (int)descriptor_archivo;
-	int pid = (int) pcbNuevo->PID;
-	int tamanioBuffer = sizeof(int)*3;
+	int32_t codigoAccion = accionCerrarArchivo;
+	int32_t fd= (int32_t)descriptor_archivo;
+	int32_t pid = (int32_t) pcbNuevo->PID;
+	int32_t tamanioBuffer = sizeof(int32_t)*3;
 	void* buffer = malloc(tamanioBuffer);
-	int offset = 0;
-	memcpy(buffer, &codigoAccion, sizeof(int));
-	offset += sizeof(int);
-	memcpy(buffer + offset, &fd, sizeof(int));
-	offset += sizeof(int);
-	memcpy(buffer + offset, &pid, sizeof(int));
+	int32_t offset = 0;
+	memcpy(buffer, &codigoAccion, sizeof(int32_t));
+	offset += sizeof(int32_t);
+	memcpy(buffer + offset, &fd, sizeof(int32_t));
+	offset += sizeof(int32_t);
+	memcpy(buffer + offset, &pid, sizeof(int32_t));
 	send(kernel, buffer, tamanioBuffer, 0);
 
 	loggearFinDePrimitiva("cerrar");
@@ -574,19 +552,19 @@ void mover_cursor(t_descriptor_archivo descriptor_archivo, t_valor_variable posi
 	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|, y la posicion |%d|", descriptor_archivo, posicion);
 
 	//Envio comando al kernel
-	int codigoAccion = accionMoverCursor;
-	int fd= (int)descriptor_archivo;
-	int pid = (int) pcbNuevo->PID;
-	int tamanioBuffer = sizeof(int)*4;
+	int32_t codigoAccion = accionMoverCursor;
+	int32_t fd= (int32_t)descriptor_archivo;
+	int32_t pid = (int32_t) pcbNuevo->PID;
+	int32_t tamanioBuffer = sizeof(int32_t)*4;
 	void* buffer = malloc(tamanioBuffer);
-	int offset = 0;
-	memcpy(buffer, &codigoAccion, sizeof(int));
-	offset += sizeof(int);
-	memcpy(buffer + offset, &fd, sizeof(int));
-	offset += sizeof(int);
-	memcpy(buffer + offset, &pid, sizeof(int));
-	offset += sizeof(int);
-	memcpy(buffer + offset, &posicion, sizeof(int));
+	int32_t offset = 0;
+	memcpy(buffer, &codigoAccion, sizeof(int32_t));
+	offset += sizeof(int32_t);
+	memcpy(buffer + offset, &fd, sizeof(int32_t));
+	offset += sizeof(int32_t);
+	memcpy(buffer + offset, &pid, sizeof(int32_t));
+	offset += sizeof(int32_t);
+	memcpy(buffer + offset, &posicion, sizeof(int32_t));
 	send(kernel, buffer, tamanioBuffer, 0);
 
 	loggearFinDePrimitiva("mover_cursor");
@@ -598,20 +576,20 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|, y un tamanio |%d|", descriptor_archivo, tamanio);
 
 	//Envio comando al kernel
-	int codigoAccion = accionEscribir;
-	int fd = (int) descriptor_archivo;
-	int pid = (int) pcbNuevo->PID;
-	int tamanioBuffer = sizeof(int)*4 + tamanio;
+	int32_t codigoAccion = accionEscribir;
+	int32_t fd = (int32_t) descriptor_archivo;
+	int32_t pid = (int32_t) pcbNuevo->PID;
+	int32_t tamanioBuffer = sizeof(int32_t)*4 + tamanio;
 	void* buffer = malloc(tamanioBuffer);
-	int offset = 0;
-	memcpy(buffer, &codigoAccion, sizeof(int));
-	offset += sizeof(int);
-	memcpy(buffer + offset, &fd, sizeof(int));
-	offset += sizeof(int);
-	memcpy(buffer + offset, &pid, sizeof(int));
-	offset += sizeof(int);
-	memcpy(buffer + offset, &tamanio, sizeof(int));
-	offset += sizeof(int);
+	int32_t offset = 0;
+	memcpy(buffer, &codigoAccion, sizeof(int32_t));
+	offset += sizeof(int32_t);
+	memcpy(buffer + offset, &fd, sizeof(int32_t));
+	offset += sizeof(int32_t);
+	memcpy(buffer + offset, &pid, sizeof(int32_t));
+	offset += sizeof(int32_t);
+	memcpy(buffer + offset, &tamanio, sizeof(int32_t));
+	offset += sizeof(int32_t);
 	memcpy(buffer + offset, informacion, tamanio);
 	send(kernel, buffer, tamanioBuffer, 0);
 
@@ -624,25 +602,25 @@ void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valo
 	log_debug(debugLog, "La primitiva recibio el descriptor |%d|, un tamanio |%d|, y un puntero |%d|", descriptor_archivo, tamanio, informacion);
 
 	//Envio comando al kernel
-	int codigoAccion = accionObtenerDatosArchivo;
-	int fd= (int)descriptor_archivo;
-	int pid = (int) pcbNuevo->PID;
-	int tamanioBuffer = sizeof(int)*4;
+	int32_t codigoAccion = accionObtenerDatosArchivo;
+	int32_t fd= (int32_t)descriptor_archivo;
+	int32_t pid = (int32_t) pcbNuevo->PID;
+	int32_t tamanioBuffer = sizeof(int32_t)*4;
 	void* buffer = malloc(tamanioBuffer);
-	int offset = 0;
-	memcpy(buffer, &codigoAccion, sizeof(int));
-	offset += sizeof(int);
-	memcpy(buffer + offset, &fd, sizeof(int));
-	offset += sizeof(int);
-	memcpy(buffer + offset, &pid, sizeof(int));
-	offset += sizeof(int);
-	memcpy(buffer + offset, &tamanio, sizeof(int));
+	int32_t offset = 0;
+	memcpy(buffer, &codigoAccion, sizeof(int32_t));
+	offset += sizeof(int32_t);
+	memcpy(buffer + offset, &fd, sizeof(int32_t));
+	offset += sizeof(int32_t);
+	memcpy(buffer + offset, &pid, sizeof(int32_t));
+	offset += sizeof(int32_t);
+	memcpy(buffer + offset, &tamanio, sizeof(int32_t));
 	send(kernel, buffer, tamanioBuffer, 0);
 
 	char *recibido = malloc(tamanio);
 	recv(kernel, recibido, tamanio, 0);
 	//Envio datos a memoria
-	int i=0;
+	int32_t i=0;
 	while(i<tamanio){
 		enviar_direccion_y_valor_a_Memoria(informacion+i, recibido[i]);
 		log_debug(debugLog, "Enviando a memoria. Pos: |%d| Valor: |%c|", informacion+i, recibido[i]);

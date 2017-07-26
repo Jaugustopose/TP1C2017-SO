@@ -137,7 +137,7 @@ void finalizarProceso(t_proceso* proceso)
 {
 	cambiarEstado(proceso,EXIT);
 
-	//TODO: ELIMINAR ARCHIVOS ABIERTOS QUE TENGAMOS!!!!
+	//TODO: LUCAS ELIMINAR ARCHIVOS ABIERTOS QUE TENGAMOS!!!!
 	liberarRecursos(proceso);
 
 	if (proceso->semaforo != NULL){
@@ -151,6 +151,7 @@ void finalizarProceso(t_proceso* proceso)
 	{
 		return unProceso->PCB->PID == proceso->PCB->PID;
 	}
+
 
 	//TODO:CONVIENE DEJARLO PARA EL HISTORICO DE PROCESOS.
 	//Lo saco de la lista de procesos. Queda su PCB en la cola de exit para historico
@@ -381,15 +382,25 @@ void ejecutarProceso(t_proceso* proceso, int cpu) {
 //	}
 //}
 
+void recibirFinalizacionErronea(int cliente) {
+
+	t_proceso* proceso = obtenerProceso(cliente);
+
+	//Lo aborto por exception
+	proceso->abortado = true;
+	recibirFinalizacion(cliente);
+}
+
+
 void recibirFinalizacion(int cliente) {
 
 	t_proceso* proceso = obtenerProceso(cliente);
 	if (proceso != NULL) {
 		proceso->PCB = recibirPCBDeCPU(cliente);
-//		if (!proceso->abortado)
-//		{
+		if (!proceso->abortado)
+		{
 			finalizarProceso(proceso);
-	//	}
+		}
 	}
 }
 /****************************************CONSOLA KERNEL*******************************************************/

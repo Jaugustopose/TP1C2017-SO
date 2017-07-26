@@ -53,7 +53,7 @@ t_pidHeap* getPID(int pid);
 t_paginaHeap* getPagina(t_pidHeap* pidElement, int nroPag);
 t_bloque* getBloque(t_paginaHeap* pagina, int indice);
 int getLastNroPag(int pid);
-void solicitarPagina(int pid);
+int solicitarPagina(int pid);
 t_paginaHeap* getPaginaConEspacio(t_pidHeap* pidElement, int pid, int espacio);
 t_bloque* getBloqueConEspacio(t_paginaHeap* pagina, int espacio);
 t_puntero alocar(int pid, int espacio);

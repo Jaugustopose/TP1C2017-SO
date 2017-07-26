@@ -147,6 +147,7 @@ void abrirArchivo(int socketCpu, int socketFS){
 		// Si no existe el archivo pero tenemos permisos de creacion se lo manda a crear
 		if(res==-1 && string_contains(permisos, "c")){
 			crearArchivo(pid, path, permisos, socketCpu, socketFS);
+
 			return;
 		}else{
 			//TODO: Error Archivo no existe

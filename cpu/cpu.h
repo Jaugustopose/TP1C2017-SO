@@ -36,6 +36,7 @@ struct sockaddr_in dirKernel;
 int kernel;
 struct sockaddr_in dirMemoria;
 int memoria;
+bool error;
 
 //Puedo terminar
 bool ejecutando;
