@@ -108,20 +108,23 @@ void connect_w(int cliente, struct sockaddr_in* direccionServidor) {
 	}
 }
 
-void conectarConKernel(int socket) {
+int conectarConKernel() {
 
 	//Handshake
-			struct sockaddr_in direccionServ;
-				direccionServ.sin_family = AF_INET;
-				direccionServ.sin_port = htons(config.PUERTO_KERNEL); // short, Ordenación de bytes de la red
-				direccionServ.sin_addr.s_addr = inet_addr("127.0.0.1");
-				memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
-				connect(socket, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
-	send(socket,&identidad, sizeof(int),0);
+	int socketKernel = socket(AF_INET, SOCK_STREAM, 0);
+	struct sockaddr_in direccionServ;
+	direccionServ.sin_family = AF_INET;
+	direccionServ.sin_port = htons(config.PUERTO_KERNEL); // short, Ordenación de bytes de la red
+	direccionServ.sin_addr.s_addr = inet_addr(config.IP_KERNEL);
+	memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
+	connect(socketKernel, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
+	send(socketKernel,&identidad, sizeof(int),0);
+
+	return socketKernel;
 
 }
 
-void crearPrograma(param_programa parametrosCrearPrograma)
+void crearPrograma(param_programa* parametrosCrearPrograma)
 {
 
 	//pthread_t idHilo = pthread_self();
@@ -137,22 +140,13 @@ void crearPrograma(param_programa parametrosCrearPrograma)
 //	}
 //
 //	send(cliente,&identidad, sizeof(int),0);
-	int accion = envioScript;
-	int longitudPrograma = strlen(parametrosCrearPrograma.programaACrear);
-	int tamanioBufferCrearPrograma = sizeof(int32_t)+sizeof(int32_t)+(strlen(parametrosCrearPrograma.programaACrear));
 
-	void* bufferCrearPrograma = malloc(tamanioBufferCrearPrograma);
-	memcpy(bufferCrearPrograma, &accion, sizeof(int32_t));
-	memcpy(bufferCrearPrograma + sizeof(int32_t), &longitudPrograma,sizeof(int32_t));
-	memcpy(bufferCrearPrograma + sizeof(int32_t)*2, parametrosCrearPrograma.programaACrear,strlen(parametrosCrearPrograma.programaACrear));
 
-	send(parametrosCrearPrograma.socket,bufferCrearPrograma,tamanioBufferCrearPrograma,0);
-	int pidRecibido;
-	recv(parametrosCrearPrograma.socket, &pidRecibido, sizeof(int32_t), 0);
+//	 conectarConKernel(kernelSock);
 
-	printf("PID: %d\n", pidRecibido);
 
-	list_add(listaPIDs, pidRecibido);
+
+		crearHiloPrograma(parametrosCrearPrograma);
 
 
 }
@@ -185,24 +179,62 @@ void* pidePathAlUsuario(char* path)
     }
 }
 
-void crearHiloPrograma(int kernel, char* programaACrear)
+void atenderAcciones(param_programa* parametrosCrearPrograma)
 {
-	pthread_t unHilo;
-	param_programa parametrosCrearPrograma;
-	parametrosCrearPrograma.socket = kernel;
-	parametrosCrearPrograma.programaACrear = programaACrear;
-	pthread_create(&unHilo, NULL, (void*)crearPrograma,(void*) &parametrosCrearPrograma);
+	 int socketKernel = conectarConKernel();
+
+	 int accion = envioScript;
+	int longitudPrograma = strlen(parametrosCrearPrograma->programaACrear);
+	int tamanioBufferCrearPrograma = sizeof(int32_t)+sizeof(int32_t)+(strlen(parametrosCrearPrograma->programaACrear));
+
+	void* bufferCrearPrograma = malloc(tamanioBufferCrearPrograma);
+	memcpy(bufferCrearPrograma, &accion, sizeof(int32_t));
+	memcpy(bufferCrearPrograma + sizeof(int32_t), &longitudPrograma,sizeof(int32_t));
+	memcpy(bufferCrearPrograma + sizeof(int32_t)*2, parametrosCrearPrograma->programaACrear,strlen(parametrosCrearPrograma->programaACrear));
+
+	send(socketKernel,bufferCrearPrograma,tamanioBufferCrearPrograma,0);
+	int pidRecibido;
+	recv(socketKernel, &pidRecibido, sizeof(int32_t), 0);
+
+	printf("PID: %d\n", pidRecibido);
+
+	list_add(listaPIDs, pidRecibido);
+
+	while(1)
+	{
+			int codAccion;
+			int bytes = recv(socketKernel, &codAccion, sizeof(int32_t), 0);
+			recibeOrden(codAccion);
+	}
 }
 
-void atenderAcciones(char* accionRecibida){
+void crearHiloPrograma(param_programa* parametrosCrearPrograma)
+{
+	pthread_create(&hiloPrograma, NULL, (void*)atenderAcciones, (void*)parametrosCrearPrograma);
+}
 
-	switch ((int)accionRecibida) {
+
+void imprimirTexto()
+{
+	int pid;
+	int tamanioTexto;
+	recv(kernelSock, &pid, sizeof(int32_t), 0);
+	recv(kernelSock, &tamanioTexto, sizeof(int32_t), 0);
+
+	void* buffer = malloc(tamanioTexto);
+	recv(kernelSock, buffer, tamanioTexto, 0);
+	char* texto = buffer;
+}
+
+void recibeOrden(int32_t accion){
+
+	switch (accion) {
 
 		case accionError:
 			break;
 
 		case accionImprimirTextoConsola:
-
+			imprimirTexto();
 			break;
 
 		case accionConsolaFinalizarNormalmente:
@@ -259,11 +291,11 @@ void escucharUsuario(int kernel)
 								break;
 							}else {
 								printf("Iniciando!...\n");
-								//crearHiloPrograma(kernel,programaSolicitado);
 
-								param_programa parametrosPrograma;
-								parametrosPrograma.socket = kernel;
-								parametrosPrograma.programaACrear = programaSolicitado;
+
+								param_programa* parametrosPrograma = malloc(sizeof(param_programa));
+								parametrosPrograma->socket = kernel;
+								parametrosPrograma->programaACrear = programaSolicitado;
 								crearPrograma(parametrosPrograma);
 								limpiaMensajes();
 								imprimeMenuUsuario();
@@ -300,10 +332,12 @@ void escucharPedidosKernel(int socket)
 void inicializarContexto()
 {
 	listaPIDs = list_create();
+	sem_init(&mutexCreaPrograma, 1, 1);
+	sem_init(&mutexB, 1, 0);
 }
 int main(void){
 
-	int kernel = socket_ws();
+	kernelSock = socket_ws();
 
 	inicializarContexto();
 
@@ -311,11 +345,16 @@ int main(void){
 
     cargarConfiguracion();
 
-    conectarConKernel(kernel);
+   // kernelSock = conectarConKernel();
 
     imprimeMenuUsuario();
 
-    escucharUsuario(kernel);
+  //  crearHiloPrograma();
+
+    escucharUsuario(kernelSock);
+
+
+
 
    // escucharPedidosKernel(kernel); //Mal hecho, nunca entra por el while(1) del escucharUsuario
 

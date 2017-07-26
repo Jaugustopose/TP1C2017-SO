@@ -277,7 +277,7 @@ void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProces
 	for (fdClienteCont = 0; fdClienteCont < list_size(listaConProcesos); fdClienteCont++) {
 		t_proceso* proceso = list_get(listaConProcesos, fdClienteCont);
 		if (proceso -> ConsolaDuenio == fileDescriptor) {
-			proceso -> PCB->exitCode = -6;
+			proceso -> PCB->exitCode = -6; //TODO hace enum
 			queue_push(colaExit, proceso);
 		}
 

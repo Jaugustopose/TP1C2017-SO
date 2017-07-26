@@ -276,6 +276,7 @@ void enviarSolicitudBytes(int pid, int pagina, int offset, int size) {
 	if (hayOverflow()) {
 		log_debug(debugLog, ANSI_COLOR_RED "OVERFLOW!");
 		ejecutando= false;
+		pcbNuevo->exitCode = -2;
 		//overflowException(overflow);
 	}
     free(solicitud);

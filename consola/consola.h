@@ -1,4 +1,5 @@
 #ifndef consola_h
+#define consola_h
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -18,7 +19,13 @@
 #include "cliente-servidor.h"
 #include "serializador.h"
 #include <pthread.h>
+#include <semaphore.h>
 
+pthread_t hiloPrograma;
+pthread_mutex_t mutexCreaPrograma;
+pthread_mutex_t mutexA;
+pthread_mutex_t mutexB;
+int kernelSock;
 
 typedef struct configuracion{
 	char* IP_KERNEL;
