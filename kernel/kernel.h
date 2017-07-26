@@ -69,9 +69,8 @@ t_config* configKernel;
 config_t config;
 
 typedef enum t_proceso_estado {
-	NEW, READY, EXEC, BLOCK, EXIT
+	NEW, READY, EXEC, BLOCK, EXIT, ALL
 }t_proceso_estado;
-
 
 typedef struct t_consola{
 	int32_t consolaID;

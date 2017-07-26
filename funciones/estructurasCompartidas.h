@@ -46,21 +46,13 @@ enum tipoMensaje {
 
 };
 
-enum consolaKernelPedidos
-{
-	listadoProcesoCompleto = 40,
-	totalRafagas = 41,
-	totalPrivilegiadas = 42,
-	verTablaArchivosAbiertos = 43,
-	totalPaginasHeap = 44,
-	totalAccionesAlocar = 45,
-	totalAccionesAclocarEnBytes = 46,
-	totalAccionesLiberar = 47,
-	totalAccionesLiberarEnBytes = 48,
-	verTablaGlobalArchivos = 49,
-	modificarGradoMultiprog = 50,
-	finalizarProcesoDesdeKernel = 51,
-	detenerPlanificacion = 52
+enum accionConsolaKernel {
+	listarProcesos = 1,
+	operarSobreProceso = 2,
+	obtenerTGArchivos = 3,
+	modificarMultiprogramacion = 4,
+	finalizarProcesoPorUsuario = 5,
+	detenerPlanificacion = 6
 };
 
 enum tipoDeCliente {

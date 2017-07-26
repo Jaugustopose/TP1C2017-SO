@@ -16,7 +16,10 @@
 #include <parser/metadata_program.h>
 #include <math.h>
 
-
+/**
+ * Prototipos
+ */
+void escucharConsolaKernel();
 
 
 #endif /* GESTIONDEPROCESOS_H_ */

@@ -385,41 +385,64 @@ void recibirFinalizacion(int cliente) {
 }
 /****************************************CONSOLA KERNEL*******************************************************/
 
-void recibirAccionDelUsuarioKernel(int32_t orden)
-{
-	while(1)
-	{
-		switch(orden)
-		{
-			case listadoProcesoCompleto:
-						break;
-
-			case totalRafagas:
-						break;
-
-			case totalPrivilegiadas:
-						break;
-
-			case verTablaArchivosAbiertos:
-						break;
-
-			case totalPaginasHeap:
-				//Esta accion se subdivide en otras dos
-						break;
-
-			case verTablaGlobalArchivos:
-						break;
-
-			case modificarGradoMultiprog:
-						break;
-
-			case finalizarProcesoDesdeKernel:
-						break;
-
+void escucharConsolaKernel() {
+	log_info(infoLog, "Escuchando nuevas solicitudes de consola en nuevo hilo");
+		int result;
+		while (1) {
+			puts("Ingrese una acción a realizar\n");
+			puts("1: Listar Procesos");
+			puts("2: Operaciones sobre un proceso");
+			puts("3: Obtener tabla global de archivos");
+			puts("4: Modificar grado de multiprogramación");
+			puts("5: Finalizar proceso");
+			puts("6: Detener planificación");
+			char accion[3];
+			if (fgets(accion, sizeof(accion), stdin) == NULL) {
+				printf("Error al leer la consola !\n");
+				log_error(errorLog, "ERROR AL LEER LA CONSOLA! - accion: %s", accion);
+				return;
+			}
+			int codAccion = accion[0] - '0';
+			switch (codAccion) {
+			case listarProcesos:
+				puts("\n¿Qué desea listar?");
+				puts("0: Procesos en cola de NEW");
+				puts("1: Procesos en cola de READY");
+				puts("3: Procesos en cola de BLOCK");
+				puts("4: Procesos en cola de EXIT");
+				puts("5: Todos los procesos\n");
+				char input[10];
+				if (fgets(input, sizeof(input), stdin) == NULL) {
+					log_error(errorLog, "Error al leer consola del Kernel! - input: %s", input);
+					break;
+				}
+				char* eptr;
+				int inputInt = strtol(input, &eptr, 10);
+				if (result == 0) {
+					log_error("Error con el valor ingresado - input: %s", input);
+					result = 1;
+				}
+				imprimir(inputInt);
+				break;
+			case operarSobreProceso:
+				printf("Codificar operarSobreProceso!\n");
+				break;
+			case obtenerTGArchivos:
+				printf("Codificar obtenerTGArchivos!\n");
+				break;
+			case modificarMultiprogramacion:
+				printf("Codificar modificarMultiprogramacion!\n");
+				break;
+			case finalizarProcesoPorUsuario:
+				printf("Codificar finalizarProcesoPorUsuario!\n");
+				break;
 			case detenerPlanificacion:
-						break;
+				printf("Codificar detenerPlanificacion!\n");
+				break;
+			default:
+				printf("No se reconece la acción %d!\n", codAccion);
+			}
 		}
-	}
 }
 
 void modificarGradoDeMultiprogramacion(int nuevoGradoMulti)
@@ -512,7 +535,7 @@ void imprimir(t_proceso_estado estado){
 			imprimirColaExit();
 		break;
 
-		default:
+		case ALL:
 			imprimirTodosLosProcesos();
 		break;
 
