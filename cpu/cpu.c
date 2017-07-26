@@ -202,7 +202,7 @@ void desalojarProceso()
 	ejecutando = false;
 
 	//Envio PCB al kernel
-	serializar_PCB(pcbNuevo, kernel, accionDesalojarProceso);
+	serializar_PCB(pcbNuevo, kernel, accionFinProceso);
 }
 
 void finalizar_programa(bool normalmente){
@@ -607,31 +607,6 @@ void handler(int32_t sign) {
 		}
 	}
 }
-//void finalizar_CPU()
-//{
-//
-//}
-
-//void finalizar_programa(int32_t cierre)
-//{
-//	switch(cierre)
-//	{
-//		case CasoOverflow:
-//
-//
-//		break;
-//
-//		case CasoVariableInvalida:
-//
-//
-//		break;
-//
-//		case CasoCierreNormal:
-//
-//
-//		break;
-//	}
-//}
 
 int32_t main(void){
 

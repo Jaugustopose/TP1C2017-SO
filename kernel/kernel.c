@@ -304,27 +304,32 @@ void liberar_procesos_de_cpu(int fileDescriptor, t_list* listaConProcesos) {
 	}
 
 }
-
+void enviar_algoritmo_a_cpu()
+{
+	int algoritmo = (strcmp(config.ALGORITMO, FIFO) == 0)? SOY_FIFO : SOY_RR;
+	send(sockClie, &algoritmo, sizeof(int32_t), 0);
+}
 void Colocar_en_respectivo_fdset() {
 	//Recibo identidad y coloco en la bolsa correspondiente
 	recv(sockClie, &identidadCliente, sizeof(int32_t), 0);
 	switch (identidadCliente) {
 
 	case soyConsola:
+
 		FD_SET(sockClie, &bolsaConsolas); //agrego una nueva consola a la bolsa de consolas
 		printf("Se ha conectado una nueva consola \n");
 		break;
 
 	case soyCPU:
+
 		FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
 		encolarCPU(colaCPU, sockClie);
-		int algoritmo = (strcmp(config.ALGORITMO, FIFO) == 0)? SOY_FIFO : SOY_RR;
-		send(sockClie, &algoritmo, sizeof(int32_t), 0);
+		enviar_algoritmo_a_cpu();
+
 		break;
 		printf("Se ha conectado un nuevo CPU  \n");
 	}
 	if (sockClie > maxFd) {
-		// actualizar el máximo
 		maxFd = sockClie;
 	}
 }
@@ -413,10 +418,7 @@ void sigusr1(int cpu){
 	if (proceso!=NULL){
 		proceso->PCB = recibirPCBDeCPU(cpu);
 		proceso->sigusr1=true;
-	}
-	else{
-		//quitarCliente(cpu);
-		//limpiarColaCPU();
+		planificarExpulsion(proceso);
 	}
 }
 

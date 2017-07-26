@@ -147,13 +147,11 @@ void finalizarProceso(t_proceso* proceso)
 
 	desasignarCPU(proceso);
 
-	bool esElProcesoBuscado(t_proceso* unProceso)
-	{
-		return unProceso->PCB->PID == proceso->PCB->PID;
-	}
-
-
 	//TODO:CONVIENE DEJARLO PARA EL HISTORICO DE PROCESOS.
+	//	bool esElProcesoBuscado(t_proceso* unProceso)
+	//	{
+	//		return unProceso->PCB->PID == proceso->PCB->PID;
+	//	}
 	//Lo saco de la lista de procesos. Queda su PCB en la cola de exit para historico
 	//list_remove_and_destroy_by_condition(listaDeProcesos,(void*)esElProcesoBuscado, (void*)destructorProcesos);
 }
@@ -209,30 +207,36 @@ void cambiarEstado(t_proceso* proceso, int estado) {
 void rafagaProceso(int cliente){
 
 	t_proceso* proceso = obtenerProceso(cliente);
-	proceso->rafagas++;
 	proceso->rafagasTotales++;
 	planificarExpulsion(proceso);
 }
 
 void continuarProceso(t_proceso* proceso) {
 
-	int codAccion = accionContinuarProceso;
-	int quantum = config.QUANTUM_SLEEP;
-	void* buffer = malloc(2*sizeof(int));
-	memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
+
+	int32_t codAccion = accionContinuarProceso;
+	int32_t quantum = config.QUANTUM_SLEEP;
+	void* buffer = malloc(2*sizeof(int32_t));
+	memcpy(buffer, &codAccion, sizeof(codAccion));
 	memcpy(buffer + sizeof(codAccion), &quantum, sizeof(quantum)); //QUANTUM_sleep
 
     send(proceso->CpuDuenio, buffer, sizeof(codAccion) + sizeof(quantum), 0);
+
+	proceso->rafagas++;
+
     free(buffer);
 }
 
 bool terminoQuantum(t_proceso* proceso) {
 	return (bool)(strcmp(config.ALGORITMO, ROUND_ROBIN) == 0 &&
-					proceso->rafagas > config.QUANTUM);
+					proceso->rafagas >= config.QUANTUM);
 }
 
 void desasignarCPU(t_proceso* proceso) {
-	if (!proceso->sigusr1){
+
+	/*Se coloca esta condici{on porque pudo haber pasado que se intente desasignar dos veces.
+	proceso->CpuDuenio != -1*/
+	if (!proceso->sigusr1 && proceso->CpuDuenio != -1){
 		encolarCPU(colaCPU, proceso->CpuDuenio);
 	}
 
@@ -280,7 +284,7 @@ void expulsarProceso(t_proceso* proceso) {
 		if (!proceso->abortado){
 			cambiarEstado(proceso, READY);
 		}else{
-			cambiarEstado(proceso, EXIT);
+			finalizarProceso(proceso);
 		}
 	desasignarCPU(proceso);
 
@@ -316,7 +320,12 @@ void planificarExpulsion(t_proceso* proceso) {
 			expulsarProceso(proceso);
 		}else
 		{
-			continuarProceso(proceso);
+			if(proceso->sigusr1){
+				expulsarProceso(proceso);
+			}
+			else{
+				continuarProceso(proceso);
+			}
 		}
 	}
     else if(proceso->estado == BLOCK)
@@ -326,7 +335,6 @@ void planificarExpulsion(t_proceso* proceso) {
 
 	if(proceso->abortado)
 	{
-		liberarRecursos(proceso);
 		finalizarProceso(proceso);
 	}
 
@@ -336,6 +344,7 @@ void asignarCPU(t_proceso* proceso, int cpu) {
 
 	cambiarEstado(proceso, EXEC);
 
+	//TODO: ESTO QUE ONDA?
 	list_add(listaEjecucion, proceso);
 
 	proceso->CpuDuenio = cpu;
