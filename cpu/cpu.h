@@ -41,6 +41,7 @@ bool error;
 //Puedo terminar
 bool ejecutando;
 bool terminar;
+bool ejecucionInterrumpida;
 
 bool haySigusr1;
 int overflow;

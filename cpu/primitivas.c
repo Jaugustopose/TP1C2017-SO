@@ -62,72 +62,87 @@ char* convertirFlags(t_banderas flags){
 
 t_puntero obtener_posicion_de(t_nombre_variable variable) {
 
-	log_debug(debugLog, ANSI_COLOR_YELLOW "OBTENER_POSICION_DE");
-	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
-	log_debug(debugLog, "La primitiva recibio la VARIABLE: |%c| ", variable);
+	if(!ejecucionInterrumpida){
 
-	t_puntero posicionAbsoluta = 0;
-	t_pedido* posicionRelativa;
-	char* cadena = string_from_format("%c",variable);
-	t_elemento_stack* head = stack_head(stack);
+		log_debug(debugLog, ANSI_COLOR_YELLOW "OBTENER_POSICION_DE");
+		log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
+		log_debug(debugLog, "La primitiva recibio la VARIABLE: |%c| ", variable);
 
-	switch (tipo_variable(variable, head)) {
+		t_puntero posicionAbsoluta = 0;
+		t_pedido* posicionRelativa;
+		char* cadena = string_from_format("%c",variable);
+		t_elemento_stack* head = stack_head(stack);
 
-		case DECLARADA:
-			posicionRelativa = (t_pedido*)dictionary_get(head->identificadores,cadena);
-			break;
-		case PARAMETRO:
-			posicionRelativa = (t_pedido*)list_get(head->argumentos, nombreToInt(variable));
-			break;
-		case NOEXISTE:
-			posicionAbsoluta = -1;
-			break;
+		switch (tipo_variable(variable, head)) {
+
+			case DECLARADA:
+				posicionRelativa = (t_pedido*)dictionary_get(head->identificadores,cadena);
+				break;
+			case PARAMETRO:
+				posicionRelativa = (t_pedido*)list_get(head->argumentos, nombreToInt(variable));
+				break;
+			case NOEXISTE:
+				posicionAbsoluta = -1;
+				break;
+		}
+
+		if (posicionAbsoluta != (t_puntero)-1) {
+				posicionAbsoluta = (posicionRelativa->nroPagina*tamanioPaginas) + posicionRelativa->offset;
+		} else {
+			finalizar_proceso(false,false);
+		}
+
+		log_debug(debugLog, "La pos_relativa es pagina: |%d|, offset: |%d| ", posicionRelativa->nroPagina, posicionRelativa->offset);
+		log_debug(debugLog, "La pos_absoluta: |%d|", posicionAbsoluta);
+		loggearFinDePrimitiva("obtener_posicion_de");
+
+		free(cadena);
+		return posicionAbsoluta;
+	}else
+	{
+		return 0;
 	}
-
-	if (posicionAbsoluta != (t_puntero)-1) {
-			posicionAbsoluta = (posicionRelativa->nroPagina*tamanioPaginas) + posicionRelativa->offset;
-	} else {
-		finalizar_proceso(false,false);
-	}
-
-	log_debug(debugLog, "La pos_relativa es pagina: |%d|, offset: |%d| ", posicionRelativa->nroPagina, posicionRelativa->offset);
-	log_debug(debugLog, "La pos_absoluta: |%d|", posicionAbsoluta);
-	loggearFinDePrimitiva("obtener_posicion_de");
-
-	free(cadena);
-	return posicionAbsoluta;
 }
 
 t_puntero definir_variable(t_nombre_variable variable) {
 
-	log_debug(debugLog, ANSI_COLOR_YELLOW "DEFINIR_VARIABLE");
-	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
-	log_debug(debugLog, "La primitiva recibio la VARIABLE: |%c| ", variable);
-	//t_pedido* direccion = stack_proximo_pedido(stack, tamanioPaginas);
+if(!ejecucionInterrumpida){
+		log_debug(debugLog, ANSI_COLOR_YELLOW "DEFINIR_VARIABLE");
+		log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
+		log_debug(debugLog, "La primitiva recibio la VARIABLE: |%c| ", variable);
+		//t_pedido* direccion = stack_proximo_pedido(stack, tamanioPaginas);
 
-	//ATENCION: ACA SE TOMAN LAS DIRECCIONES LOGICAS: CODIGO + STACK + HEAP
-	t_pedido* direccion = stack_proximo_pedido(stack, tamanioPaginas, cantidadPagCodigo);
-	t_elemento_stack* head = stack_head(stack);
-	char* cadena = string_from_format("%c",variable);
+		//ATENCION: ACA SE TOMAN LAS DIRECCIONES LOGICAS: CODIGO + STACK + HEAP
+		t_pedido* direccion = stack_proximo_pedido(stack, tamanioPaginas, cantidadPagCodigo);
+		t_elemento_stack* head = stack_head(stack);
+		char* cadena = string_from_format("%c",variable);
 
-	if(esParametro(variable))
+		if(esParametro(variable))
+		{
+			list_add(head->argumentos,(void*)direccion);
+		}else{
+			//agrego el caracter a una cadena
+		 dictionary_put(head->identificadores, cadena, (void*)direccion);
+		}
+
+		loggearFinDePrimitiva("definir_variable");
+
+		free(cadena);
+		//free(direccion);
+
+		return (direccion->nroPagina*tamanioPaginas) + direccion->offset;
+}
+	else
 	{
-		list_add(head->argumentos,(void*)direccion);
-	}else{
-		//agrego el caracter a una cadena
-	 dictionary_put(head->identificadores, cadena, (void*)direccion);
+		return 0;
 	}
 
-	loggearFinDePrimitiva("definir_variable");
-
-	free(cadena);
-	//free(direccion);
-
-	return (direccion->nroPagina*tamanioPaginas) + direccion->offset;
 }
 
 t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 {
+	if(!ejecucionInterrumpida){
+
 	log_debug(debugLog, ANSI_COLOR_YELLOW "DEREFERENCIAR_VARIABLE");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio la direccion: |%d| ", direccion_variable);
@@ -158,11 +173,16 @@ t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 			free(bufferValor);
 
 			return valor;
+	}else{
+		return 0;
+	}
 
 }
 
 void asignar(t_puntero direccion_variable, t_valor_variable valor)
 {
+	if(!ejecucionInterrumpida){
+
 	log_debug(debugLog, ANSI_COLOR_YELLOW "ASIGNAR");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio la direccion: |%d|, con el valor: |%d| ", direccion_variable, valor);
@@ -172,11 +192,13 @@ void asignar(t_puntero direccion_variable, t_valor_variable valor)
 
 	loggearFinDePrimitiva("asignar");
 
-	return;
+	}
 }
 
 void ir_al_label(t_nombre_etiqueta label)
 {
+	if(!ejecucionInterrumpida){
+
 	log_debug(debugLog, ANSI_COLOR_YELLOW "IR_AL_LABEL");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio el label: |%d| ", label);
@@ -191,11 +213,12 @@ void ir_al_label(t_nombre_etiqueta label)
 	loggearFinDePrimitiva("ir_al_label");
 
 	return;
+	}
 }
 
 void finalizar()
 {
-
+	if(!ejecucionInterrumpida){
 	log_debug(debugLog, ANSI_COLOR_YELLOW "FINALIZAR");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 
@@ -211,12 +234,13 @@ void finalizar()
 	//actualizarPC(pcbNuevo, retorno);
 
 	loggearFinDePrimitiva("finalizar");
-
+	}
 
 }
 
 t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableCompartida)
 {
+	if(!ejecucionInterrumpida){
 	log_debug(debugLog, ANSI_COLOR_YELLOW "OBTENER_VALOR_COMPARTIDA");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "Se pide a kernel el valor de la variable: |%s| ", nombreVariableCompartida);
@@ -239,12 +263,18 @@ t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableComp
 	loggearFinDePrimitiva("obtener_valor_compartida");
 
 	return valorCompartida;
+	}else
+	{
+		return 0;
+	}
 
 }
 
 t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableCompartida, t_valor_variable valorCompartida)
 {
-	log_debug(debugLog, ANSI_COLOR_YELLOW "ASIGNAR_VALOR_COMPARTIDA");
+	if(!ejecucionInterrumpida){
+
+		log_debug(debugLog, ANSI_COLOR_YELLOW "ASIGNAR_VALOR_COMPARTIDA");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "Se pide a kernel asignar: |%d| a la variable: |%s| ", valorCompartida, nombreVariableCompartida);
 
@@ -277,10 +307,17 @@ t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableComp
 	}
 
 	return valorAsignado;
+	}else
+	{
+		return 0;
+
+	}
 }
 
 void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 {
+	if(!ejecucionInterrumpida){
+
 	log_debug(debugLog, ANSI_COLOR_YELLOW "LLAMAR_SIN_RETORNO");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "Se llama a la funcion |%c| ", etiqueta);
@@ -306,10 +343,14 @@ void llamar_sin_retorno(t_nombre_etiqueta etiqueta)
 
 	loggearFinDePrimitiva("llamar_sin_retorno");
 
+	}
+
 }
 
 void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
 {
+	if(!ejecucionInterrumpida){
+
 	log_debug(debugLog, ANSI_COLOR_YELLOW "LLAMAR_CON_RETORNO");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "Se llama a la funcion: |%s| y se retornara luego a: |%d| ", etiqueta, donde_retornar);
@@ -336,10 +377,13 @@ void llamar_con_retorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar)
 	loggearFinDePrimitiva("llamar_con_retorno");
 
 	return;
+	}
 }
 
 void retornar(t_valor_variable unaVariable)
 {
+	if(!ejecucionInterrumpida){
+
 	log_debug(debugLog, ANSI_COLOR_YELLOW "RETORNAR");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "Se retorna: |%d|.", unaVariable);
@@ -371,10 +415,13 @@ void retornar(t_valor_variable unaVariable)
 	loggearFinDePrimitiva("retornar");
 
 	return;
+	}
 }
 
 void wait(t_nombre_semaforo identificador_semaforo)
 {
+	if(!ejecucionInterrumpida){
+
 	log_debug(debugLog, ANSI_COLOR_YELLOW "WAIT");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "El semaforo es: |%s|.", identificador_semaforo);
@@ -390,12 +437,13 @@ void wait(t_nombre_semaforo identificador_semaforo)
 
 	send(kernel, buffer, sizeof(int32_t)*2 + tamanioNombreSem, 0);
 
-
 	loggearFinDePrimitiva("wait");
+	}
 }
 
 void primitiva_signal(t_nombre_semaforo identificador_semaforo)
 {
+	if(!ejecucionInterrumpida){
 	log_debug(debugLog, ANSI_COLOR_YELLOW "SIGNAL");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "El semaforo es: |%c|.", identificador_semaforo);
@@ -404,10 +452,13 @@ void primitiva_signal(t_nombre_semaforo identificador_semaforo)
 	int32_t codigoAccion = accionSignal;
 	enviarTamanioYString(codigoAccion, kernel, nombreSemaforo);
 	loggearFinDePrimitiva("signal");
+	}
 }
 
 t_puntero reservar(t_valor_variable espacio)
 {
+	if(!ejecucionInterrumpida){
+
 	log_debug(debugLog, ANSI_COLOR_YELLOW "RESERVAR");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio para reservar: |%d| de espacio.", espacio);
@@ -434,10 +485,16 @@ t_puntero reservar(t_valor_variable espacio)
 	loggearFinDePrimitiva("reservar");
 
 	return puntero;
+	}else
+	{
+		return 0;
+	}
 }
 
 void liberar(t_puntero puntero)
 {
+	if(!ejecucionInterrumpida){
+
 	log_debug(debugLog, ANSI_COLOR_YELLOW "LIBERAR");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 	log_debug(debugLog, "La primitiva recibio el puntero: |%d| para liberar.", puntero);
@@ -466,9 +523,13 @@ void liberar(t_puntero puntero)
 		log_error(debugLog, "ERROR AL LIBERAR");
 	}
 }
+}
 
 t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 {
+	if(!ejecucionInterrumpida){
+
+
 	log_debug(debugLog, ANSI_COLOR_YELLOW "ABRIR");
 	log_debug(debugLog, "La primitiva recibio la direccion: |%s|", direccion);
 
@@ -500,10 +561,17 @@ t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 	return fd;
 
 	loggearFinDePrimitiva("abrir");
+	}else
+	{
+		return 0;
+	}
 }
 
 void borrar(t_descriptor_archivo direccion)
 {
+	if(!ejecucionInterrumpida){
+
+
 	log_debug(debugLog, ANSI_COLOR_YELLOW "BORRAR");
 	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|", direccion);
 
@@ -522,10 +590,12 @@ void borrar(t_descriptor_archivo direccion)
 	send(kernel, buffer, tamanioBuffer, 0);
 
 	loggearFinDePrimitiva("borrar");
+	}
 }
 
 void cerrar(t_descriptor_archivo descriptor_archivo)
 {
+	if(!ejecucionInterrumpida){
 	log_debug(debugLog, ANSI_COLOR_YELLOW "CERRAR");
 	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|", descriptor_archivo);
 
@@ -544,10 +614,12 @@ void cerrar(t_descriptor_archivo descriptor_archivo)
 	send(kernel, buffer, tamanioBuffer, 0);
 
 	loggearFinDePrimitiva("cerrar");
+	}
 }
 
 void mover_cursor(t_descriptor_archivo descriptor_archivo, t_valor_variable posicion)
 {
+	if(!ejecucionInterrumpida){
 	log_debug(debugLog, ANSI_COLOR_YELLOW "MOVER CURSOR");
 	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|, y la posicion |%d|", descriptor_archivo, posicion);
 
@@ -568,10 +640,12 @@ void mover_cursor(t_descriptor_archivo descriptor_archivo, t_valor_variable posi
 	send(kernel, buffer, tamanioBuffer, 0);
 
 	loggearFinDePrimitiva("mover_cursor");
+	}
 }
 
 void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio)
 {
+	if(!ejecucionInterrumpida){
 	log_debug(debugLog, ANSI_COLOR_YELLOW "ESCRIBIR");
 	log_debug(debugLog, "La primitiva recibio el descriptor: |%d|, y un tamanio |%d|", descriptor_archivo, tamanio);
 
@@ -594,10 +668,12 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 	send(kernel, buffer, tamanioBuffer, 0);
 
 	loggearFinDePrimitiva("escribir");
+	}
 }
 
 void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valor_variable tamanio)
 {
+	if(!ejecucionInterrumpida){
 	log_debug(debugLog, ANSI_COLOR_YELLOW "LEER");
 	log_debug(debugLog, "La primitiva recibio el descriptor |%d|, un tamanio |%d|, y un puntero |%d|", descriptor_archivo, tamanio, informacion);
 
@@ -627,6 +703,7 @@ void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valo
 		i++;
 	}
 	loggearFinDePrimitiva("leer");
+	}
 }
 
 //Esta asigna todas las implementaciones nuestras al enumerador de funciones del parser de SO

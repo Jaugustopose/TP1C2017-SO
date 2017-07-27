@@ -235,7 +235,7 @@ void inicializarContexto()
 {
 	ejecutando = true;
 	terminar = false;
-	lanzarOverflowExep = false;
+	ejecucionInterrumpida = false;
 	pcbNuevo = NULL;
 
 }
@@ -306,6 +306,7 @@ void enviarAlmacenarBytes(int32_t pid, int32_t pagina, int32_t offset, int32_t s
 		if (hayOverflow()) {
 			log_debug(debugLog, ANSI_COLOR_RED "OVERFLOW!");
 			ejecutando = false;
+			ejecucionInterrumpida = true;
 			lanzar_excepcion(pcbNuevo, overflow);
 			finalizar_proceso(false, true);
 		}
@@ -493,10 +494,9 @@ void pedirSentencia()
 			sentenciaPedida = string_new();
 			obtenerSentencia(&tamanio);
 
-			if(!hayOverflow()){
-				parsear(sentenciaPedida);
-				free(sentenciaPedida);
-			}
+			parsear(sentenciaPedida);
+			free(sentenciaPedida);
+
 		}
 
 }
@@ -507,6 +507,7 @@ void recibirOrdenes(int32_t accionRecibida)
 	switch((int32_t)accionRecibida){
 
 		case accionObtenerPCB: //Recibir nuevo PCB del Kernel
+			ejecucionInterrumpida = false;
 			overflow = false;
 			lanzarOverflowExep = false;
 			ejecutando = true;
@@ -518,6 +519,7 @@ void recibirOrdenes(int32_t accionRecibida)
 			if(!puedo_terminar()){
 				pedirSentencia();
 			}
+			ejecucionInterrumpida = false;
 			break;
 		case accionDesalojarProceso: //Envio PCB al Kernel
 

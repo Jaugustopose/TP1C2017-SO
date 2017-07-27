@@ -137,7 +137,7 @@ void finalizarProceso(t_proceso* proceso)
 {
 	cambiarEstado(proceso,EXIT);
 
-	//TODO: LUCAS ELIMINAR ARCHIVOS ABIERTOS QUE TENGAMOS!!!!
+	//liberarRecursosFS(proceso->pidProceso);
 	liberarRecursos(proceso);
 
 	if (proceso->semaforo != NULL){

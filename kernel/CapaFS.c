@@ -78,6 +78,22 @@ void quitarTablaProceso(int pid, int fd){
 	list_replace(tablaProceso,fd-2,NULL);
 }
 
+void liberarRecursosFS(int pid){
+	t_list* tablaProceso = dictionary_get(tablasProcesos, string_itoa(pid));
+	if(tablaProceso==NULL){
+		return;
+	}
+	int i;
+	for (i = 0; i < list_size(tablaProceso); ++i) {
+		FD_t* fileDescriptor = list_get(tablaProceso, i);
+		globalFD_t* globalFD = list_get(tablaGlobalArchivos,fileDescriptor->indiceTablaGlobal);
+		globalFD->cantProcesos--;
+		free(fileDescriptor);
+	}
+	dictionary_remove(tablasProcesos, string_itoa(pid));
+	list_destroy(tablaProceso);
+}
+
 //*********************************Operaciones FS***************************
 
 void crearArchivo(int Pid, char* path, char* permisos, int socketCpu, int socketFS){
@@ -104,7 +120,8 @@ void crearArchivo(int Pid, char* path, char* permisos, int socketCpu, int socket
 		int fd = agregarTablaProceso(Pid, indiceTablaGlobal, permisos);
 		send(socketCpu, &fd, sizeof(fd),0);
 	}else{
-		//TODO: -1 no hay bloques libres -2 no se pudo crear el archivo
+		int fd = -1;
+		send(socketCpu, &fd, sizeof(fd),0);
 	}
 }
 
@@ -147,15 +164,10 @@ void abrirArchivo(int socketCpu, int socketFS){
 		// Si no existe el archivo pero tenemos permisos de creacion se lo manda a crear
 		if(res==-1 && string_contains(permisos, "c")){
 			crearArchivo(pid, path, permisos, socketCpu, socketFS);
-
-			return;
-		}else{
-			//TODO: Error Archivo no existe
-			//ACA METER send(socketCpu, &RES, sizeof(fd),0); y ese res tiene que ser -2
-			//Primitiva abrir en CPU lo detecta como -2 => exit code y sale del programa.
 			return;
 		}
-		//TODO: Error el archivo esta corrupto
+		int fd = -1;
+		send(socketCpu, &fd, sizeof(fd),0);
 	}
 }
 
@@ -173,9 +185,8 @@ void leerArchivo(int socketCpu, int socketFS){
 	proceso->privilegiadas++;
 
 	if(string_contains(fileDescriptor->permisos,"r")==NULL){
-		//TODO Dar Error de permisos y terminar el proceso
-		//ACA METER send(socketCpu, &RES, sizeof(fd),0); y ese res tiene que ser -2
-		//Primitiva abrir en CPU lo detecta como -3 => exit code y sale del programa.
+		int res=-1;
+		send(socketCpu, &res, sizeof(res),0);
 		return;
 	}
 	globalFD_t* globalFD = list_get(tablaGlobalArchivos, fileDescriptor->indiceTablaGlobal);
@@ -198,9 +209,10 @@ void leerArchivo(int socketCpu, int socketFS){
 	if(res==1){
 		void* datos = malloc(tamanio);
 		recv(socketFS, datos, tamanio, 0);
+		send(socketCpu, &res, sizeof(res),0);
 		send(socketCpu, datos, tamanio,0);
 	}else{
-		//TODO: Dar error
+		send(socketCpu, &res, sizeof(res),0);
 	}
 }
 
@@ -248,9 +260,8 @@ void escribirArchivo(int socketCpu, int socketFS){
 	FD_t* fileDescriptor = obtenerFD(pid, fd);
 
 	if(string_contains(fileDescriptor->permisos,"w")==NULL){
-		//TODO Dar Error de permisos y terminar el proceso
-		//ACA METER send(socketCpu, &RES, sizeof(fd),0); y ese res tiene que ser -4
-		//Primitiva abrir en CPU lo detecta como -4 => exit code y sale del programa.
+		int res=-1;
+		send(socketCpu, &res, sizeof(res),0);
 		return;
 	}
 	globalFD_t* globalFD = list_get(tablaGlobalArchivos, fileDescriptor->indiceTablaGlobal);
@@ -271,13 +282,7 @@ void escribirArchivo(int socketCpu, int socketFS){
 	//Recibo respuesta
 	int res;
 	recv(socketFS, &res, sizeof(res), 0);
-	//Analizar respuesta y enviar a CPU
-	if(res==1){
-		//TODO: OK
-	}else{
-		//TODO: -1 error al escribir el archivo
-	}
-	//TODO: Enviar peticion al FS y enviar respuesta a la CPU
+	send(socketCpu, &res, sizeof(res),0);
 }
 
 void cerrarArchivo(int socketCpu, int socketFS){
@@ -290,7 +295,6 @@ void cerrarArchivo(int socketCpu, int socketFS){
 	t_proceso* proceso = buscarProcesoPorPID(pid);
 	proceso->privilegiadas++;
 
-	//TODO: Recibir informacion desde el CPU
 	quitarTablaGlobal(fileDescriptor);
 	quitarTablaProceso(pid, fd);
 }
