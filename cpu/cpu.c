@@ -220,37 +220,11 @@ void desalojarProceso()
 	serializar_PCB(pcbNuevo, kernel, accionFinProceso);
 }
 
-void finalizar_programa(bool normalmente){
-
-	if(normalmente){
-			//Loguear mensaje
-
-	}
-	if((overflow == -10) || normalmente){
-
-		//Avisar a Memoria que termino el proceso
-		char* accionEnviarMemo = (char*)accionFinProceso;
-	    send(memoria, accionEnviarMemo, sizeof(int32_t), 0);
-		free(accionEnviarMemo);
-
-	}
-
-
-	//Avisar a Kernel que termino el proceso
-	char* accionEnviar = (char*)accionFinProceso;
-    send(kernel, accionEnviar, sizeof(int32_t), 0);
-	free(accionEnviar);
-
-	destruir_PCB(pcbNuevo);
-	ejecutando = false;
-	pcbNuevo = NULL;
-}
-
 void inicializarContexto()
 {
 	ejecutando = true;
 	terminar = false;
-	ejecucionInterrumpida = false;
+	error = false;
 	pcbNuevo = NULL;
 
 }
@@ -284,7 +258,6 @@ void enviarSolicitudBytes(int32_t pid, int32_t pagina, int32_t offset, int32_t s
 
 				log_debug(debugLog, ANSI_COLOR_RED "OVERFLOW!");
 				ejecutando= false;
-				ejecucionInterrumpida = true;
 				lanzar_excepcion(pcbNuevo, ERROR_MEMORIA);
 				error = true;
 			}
@@ -323,7 +296,6 @@ void enviarAlmacenarBytes(int32_t pid, int32_t pagina, int32_t offset, int32_t s
 		if (hayOverflow()) {
 			log_debug(debugLog, ANSI_COLOR_RED "OVERFLOW!");
 			ejecutando = false;
-			ejecucionInterrumpida = true;
 			error = true;
 			lanzar_excepcion(pcbNuevo, overflow);
 
@@ -445,29 +417,17 @@ int32_t sentenciaNoFinaliza(char* sentencia){
 
 void finalizar_proceso(bool terminaNormalmente)
 {
-	if(terminaNormalmente)
-	{
-		log_debug(debugLog, ANSI_COLOR_GREEN "El proceso ansisop ejecutó su última instrucción." ANSI_COLOR_RESET);
+	log_debug(debugLog, ANSI_COLOR_GREEN "El proceso ansisop ejecutó su última instrucción." ANSI_COLOR_RESET);
 
-		pcbNuevo->exitCode = FINALIZO_CORRECTAMENTE;
-		serializar_PCB(pcbNuevo, kernel, accionFinProceso);
+	pcbNuevo->exitCode = FINALIZO_CORRECTAMENTE;
+	serializar_PCB(pcbNuevo, kernel, accionFinProceso);
 
-	}else
-	{
-		if(error)
-		{
-				log_debug(debugLog, ANSI_COLOR_RED "El proceso ansisop finaliza por un error en el programa." ANSI_COLOR_RESET);
-				serializar_PCB(pcbNuevo, kernel, accionError);
-		}else{
+	/* TODO: Finalizar por SIGUR
+	 * else{
 
-			log_debug(debugLog, ANSI_COLOR_GREEN "El proceso ansisop finaliza por SIGUSR1" ANSI_COLOR_RESET);
-			serializar_PCB(pcbNuevo, kernel, accionQuantumInterrumpido);
-		}
-
-	}
-
-
-
+		log_debug(debugLog, ANSI_COLOR_GREEN "El proceso ansisop finaliza por SIGUSR1" ANSI_COLOR_RESET);
+		serializar_PCB(pcbNuevo, kernel, accionQuantumInterrumpido);
+	}*/
 
 	ejecutando = false;
 	destruir_PCB(pcbNuevo);
@@ -486,16 +446,20 @@ void parsear(char* sentencia)
 
 	if(sentenciaNoFinaliza(sentencia)){
 
+		if(error){
+			log_debug(debugLog, ANSI_COLOR_RED "El proceso ansisop finaliza por un error en el programa." ANSI_COLOR_RESET);
+			serializar_PCB(pcbNuevo, kernel, accionError);
+			error = false;
+		}else{
 			int32_t codAccion = accionFinInstruccion;
 			void* buffer = malloc(sizeof(int32_t));
 			memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
 			send(kernel, buffer, sizeof(codAccion), 0);
+		}
 
-		}
-		else
-		{
-			finalizar_proceso(true);
-		}
+	}else{
+		finalizar_proceso(true);
+	}
 }
 
 void pedirSentencia()
@@ -524,7 +488,6 @@ void recibirOrdenes(int32_t accionRecibida)
 	switch((int32_t)accionRecibida){
 
 		case accionObtenerPCB: //Recibir nuevo PCB del Kernel
-			ejecucionInterrumpida = false;
 			overflow = false;
 			lanzarOverflowExep = false;
 			ejecutando = true;
@@ -536,7 +499,7 @@ void recibirOrdenes(int32_t accionRecibida)
 			if(!puedo_terminar()){
 				pedirSentencia();
 			}
-			ejecucionInterrumpida = false;
+			//ejecucionInterrumpida = false;
 			break;
 		case accionDesalojarProceso: //Envio PCB al Kernel
 

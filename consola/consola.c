@@ -177,11 +177,9 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 	char* horaInicio;
 	char* horaFin;
 	char* tiempoTranscurrido;
+	int cantPrintf=0;
 
 	switch (accion) {
-
-		case accionError:
-			break;
 
 		case accionImprimirTextoConsola:
 			recv(socketKernel, &tamanioTexto, sizeof(int32_t), 0);
@@ -189,6 +187,7 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 			recv(socketKernel, buffer, tamanioTexto, 0);
 			printf("Impresion por pantalla PID: %d | Mensaje : %s", pid, (char*)buffer);
 			free(buffer);
+			cantPrintf++;
 			break;
 
 		case accionConsolaFinalizarNormalmente:
@@ -200,6 +199,7 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 			printf("Fin: %s\n", horaFin);
 			tiempoTranscurrido = calcularDuracion(inicio, fin);
 			printf("Duracion: %s", tiempoTranscurrido);
+			printf("Cantidad de impresiones en pantalla: %d", cantPrintf);
 			free(horaInicio);
 			free(horaFin);
 			free(tiempoTranscurrido);
@@ -341,6 +341,7 @@ void escucharUsuario()
 						memcpy(buffer,&codigo,sizeof(int32_t));
 						memcpy(buffer+sizeof(int32_t),&pid,sizeof(int32_t));
 						send(infoThread->socket,buffer,sizeof(int32_t)*2,0);
+						close(infoThread->socket);
 						free(buffer);
 					}
 				}
