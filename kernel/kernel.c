@@ -503,7 +503,11 @@ void atender_accion_consola(int idMensaje, int memoria, int consola) {
 
 	case envioScript:
 		Accion_envio_script(memoria, consola, idMensaje);
+		break;
 
+	case finalizarProgramaAccion:
+		// TODO: hacer funcion accion_finalizar_proceso();
+		break;
 	}
 }
 
@@ -511,8 +515,8 @@ void atender_accion_consola(int idMensaje, int memoria, int consola) {
 void crearSemaforos() {
 
 	int i = 0;
-	char* sem = string_substring_from(config.SEM_IDS[i],1);
-	char* semValue = string_substring_from(config.SEM_INIT[i],1);
+	char* sem = config.SEM_IDS[i];
+	char* semValue = config.SEM_INIT[i];
 	while (config.SEM_IDS[i] != '\0') {
 
 		t_semaforo* semaforo = malloc(sizeof(t_semaforo));
