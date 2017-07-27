@@ -22,16 +22,18 @@ int redondear(float numero) {
 }
 
 void encolarCPU(t_queue* cola, int socket){
-	int *p = malloc(sizeof(int));
-	*p = socket;
-	queue_push(cola, p);
+	//int *p = malloc(sizeof(int));
+//	*p = socket;
+	queue_push(cola, socket);
 }
 
 int desencolarCPU(t_queue* cola){
-	int *p = queue_pop(cola);
-	int socket = *p;
-	free(p);
-	return socket;
+
+	return queue_pop(cola);
+	//int *p = queue_pop(cola);
+	//int socket = *p;
+	//free(p);
+	//return socket;
 }
 
 //Nuestra. Dada una cola, te saca un elemento y te devuelve una nueva sin ese elemento
