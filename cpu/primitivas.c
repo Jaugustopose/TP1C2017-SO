@@ -479,6 +479,7 @@ t_puntero reservar(t_valor_variable espacio)
 	if(puntero < 0)
 	{
 		lanzar_excepcion(pcbNuevo, ERROR_SOLICITUD_HEAP);
+		ejecutando = false;
 		error = true;
 		ejecucionInterrumpida = true;
 	}
@@ -563,6 +564,7 @@ t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 	if(fd<0)
 	{
 		lanzar_excepcion(pcbNuevo, ERROR_ACCESO_ARCHIVO);
+		ejecutando = false;
 		error = true;
 		ejecucionInterrumpida = true;
 	}
@@ -682,6 +684,7 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 	if(res < 0)
 	{
 		lanzar_excepcion(pcbNuevo, ERROR_ESCRITURA);
+		ejecutando = false;
 		error = true;
 		ejecucionInterrumpida = true;
 	}
@@ -728,6 +731,7 @@ void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valo
 	}else
 	{
 		lanzar_excepcion(pcbNuevo, ERROR_PERMISOS);
+		ejecutando= false;
 		error = true;
 		ejecucionInterrumpida = true;
 	}

@@ -30,7 +30,7 @@ void encolarCPU(t_queue* cola, int socket){
 int desencolarCPU(t_queue* cola){
 	int *p = queue_pop(cola);
 	int socket = *p;
-	free(p);
+	//free(p);
 	return socket;
 }
 
