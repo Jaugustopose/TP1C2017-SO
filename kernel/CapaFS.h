@@ -18,5 +18,6 @@ void escribirArchivo(int socketCpu, int socketFS);
 void cerrarArchivo(int socketCpu, int socketFS);
 void borrarArchivo(int socketCPU, int socketFS);
 void moverCursor(int socketCPU, int socketFS);
+void liberarRecursosFS(int pid);
 
 #endif

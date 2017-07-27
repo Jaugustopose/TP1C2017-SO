@@ -127,3 +127,11 @@ void enviarTamanioYSerial(int codigoAccion, int sock, int tamanio, char* mensaje
 
 	send(sock, bufferVarComp, offset, 0);
 }
+
+/*********************************************EXCEPCIONES*****************************************************/
+void setear_exitCode(t_PCB* pcb, int32_t codigoError)
+{
+	pcb->exitCode = codigoError;
+}
+
+

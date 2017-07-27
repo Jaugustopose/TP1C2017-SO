@@ -2,11 +2,49 @@
 #include "cpu.h"
 #include "deserializador.h"
 
-char* lecturaLargoMensajeASerializar(int sock){
+void lanzar_excepcion(t_PCB* pcb, int32_t codigoError)
+{
+	switch(codigoError){
 
-	char* serialLargo = malloc(sizeof(int));
-	recv(sock, serialLargo, sizeof(int), 0);
-	int largo = char4ToInt(serialLargo);
+		case ERROR_MEMORIA:
+			log_info(infoLog,ANSI_COLOR_RED "Stack overflow! se intentó leer una dirección inválida." ANSI_COLOR_RESET);
+			setear_exitCode(pcb, ERROR_MEMORIA);
+		break;
+
+		case ERROR_ASIGNAR_PAGINAS:
+			log_info(infoLog,ANSI_COLOR_RED "No hay marcos suficientes para el proceso." ANSI_COLOR_RESET);
+			setear_exitCode(pcb, ERROR_ASIGNAR_PAGINAS);
+		break;
+
+		case ERROR_SOLICITUD_HEAP:
+			log_info(infoLog,ANSI_COLOR_RED "No hay marcos suficientes para el proceso." ANSI_COLOR_RESET);
+			setear_exitCode(pcb, ERROR_SOLICITUD_HEAP);
+		break;
+
+		case ERROR_ESCRITURA:
+			log_info(infoLog,ANSI_COLOR_RED "No hay permisos  para el archivo que se desea escribir." ANSI_COLOR_RESET);
+			setear_exitCode(pcb, ERROR_ESCRITURA);
+			break;
+
+		case ERROR_PERMISOS:
+			log_info(infoLog,ANSI_COLOR_RED "No hay permisos  para el archivo que se desea leer" ANSI_COLOR_RESET);
+			setear_exitCode(pcb, ERROR_PERMISOS);
+			break;
+
+		case ERROR_ACCESO_ARCHIVO:
+			log_info(infoLog,ANSI_COLOR_RED "El programa intento acceder a un archivo inexistente." ANSI_COLOR_RESET);
+			setear_exitCode(pcb, ERROR_ACCESO_ARCHIVO);
+			break;
+
+		default: printf("LLEGO CUARLQUIER COSA\n");
+	}
+}
+
+char* lecturaLargoMensajeASerializar(int32_t sock){
+
+	char* serialLargo = malloc(sizeof(int32_t));
+	recv(sock, serialLargo, sizeof(int32_t), 0);
+	int32_t largo = char4ToInt(serialLargo);
 	char* mensaje = malloc(largo);
 	recv(sock, mensaje, largo, 0);
 	free(serialLargo);
@@ -14,10 +52,10 @@ char* lecturaLargoMensajeASerializar(int sock){
 	return mensaje;
 }
 
-void enviarLargoMensajeASerializar(int sock, int largo, char* mensaje){
+void enviarLargoMensajeASerializar(int32_t sock, int32_t largo, char* mensaje){
 
 	char* serialLargo = intToChar4(largo);
-	send(sock,serialLargo, sizeof(int), 0);
+	send(sock,serialLargo, sizeof(int32_t), 0);
 	send(sock, mensaje, largo, 0);
 
 	free(serialLargo);
@@ -25,8 +63,8 @@ void enviarLargoMensajeASerializar(int sock, int largo, char* mensaje){
 
 void recibirQuantumSleep(){
 
-	int quantum;
-	int bytes = recv(kernel, &quantum, sizeof(int), 0);
+	int32_t quantum;
+	int32_t bytes = recv(kernel, &quantum, sizeof(int32_t), 0);
 	quantumSleep = quantum;
 
 }
@@ -39,47 +77,16 @@ bool hayOverflow(){
 	return overflow ==-10;
 }
 
-void overflowException(int mensajeMemoria){
-
-	//TODO: Desarrollar el manejo del overflow. Hay que finalizar proceso y demas.
-	//Puede recibir: 0 (stackoverflow), 1(marcos insuficientes), otra cosa.
-
-	if(lanzarOverflowExep){
-
-			finalizar_programa(false);
-
-			lanzarOverflowExep=false;
-		}
-}
-
 void actualizarPC(t_PCB* pcb, t_puntero_instruccion pc) {
 
-	pcb->contadorPrograma = (int)pc;
+	pcb->contadorPrograma = (int32_t)pc;
 }
 
-void finalizarProgramaVariableInvalida(){
-
-	char* accionKernel = (char*)accionFinProceso;
-	send(kernel, accionKernel, sizeof(accionKernel), 0);
-	free(accionKernel);
-
-	char* accionMemoria = (char*)accionFinProceso;
-	send(memoria, accionMemoria, sizeof(accionMemoria), 0);
-	free(accionMemoria);
-
-
-	//Falta: Destruir PCB
-
-	ejecutando = false;
-	pcbNuevo = NULL;
-
-}
-
-int minimo(int a, int b) {
+int32_t minimo(int32_t a, int32_t b) {
 	return a < b ? a : b;
 }
 
-void sacarSaltoDeLinea(char* texto, int ultPos){
+void sacarSaltoDeLinea(char* texto, int32_t ultPos){
 	if(texto[ultPos-1]=='\n'){
 		texto[ultPos-1]='\0';
 	}
@@ -119,8 +126,8 @@ void cargarConfiguracion()
 	}
 }
 
-int socket_ws() {
-	int sock;
+int32_t socket_ws() {
+	int32_t sock;
 
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 		puts("Error al crear socket");
@@ -129,7 +136,7 @@ int socket_ws() {
 	return sock;
 }
 
-void connect_w(int cliente, struct sockaddr_in* direccionServidor) {
+void connect_w(int32_t cliente, struct sockaddr_in* direccionServidor) {
 	if (connect(cliente, (void*) direccionServidor, sizeof(*direccionServidor))
 			!= 0) {
 		perror("No se pudo conectar");
@@ -154,7 +161,7 @@ void conectarConKernel() {
 	connect_w(kernel, &dirKernel);
 	printf("Conectado a Kernel");
 
-	send(kernel,&identidadCpu, sizeof(int),0);
+	send(kernel,&identidadCpu, sizeof(int32_t),0);
 	recv(kernel, &algoritmo, sizeof(int32_t), 0);
 	printf("Algoritmo: %d", algoritmo);
 
@@ -170,9 +177,9 @@ void conectarConMemoria() {
 
 }
 
-int obtener_tamanio_pagina(int memoria) {
-	int valorRecibido;
-	int idMensaje = 6;
+int32_t obtener_tamanio_pagina(int32_t memoria) {
+	int32_t valorRecibido;
+	int32_t idMensaje = 6;
 	send(memoria, &idMensaje, sizeof(int32_t), 0);
 	recv(memoria, &valorRecibido, sizeof(int32_t), 0);
 
@@ -210,7 +217,7 @@ void desalojarProceso()
 	ejecutando = false;
 
 	//Envio PCB al kernel
-	serializar_PCB(pcbNuevo, kernel, accionDesalojarProceso);
+	serializar_PCB(pcbNuevo, kernel, accionFinProceso);
 }
 
 void finalizar_programa(bool normalmente){
@@ -223,7 +230,7 @@ void finalizar_programa(bool normalmente){
 
 		//Avisar a Memoria que termino el proceso
 		char* accionEnviarMemo = (char*)accionFinProceso;
-	    send(memoria, accionEnviarMemo, sizeof(int), 0);
+	    send(memoria, accionEnviarMemo, sizeof(int32_t), 0);
 		free(accionEnviarMemo);
 
 	}
@@ -231,7 +238,7 @@ void finalizar_programa(bool normalmente){
 
 	//Avisar a Kernel que termino el proceso
 	char* accionEnviar = (char*)accionFinProceso;
-    send(kernel, accionEnviar, sizeof(int), 0);
+    send(kernel, accionEnviar, sizeof(int32_t), 0);
 	free(accionEnviar);
 
 	destruir_PCB(pcbNuevo);
@@ -243,13 +250,13 @@ void inicializarContexto()
 {
 	ejecutando = true;
 	terminar = false;
-	lanzarOverflowExep = false;
+	ejecucionInterrumpida = false;
 	pcbNuevo = NULL;
 
 }
 /**********FUNCIONES PARA MANEJO DE SENTENCIAS*********************************************************************/
 
-void enviarSolicitudBytes(int pid, int pagina, int offset, int size) {
+void enviarSolicitudBytes(int32_t pid, int32_t pagina, int32_t offset, int32_t size) {
 	if(!hayOverflow())
 	{
 	pedidoBytesMemoria_t pedido;
@@ -258,32 +265,35 @@ void enviarSolicitudBytes(int pid, int pagina, int offset, int size) {
 	pedido.offset = offset;
 	pedido.tamanio = size;
 
-	void* solicitud = malloc(sizeof(int) + sizeof(t_pedido));
+	void* solicitud = malloc(sizeof(int32_t) + sizeof(t_pedido));
 
-	int codAccion = solicitarBytesAccion;
+	int32_t codAccion = solicitarBytesAccion;
 	memcpy(solicitud, &codAccion, sizeof(codAccion));
 	memcpy(solicitud + sizeof(codAccion), &pedido, sizeof(pedidoBytesMemoria_t));
-	int tamanio = sizeof(codAccion) + sizeof(pedidoBytesMemoria_t);
-	//int tamanio = serializar_pedido_bytes(solicitud, pedido);
+	int32_t tamanio = sizeof(codAccion) + sizeof(pedidoBytesMemoria_t);
+
 
 	send(memoria, solicitud, tamanio, 0);
 
-	char* stackOverflow = malloc(sizeof(int));
-	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), 0);
+	char* stackOverflow = malloc(sizeof(int32_t));
+	int32_t bytesRecibidos = recv(memoria, stackOverflow, sizeof(int32_t), 0);
 	overflow = char4ToInt(stackOverflow);
     free(stackOverflow);
 
-	if (hayOverflow()) {
-		log_debug(debugLog, ANSI_COLOR_RED "OVERFLOW!");
-		ejecutando= false;
-		pcbNuevo->exitCode = -2;
-		//overflowException(overflow);
-	}
-    free(solicitud);
+			if (hayOverflow()) {
+
+				log_debug(debugLog, ANSI_COLOR_RED "OVERFLOW!");
+				ejecutando= false;
+				ejecucionInterrumpida = true;
+				lanzar_excepcion(pcbNuevo, ERROR_MEMORIA);
+				error = true;
+			}
+
+    	free(solicitud);
 	}
 }
 
-void enviarAlmacenarBytes(int pid, int pagina, int offset, int size, t_valor_variable valor) {
+void enviarAlmacenarBytes(int32_t pid, int32_t pagina, int32_t offset, int32_t size, t_valor_variable valor) {
 	if (!hayOverflow()) {
 	pedidoBytesMemoria_t sub_pedido;
 	sub_pedido.pid = pid;
@@ -296,41 +306,45 @@ void enviarAlmacenarBytes(int pid, int pagina, int offset, int size, t_valor_var
 	pedido.buffer = malloc(sizeof(sub_pedido.tamanio));
 	pedido.buffer = valor;
 
-	void* solicitud = malloc(sizeof(int) + sizeof(pedidoAlmacenarBytesMemoria_t));
+	void* solicitud = malloc(sizeof(int32_t) + sizeof(pedidoAlmacenarBytesMemoria_t));
 
-	int codAccion = almacenarBytesAccion;
+	int32_t codAccion = almacenarBytesAccion;
 	memcpy(solicitud, &codAccion, sizeof(codAccion));
 	memcpy(solicitud + sizeof(codAccion), &pedido, sizeof(pedidoAlmacenarBytesMemoria_t));
-	int tamanio = sizeof(codAccion) + sizeof(pedidoAlmacenarBytesMemoria_t);
+	int32_t tamanio = sizeof(codAccion) + sizeof(pedidoAlmacenarBytesMemoria_t);
 
 	send(memoria, solicitud, tamanio, 0);
 
-	char* stackOverflow = malloc(sizeof(int));
-	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), 0);
+	char* stackOverflow = malloc(sizeof(int32_t));
+	recv(memoria, stackOverflow, sizeof(int32_t), 0);
 	overflow = char4ToInt(stackOverflow);
     free(stackOverflow);
 
-	if (hayOverflow()) {
-		log_debug(debugLog, ANSI_COLOR_RED "OVERFLOW!");
-		ejecutando = false;
-		//overflowException(overflow);
-	}
-    free(solicitud);
+		if (hayOverflow()) {
+			log_debug(debugLog, ANSI_COLOR_RED "OVERFLOW!");
+			ejecutando = false;
+			ejecucionInterrumpida = true;
+			error = true;
+			lanzar_excepcion(pcbNuevo, overflow);
+
+		}
+
+     free(solicitud);
 	}
 }
 
-int longitudSentencia(t_sentencia* sentencia) {
-	return (int)(sentencia->fin - sentencia->inicio);
+int32_t longitudSentencia(t_sentencia* sentencia) {
+	return (int32_t)(sentencia->fin - sentencia->inicio);
 }
 
-t_sentencia* obtenerSentenciaRelativa(int* paginaInicioSentencia) {
+t_sentencia* obtenerSentenciaRelativa(int32_t* paginaInicioSentencia) {
 
 	t_sentencia* sentenciaAbsoluta = list_get(pcbNuevo->indiceCodigo, pcbNuevo->contadorPrograma);
 	t_sentencia* sentenciaRel = malloc(sizeof(t_sentencia));
 
-	    int inicioAbsoluto = sentenciaAbsoluta->inicio;
-		int paginaInicio = (int) (inicioAbsoluto / tamanioPaginas);
-		int inicioRelativo = inicioAbsoluto % tamanioPaginas;
+	    int32_t inicioAbsoluto = sentenciaAbsoluta->inicio;
+		int32_t paginaInicio = (int32_t) (inicioAbsoluto / tamanioPaginas);
+		int32_t inicioRelativo = inicioAbsoluto % tamanioPaginas;
 		sentenciaRel->inicio = inicioRelativo;
 		sentenciaRel->fin = inicioRelativo + longitudSentencia(sentenciaAbsoluta);
 
@@ -339,13 +353,11 @@ t_sentencia* obtenerSentenciaRelativa(int* paginaInicioSentencia) {
 	return sentenciaRel;
 }
 
-
-
-int esPaginaCompleta(int longitudRestante) {
+int32_t esPaginaCompleta(int32_t longitudRestante) {
 	return longitudRestante >= tamanioPaginas;
 }
 
-void recibirPedazoDeSentencia(int size){
+void recibirPedazoDeSentencia(int32_t size){
 
 	char* sentenciaRecibida = malloc(size);
 	recv(memoria, sentenciaRecibida, size, 0);
@@ -361,12 +373,12 @@ void recibirPedazoDeSentencia(int size){
 
 }
 
-void pedirPrimeraSentencia(t_sentencia* sentenciaRelativa, int pagina, int* longitudRestante) {
+void pedirPrimeraSentencia(t_sentencia* sentenciaRelativa, int32_t pagina, int32_t* longitudRestante) {
 
 //if (!hayOverflow()) {
-	 int tamanioPrimeraSentencia = minimo(*longitudRestante, tamanioPaginas - sentenciaRelativa->inicio);
+	 int32_t tamanioPrimeraSentencia = minimo(*longitudRestante, tamanioPaginas - sentenciaRelativa->inicio);
 
-//	 char* accion = (int)solicitarBytesAccion;
+//	 char* accion = (int32_t)solicitarBytesAccion;
 //	 send(memoria, accion, sizeof(accion), 0);
 //	 free(accion);
 
@@ -377,9 +389,9 @@ void pedirPrimeraSentencia(t_sentencia* sentenciaRelativa, int pagina, int* long
  //}
 }
 
-void pedirPaginaCompleta(int nroPagina) {
+void pedirPaginaCompleta(int32_t nroPagina) {
 
-//	char* accion = (int)solicitarBytesAccion;
+//	char* accion = (int32_t)solicitarBytesAccion;
 //	send(memoria, accion, sizeof(accion), 0);
 //	free(accion);
 
@@ -387,21 +399,21 @@ void pedirPaginaCompleta(int nroPagina) {
 	recibirPedazoDeSentencia(tamanioPaginas);
 }
 
-void pedirUltimaSentencia(t_sentencia* sentenciaRelativa, int pagina, int longitudRestante) {
+void pedirUltimaSentencia(t_sentencia* sentenciaRelativa, int32_t pagina, int32_t longitudRestante) {
 
 	enviarSolicitudBytes(pcbNuevo->PID, pagina, 0, longitudRestante);
 	recibirPedazoDeSentencia(longitudRestante);
 
 }
 
-void obtenerSentencia(int* tamanio)
+void obtenerSentencia(int32_t* tamanio)
 {
 	/*Una sentencia puede estar repartida en una o mas paginas*/
 
-	int paginaAPedir;
+	int32_t paginaAPedir;
 
 	t_sentencia* sentenciaRelativa = obtenerSentenciaRelativa(&paginaAPedir);
-	int longitudRestante = longitudSentencia(sentenciaRelativa);
+	int32_t longitudRestante = longitudSentencia(sentenciaRelativa);
 	(*tamanio) = longitudRestante;
 
 	// Pido la primera pagina
@@ -425,7 +437,7 @@ void obtenerSentencia(int* tamanio)
 
 }
 
-int sentenciaNoFinaliza(char* sentencia){
+int32_t sentenciaNoFinaliza(char* sentencia){
 	return strcmp(sentencia,"end")!=0
 		&& strcmp(sentencia,"\tend")!=0
 		&& strcmp(sentencia,"\t\tend")!=0;
@@ -437,26 +449,32 @@ void finalizar_proceso(bool terminaNormalmente)
 	{
 		log_debug(debugLog, ANSI_COLOR_GREEN "El proceso ansisop ejecutó su última instrucción." ANSI_COLOR_RESET);
 
-		//EXIT CODE: Cierre normal
-		pcbNuevo->exitCode = 0;
+		pcbNuevo->exitCode = FINALIZO_CORRECTAMENTE;
 		serializar_PCB(pcbNuevo, kernel, accionFinProceso);
-
-		ejecutando = false;
-		destruir_PCB(pcbNuevo);
-		pcbNuevo = NULL;
 
 	}else
 	{
-		log_info(debugLogger,"Finalizando proceso cpu...");
+		if(error)
+		{
+				log_debug(debugLog, ANSI_COLOR_RED "El proceso ansisop finaliza por un error en el programa." ANSI_COLOR_RESET);
+				serializar_PCB(pcbNuevo, kernel, accionError);
+		}else{
 
-		close(kernel);
-		close(memoria);
+			log_debug(debugLog, ANSI_COLOR_GREEN "El proceso ansisop finaliza por SIGUSR1" ANSI_COLOR_RESET);
+			serializar_PCB(pcbNuevo, kernel, accionQuantumInterrumpido);
+		}
 
-		log_info(debugLogger,"CPU finalizó correctamente.");
-		destruirLogs();
-		exit(EXIT_SUCCESS);
 	}
+
+
+
+
+	ejecutando = false;
+	destruir_PCB(pcbNuevo);
+	pcbNuevo = NULL;
+
 }
+
 
 /***********FUNCIONES DEL CIRCUITO DE PARSEO DE SENTENCIAS*****************************************/
 
@@ -468,16 +486,15 @@ void parsear(char* sentencia)
 
 	if(sentenciaNoFinaliza(sentencia)){
 
-			int codAccion = accionFinInstruccion;
-			void* buffer = malloc(sizeof(int));
+			int32_t codAccion = accionFinInstruccion;
+			void* buffer = malloc(sizeof(int32_t));
 			memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
 			send(kernel, buffer, sizeof(codAccion), 0);
 
 		}
 		else
 		{
-			bool terminaNormalmente = true;
-			finalizar_proceso(terminaNormalmente);
+			finalizar_proceso(true);
 		}
 }
 
@@ -488,16 +505,15 @@ void pedirSentencia()
 
 	if(!puedo_terminar()){
 
-			int tamanio;
+			int32_t tamanio;
 			//Espera este tiempo antes de empezar con la proxima sentencia
 			usleep(quantumSleep*1000);
 			sentenciaPedida = string_new();
 			obtenerSentencia(&tamanio);
 
-			if(!hayOverflow()){
-				parsear(sentenciaPedida);
-				free(sentenciaPedida);
-			}
+			parsear(sentenciaPedida);
+			free(sentenciaPedida);
+
 		}
 
 }
@@ -505,9 +521,10 @@ void pedirSentencia()
 void recibirOrdenes(int32_t accionRecibida)
 {
 
-	switch((int)accionRecibida){
+	switch((int32_t)accionRecibida){
 
 		case accionObtenerPCB: //Recibir nuevo PCB del Kernel
+			ejecucionInterrumpida = false;
 			overflow = false;
 			lanzarOverflowExep = false;
 			ejecutando = true;
@@ -519,6 +536,7 @@ void recibirOrdenes(int32_t accionRecibida)
 			if(!puedo_terminar()){
 				pedirSentencia();
 			}
+			ejecucionInterrumpida = false;
 			break;
 		case accionDesalojarProceso: //Envio PCB al Kernel
 
@@ -526,8 +544,6 @@ void recibirOrdenes(int32_t accionRecibida)
 
 			break;
 		case accionException: //Overflow - Le paso un cero que indica overflow
-
-		   overflowException(0);
 
 			break;
 		case accionError: //Overflow - Le paso un cero que indica overflow
@@ -550,14 +566,14 @@ void esperarProgramas()
 
 		while (!puedo_terminar()) {
 
-			int bytes = recv(kernel, &accionRecibida, sizeof(int32_t), MSG_WAITALL);
+			int32_t bytes = recv(kernel, &accionRecibida, sizeof(int32_t), MSG_WAITALL);
 			recibirOrdenes(accionRecibida);
 		}
 }
 
-int obtenerTamanioPagina(int memoria) {
-	int valorRecibido;
-	int idMensaje = 6;
+int32_t obtenerTamanioPagina(int32_t memoria) {
+	int32_t valorRecibido;
+	int32_t idMensaje = 6;
 	send(memoria, &idMensaje, sizeof(int32_t), 0);
 	recv(memoria, &valorRecibido, sizeof(int32_t), 0);
 
@@ -581,28 +597,28 @@ void finalizar_todo() {
 	exit(EXIT_SUCCESS);
 }
 
-void handler(int sign) {
+void handler(int32_t sign) {
 	if (sign == SIGUSR1) {
 		printf("CHAAAAAU SIGUSR1!!!!\n");
 		log_debug(debugLog, "Me Boletearon!!");
 		if(!ejecutando){
 
 			//TODO: deberia avisarle a memoria?
-//			int codAccion = accionQuantumInterrumpido;
-//			void* buffer = malloc(sizeof(int));
+//			int32_t codAccion = accionQuantumInterrumpido;
+//			void* buffer = malloc(sizeof(int32_t));
 //			memcpy(buffer, &codAccion, sizeof(codAccion));
 //			send(kernel, buffer, sizeof(codAccion), 0);
 
 			serializar_PCB(pcbNuevo, kernel, accionQuantumInterrumpido);
-			//finalizar_proceso(false);
+			finalizar_proceso(true);
 			finalizar_todo();
 
 		}else{
 			terminar = true;
 			log_info(infoLog, "Esperando a que termine la ejecucion del programa actual...");
 
-//			int codAccion = accionQuantumInterrumpido;
-//			void* buffer = malloc(sizeof(int));
+//			int32_t codAccion = accionQuantumInterrumpido;
+//			void* buffer = malloc(sizeof(int32_t));
 //			memcpy(buffer, &codAccion, sizeof(codAccion));
 //			send(kernel, buffer, sizeof(codAccion), 0);
 
@@ -610,33 +626,8 @@ void handler(int sign) {
 		}
 	}
 }
-//void finalizar_CPU()
-//{
-//
-//}
 
-//void finalizar_programa(int32_t cierre)
-//{
-//	switch(cierre)
-//	{
-//		case CasoOverflow:
-//
-//
-//		break;
-//
-//		case CasoVariableInvalida:
-//
-//
-//		break;
-//
-//		case CasoCierreNormal:
-//
-//
-//		break;
-//	}
-//}
-
-int main(void){
+int32_t main(void){
 
 	signal(SIGUSR1, handler); //el progama sabe que cuando se recibe SIGUSR1,se ejecuta handler
 

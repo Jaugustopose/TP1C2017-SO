@@ -36,10 +36,12 @@ struct sockaddr_in dirKernel;
 int kernel;
 struct sockaddr_in dirMemoria;
 int memoria;
+bool error;
 
 //Puedo terminar
 bool ejecutando;
 bool terminar;
+bool ejecucionInterrumpida;
 
 bool haySigusr1;
 int overflow;
@@ -75,6 +77,7 @@ void enviarAlmacenarBytes(int pid, int pagina, int offset, int size, t_valor_var
 void finalizarProgramaVariableInvalida();
 void loggearFinDePrimitiva(char* primitiva);
 void actualizarPC(t_PCB* pcb, t_puntero_instruccion pc);
+void lanzar_excepcion(t_PCB* pcb, int32_t codigoError);
 
 
 #endif

@@ -6,7 +6,7 @@
 #include <commons/collections/dictionary.h>
 #include <parser/parser.h>
 #include <parser/metadata_program.h>
-
+#include "logger.h""
 #include <sys/socket.h>
 
 
@@ -62,6 +62,22 @@ enum consolaKernelPedidos
 	modificarGradoMultiprog = 50,
 	finalizarProcesoDesdeKernel = 51,
 	detenerPlanificacion = 52
+};
+
+enum exitCodesEnum{
+
+	FINALIZO_CORRECTAMENTE = 0,
+	ERROR_RECURSOS = -1,
+	ERROR_ACCESO_ARCHIVO = -2,
+	ERROR_PERMISOS = -3,
+	ERROR_ESCRITURA = -4,
+	ERROR_MEMORIA = -5,
+	ERROR_CONSOLA_DESC = -6,
+	ERROR_FIN_CONSOLA = -7,
+	ERROR_SOLICITUD_HEAP = -8,
+	ERROR_ASIGNAR_PAGINAS = -9,
+	ERROR_SINDEFINIR = -20
+
 };
 
 enum tipoDeCliente {
@@ -175,5 +191,6 @@ void destruir_PCB(t_PCB* pcb);
 char* leerTamanioYMensaje(int sock);
 void enviarTamanioYString(int codigoAccion, int sock, char* mensaje);
 void enviarTamanioYSerial(int codigoAccion, int sock, int tamanio, char* mensaje);
+
 
 #endif /* ESTRUCTURASCOMPARTIDAS_H_ */
