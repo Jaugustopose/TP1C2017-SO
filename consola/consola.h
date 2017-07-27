@@ -26,12 +26,6 @@ typedef struct configuracion{
 	int PUERTO_KERNEL;
 }config_t;
 
-typedef struct parametrosCrearPrograma{
-	int socket;
-	char* programaACrear;
-
-}param_programa;
-
 enum opcionesUsuario {
 	iniciarPrograma = 1,
 	finalizarPrograma = 2,

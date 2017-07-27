@@ -494,8 +494,9 @@ void atender_accion_consola(int idMensaje, int memoria, int consola) {
 		Accion_envio_script(memoria, consola, idMensaje);
 		break;
 
-	case:
-		accion_finalizar_proceso();
+	case finalizarProgramaAccion:
+		// TODO: hacer funcion accion_finalizar_proceso();
+		break;
 	}
 }
 

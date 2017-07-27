@@ -5,25 +5,6 @@
 #include <time.h>
 #include <sys/timeb.h>
 
-void recibir_mensajes_en_socket(int socket) {
- 	char* buf = malloc(1000);
-	while (1) {
- 		int bytesRecibidos = recv(socket, buf, 1000, 0);
- 		if (bytesRecibidos < 0) {
- 			perror("Ha ocurrido un error al recibir un mensaje");
- 			exit(EXIT_FAILURE);
- 		} else if (bytesRecibidos == 0) {
- 			printf("Se terminó la conexión en el socket %d\n", socket);
- 			close(socket);
- 			exit(EXIT_FAILURE);
- 		} else {
- 			//Recibo mensaje e informo
- 			buf[bytesRecibidos] = '\0';
- 			printf("Recibí el mensaje de %i bytes: ", bytesRecibidos);
- 			puts(buf);
- 		}
- 	}
- }
 
 char* transformarTime(struct timeb time) {
 	struct tm *log_tm = malloc(sizeof(struct tm));
@@ -96,7 +77,6 @@ char* calcularDuracion(struct timeb inicio, struct timeb fin) {
 
 void cargarConfiguracion(){
 
-
 	char* pat = string_new();
 		char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 		string_append(&pat, getcwd(cwd, sizeof(cwd)));
@@ -116,12 +96,6 @@ void cargarConfiguracion(){
 				config.PUERTO_KERNEL = config_get_int_value(configConsola,"PUERTO_KERNEL");
 		printf("config.PUERTO_KERNEL: %d\n", config.PUERTO_KERNEL);
 		}
-}
-
-int conectarSocket(int socket, struct sockaddr_in* direccionServidor){
-
-	return connect(socket, (struct sockaddr*) &*direccionServidor, sizeof(struct sockaddr));
-
 }
 
 char* convertirArchivoACodigo()
@@ -150,22 +124,6 @@ char* convertirArchivoACodigo()
 
 		return contenido;
 
-}
-
-struct sockaddr_in crearDireccionParaCliente(unsigned short PORT, char* IP) {
-	struct sockaddr_in direccionServidor;
-	direccionServidor.sin_family = AF_INET;
-	direccionServidor.sin_addr.s_addr = inet_addr(IP);
-	direccionServidor.sin_port = htons(PORT);
-	return direccionServidor;
-}
-
-void connect_w(int cliente, struct sockaddr_in* direccionServidor) {
-	if (connect(cliente, (void*) direccionServidor, sizeof(*direccionServidor))
-			!= 0) {
-		perror("No se pudo conectar");
-		exit(1);
-	}
 }
 
 int conectarConKernel() {
@@ -242,6 +200,9 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 			printf("Fin: %s\n", horaFin);
 			tiempoTranscurrido = calcularDuracion(inicio, fin);
 			printf("Duracion: %s", tiempoTranscurrido);
+			free(horaInicio);
+			free(horaFin);
+			free(tiempoTranscurrido);
 			break;
 
 		case accionConsolaFinalizarErrorInstruccion:
@@ -254,7 +215,9 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 			printf("Fin: %s\n", horaFin);
 			tiempoTranscurrido = calcularDuracion(inicio, fin);
 			printf("Duracion: %s", tiempoTranscurrido);
-			exit(EXIT_SUCCESS);
+			free(horaInicio);
+			free(horaFin);
+			free(tiempoTranscurrido);
 			break;
 
 		default:
@@ -265,7 +228,7 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 	}
 }
 
-void atenderAcciones(param_programa* parametrosCrearPrograma)
+void atenderAcciones(char* programaSolicitado)
 {
 	struct timeb inicio, fin;
 	ftime(&inicio);
@@ -273,16 +236,18 @@ void atenderAcciones(param_programa* parametrosCrearPrograma)
 	int socketKernel = conectarConKernel();
 
 	int accion = envioScript;
-	int longitudPrograma = strlen(parametrosCrearPrograma->programaACrear);
-	int tamanioBufferCrearPrograma = sizeof(int32_t)+sizeof(int32_t)+(strlen(parametrosCrearPrograma->programaACrear));
+	int longitudPrograma = strlen(programaSolicitado);
+	int tamanioBufferCrearPrograma = sizeof(int32_t)+sizeof(int32_t)+(strlen(programaSolicitado));
 
 	void* bufferCrearPrograma = malloc(tamanioBufferCrearPrograma);
 	memcpy(bufferCrearPrograma, &accion, sizeof(int32_t));
 	memcpy(bufferCrearPrograma + sizeof(int32_t), &longitudPrograma,sizeof(int32_t));
-	memcpy(bufferCrearPrograma + sizeof(int32_t)*2, parametrosCrearPrograma->programaACrear,strlen(parametrosCrearPrograma->programaACrear));
+	memcpy(bufferCrearPrograma + sizeof(int32_t)*2, programaSolicitado,strlen(programaSolicitado));
 
 	send(socketKernel,bufferCrearPrograma,tamanioBufferCrearPrograma,0);
 	int pidRecibido;
+	free(bufferCrearPrograma);
+	free(programaSolicitado);
 	recv(socketKernel, &pidRecibido, sizeof(int32_t), 0);
 
 	infoThread_t* infoThread = malloc(sizeof(infoThread));
@@ -297,15 +262,19 @@ void atenderAcciones(param_programa* parametrosCrearPrograma)
 	while(1)
 	{
 			int codAccion;
-			int bytes = recv(socketKernel, &codAccion, sizeof(int32_t), 0);
-			recibeOrden(codAccion, socketKernel, inicio ,fin, pidRecibido);
+			if(recv(socketKernel, &codAccion, sizeof(int32_t), 0)>0){
+				recibeOrden(codAccion, socketKernel, inicio ,fin, pidRecibido);
+			}else{
+				printf("Proceso con PID %d finalizado por desconexion con Kernel", pidRecibido);
+			}
+
 	}
 }
 
-void crearPrograma(param_programa* parametrosCrearPrograma)
+void crearPrograma(char* programaSolicitado)
 {
 	pthread_t hiloPrograma;
-	pthread_create(&hiloPrograma, NULL, (void*)atenderAcciones, (void*)parametrosCrearPrograma);
+	pthread_create(&hiloPrograma, NULL, (void*)atenderAcciones, (void*)programaSolicitado);
 }
 
 /****Esta funcion es para probar nada mas**/
@@ -325,11 +294,12 @@ void imprimirProgramasEnEjecucion(){
 
 void escucharUsuario()
 {
-	int pid;
+	int32_t pid;
 	char* programaSolicitado;
 	int codAccion;
+	int salir=0;
 
-	 while(1){
+	 while(!salir){
 
 		 if(scanf("%d", &codAccion)==0){
 			 scanf("%s", &path); //Lo hago para que borre los caracteres que quedan
@@ -348,13 +318,9 @@ void escucharUsuario()
 					puts("No se encontró el archivo\n");
 					break;
 				}else {
-					printf("Iniciando!...\n");
-
-					param_programa* parametrosPrograma = malloc(sizeof(param_programa));
-					parametrosPrograma->programaACrear = programaSolicitado;
-					crearPrograma(parametrosPrograma);
-					limpiaMensajes();
-					imprimeMenuUsuario();
+					crearPrograma(programaSolicitado);
+					//limpiaMensajes();
+					//imprimeMenuUsuario();
 					break;
 				}
 
@@ -365,20 +331,31 @@ void escucharUsuario()
 					printf("PID invalido\n");
 				}else{
 					infoThread_t* infoThread = dictionary_get(infoThreads, string_itoa(pid));
-					pthread_cancel(infoThread->threadId);
-					int32_t codigo = finalizarProgramaAccion;
-					send(infoThread->socket,&codigo,sizeof(int32_t),0);
+					if(infoThread==NULL){
+						printf("No hay proceso en ejecucion con ese PID\n");
+					}else{
+						pthread_cancel(infoThread->threadId);
+						int32_t codigo = finalizarProgramaAccion;
+						void *buffer = malloc(sizeof(int32_t)*2);
+						memcpy(buffer,&codigo,sizeof(int32_t));
+						memcpy(buffer+sizeof(int32_t),&pid,sizeof(int32_t));
+						send(infoThread->socket,buffer,sizeof(int32_t)*2,0);
+						free(buffer);
+					}
 				}
 			break;
 
 			case desconectarConsola:
-				//Matar todos los threads del kernel abortivamente
-				printf("Codificar desconectar!\n");
+				salir = 1;
 			break;
 
 			case limpiarMensajes:
 				limpiaMensajes();
 			break;
+
+			default:
+				printf("Numero de operacion invalido\n");
+				break;
 
 			}
 	 }
