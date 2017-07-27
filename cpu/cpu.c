@@ -6,20 +6,35 @@ void lanzar_excepcion(t_PCB* pcb, int32_t codigoError)
 {
 	switch(codigoError){
 
-		case -10:
+		case ERROR_MEMORIA:
 			log_info(infoLog,ANSI_COLOR_RED "Stack overflow! se intentó leer una dirección inválida." ANSI_COLOR_RESET);
 			setear_exitCode(pcb, ERROR_MEMORIA);
 		break;
 
-		case -11:
+		case ERROR_ASIGNAR_PAGINAS:
 			log_info(infoLog,ANSI_COLOR_RED "No hay marcos suficientes para el proceso." ANSI_COLOR_RESET);
 			setear_exitCode(pcb, ERROR_ASIGNAR_PAGINAS);
 		break;
 
-		case -8:
+		case ERROR_SOLICITUD_HEAP:
 			log_info(infoLog,ANSI_COLOR_RED "No hay marcos suficientes para el proceso." ANSI_COLOR_RESET);
 			setear_exitCode(pcb, ERROR_SOLICITUD_HEAP);
 		break;
+
+		case ERROR_ESCRITURA:
+			log_info(infoLog,ANSI_COLOR_RED "No hay permisos  para el archivo que se desea escribir." ANSI_COLOR_RESET);
+			setear_exitCode(pcb, ERROR_ESCRITURA);
+			break;
+
+		case ERROR_PERMISOS:
+			log_info(infoLog,ANSI_COLOR_RED "No hay permisos  para el archivo que se desea leer" ANSI_COLOR_RESET);
+			setear_exitCode(pcb, ERROR_PERMISOS);
+			break;
+
+		case ERROR_ACCESO_ARCHIVO:
+			log_info(infoLog,ANSI_COLOR_RED "El programa intento acceder a un archivo inexistente." ANSI_COLOR_RESET);
+			setear_exitCode(pcb, ERROR_ACCESO_ARCHIVO);
+			break;
 
 		default: printf("LLEGO CUARLQUIER COSA\n");
 	}
@@ -269,7 +284,7 @@ void enviarSolicitudBytes(int32_t pid, int32_t pagina, int32_t offset, int32_t s
 
 				log_debug(debugLog, ANSI_COLOR_RED "OVERFLOW!");
 				ejecutando= false;
-				lanzar_excepcion(pcbNuevo, overflow);
+				lanzar_excepcion(pcbNuevo, ERROR_MEMORIA);
 			}
 
     	free(solicitud);

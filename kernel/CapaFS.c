@@ -240,17 +240,9 @@ void escribirArchivo(int socketCpu, int socketFS){
 			printf("%d|",(int)texto[i]);
 		}
 
-//		int tamanio = strlen(texto) + 1;
-//			int codAccion = accionImprimirTextoConsola;
-//			void* buffer = malloc(sizeof(codAccion)+ sizeof(pid)+ sizeof(tamanio) + tamanio);
-//
-//			memcpy(buffer, &codAccion, sizeof(int32_t));
-//			memcpy(buffer + sizeof(int32_t),&pid, sizeof(int32_t));
-//			memcpy(buffer + sizeof(int32_t)*2,&tamanio, sizeof(int32_t));
-//			memcpy(buffer + sizeof(int32_t)*3 + tamanio, texto, tamanio);
-//
-//			send(proceso->ConsolaDuenio, buffer, sizeof(int32_t)*3 + tamanio, 0);
 
+		int res=1;
+		send(socketCpu, &res, sizeof(res),0);
 
 		printf("\n");
 		return;

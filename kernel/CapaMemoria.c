@@ -77,9 +77,9 @@ int solicitarPagina(int pid)
 	int bytesRecibidos = recv(memoria, result, sizeof(int), 0);
 	int resultado = char4ToInt(result);
 
-	if(resultado == -11)
+	if(resultado == ERROR_ASIGNAR_PAGINAS)
 	{
-		return -11;
+		return ERROR_ASIGNAR_PAGINAS;
 	}else
 	{
 
@@ -220,7 +220,7 @@ t_puntero alocarMemoria(int espacioSolicitado, int pid)
 					{
 						//NO ES POSIBLE DESFRAGMENTAR
 						int result = solicitarPagina(pid);
-						if(result == -11){
+						if(result == ERROR_ASIGNAR_PAGINAS){
 								return result;
 						}else
 							{
@@ -233,7 +233,7 @@ t_puntero alocarMemoria(int espacioSolicitado, int pid)
 			{
 
 				int result = solicitarPagina(pid);
-				if(result == -11){
+				if(result == ERROR_ASIGNAR_PAGINAS){
 					return result;
 				}else{
 					return alocar(pid, espacioSolicitado);
@@ -244,7 +244,7 @@ t_puntero alocarMemoria(int espacioSolicitado, int pid)
 		{
 			int result = solicitarPagina(pid);
 
-			if(result == -11){
+			if(result == ERROR_ASIGNAR_PAGINAS){
 				return result;
 			}else
 			{
@@ -255,7 +255,7 @@ t_puntero alocarMemoria(int espacioSolicitado, int pid)
 	else
 	{
 		//RECHAZO: Solicitud invalida
-		return -8;
+		return ERROR_SOLICITUD_HEAP;
 	}
 }
 

@@ -478,7 +478,8 @@ t_puntero reservar(t_valor_variable espacio)
 
 	if(puntero < 0)
 	{
-		lanzar_excepcion(pcbNuevo, puntero);
+		lanzar_excepcion(pcbNuevo, ERROR_SOLICITUD_HEAP);
+		ejecucionInterrumpida = true;
 	}
 
 	log_debug(debugLog, "La primitiva recibio el puntero: |%d| .", puntero);
@@ -557,6 +558,12 @@ t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 
 	int32_t fd;
 	recv(kernel, &fd, sizeof(int32_t), 0);
+
+	if(fd<0)
+	{
+		lanzar_excepcion(pcbNuevo, ERROR_ACCESO_ARCHIVO);
+		ejecucionInterrumpida = true;
+	}
 
 	return fd;
 
@@ -667,7 +674,16 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 	memcpy(buffer + offset, informacion, tamanio);
 	send(kernel, buffer, tamanioBuffer, 0);
 
-	loggearFinDePrimitiva("escribir");
+
+	int res;
+	recv(kernel, &res, sizeof(int32_t),0);
+	if(res < 0)
+	{
+		lanzar_excepcion(pcbNuevo, ERROR_ESCRITURA);
+		ejecucionInterrumpida = true;
+	}
+			}
+		loggearFinDePrimitiva("escribir");
 	}
 }
 
@@ -693,15 +709,27 @@ void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valo
 	memcpy(buffer + offset, &tamanio, sizeof(int32_t));
 	send(kernel, buffer, tamanioBuffer, 0);
 
-	char *recibido = malloc(tamanio);
-	recv(kernel, recibido, tamanio, 0);
-	//Envio datos a memoria
-	int32_t i=0;
-	while(i<tamanio){
-		enviar_direccion_y_valor_a_Memoria(informacion+i, recibido[i]);
-		log_debug(debugLog, "Enviando a memoria. Pos: |%d| Valor: |%c|", informacion+i, recibido[i]);
-		i++;
+	int res;
+	recv(kernel, &res, sizeof(int32_t),0);
+	if(res != 1)
+	{
+		char *recibido = malloc(tamanio);
+		recv(kernel, recibido, tamanio, 0);
+		//Envio datos a memoria
+		int32_t i=0;
+		while(i<tamanio){
+			enviar_direccion_y_valor_a_Memoria(informacion+i, recibido[i]);
+			log_debug(debugLog, "Enviando a memoria. Pos: |%d| Valor: |%c|", informacion+i, recibido[i]);
+			i++;
+		}
+	}else
+	{
+		lanzar_excepcion(pcbNuevo, ERROR_PERMISOS);
+		ejecucionInterrumpida = true;
 	}
+
+
+
 	loggearFinDePrimitiva("leer");
 	}
 }
