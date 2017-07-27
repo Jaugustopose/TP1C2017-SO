@@ -682,7 +682,7 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 		lanzar_excepcion(pcbNuevo, ERROR_ESCRITURA);
 		ejecucionInterrumpida = true;
 	}
-			}
+
 		loggearFinDePrimitiva("escribir");
 	}
 }
