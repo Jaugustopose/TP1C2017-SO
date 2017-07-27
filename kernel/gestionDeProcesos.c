@@ -387,7 +387,7 @@ void recibirFinalizacion(int cliente) {
 
 void escucharConsolaKernel() {
 	log_info(infoLog, "Escuchando nuevas solicitudes de consola en nuevo hilo");
-		int result;
+
 		while (1) {
 			puts("Ingrese una acción a realizar\n");
 			puts("1: Listar Procesos");
@@ -406,10 +406,11 @@ void escucharConsolaKernel() {
 			switch (codAccion) {
 			case listarProcesos:
 				puts("\n¿Qué desea listar?");
-				puts("0: Procesos en cola de NEW");
-				puts("1: Procesos en cola de READY");
-				puts("3: Procesos en cola de BLOCK");
-				puts("4: Procesos en cola de EXIT");
+				puts("0: Procesos en NEW");
+				puts("1: Procesos en READY");
+				puts("2: Procesos en EXEC");
+				puts("3: Procesos en BLOCK");
+				puts("4: Procesos en EXIT");
 				puts("5: Todos los procesos\n");
 				char input[10];
 				if (fgets(input, sizeof(input), stdin) == NULL) {
@@ -418,14 +419,35 @@ void escucharConsolaKernel() {
 				}
 				char* eptr;
 				int inputInt = strtol(input, &eptr, 10);
-				if (result == 0) {
+				if (inputInt == 0) {
 					log_error("Error con el valor ingresado - input: %s", input);
-					result = 1;
+					break;
 				}
 				imprimir(inputInt);
 				break;
 			case operarSobreProceso:
-				printf("Codificar operarSobreProceso!\n");
+				puts("\nIngrese el número de PID:");
+				char inputProceso[10];
+				if (fgets(inputProceso, sizeof(inputProceso), stdin) == NULL) {
+					log_error(errorLog, "Error al leer consola del Kernel! - input: %s", inputProceso);
+					break;
+				}
+				char* ptrInput;
+				int pidBuscado = strtol(input, &ptrInput, 10);
+				if (pidBuscado == 0) {
+					log_error("Error con el valor ingresado - input: %s", inputProceso);
+					break;
+				}
+				int _esProcesoBuscado(t_proceso* proceso)
+				{
+					return proceso->pidProceso == pidBuscado;
+				}
+				t_proceso* proceso = list_find(listaDeProcesos, (void*)_esProcesoBuscado);
+				if (proceso == NULL) {
+					log_warning(warningLog, "Proceso no encontrado!");
+				} else {
+					realizarOperacionSobreProceso(proceso);
+				}
 				break;
 			case obtenerTGArchivos:
 				printf("Codificar obtenerTGArchivos!\n");
@@ -477,7 +499,7 @@ void imprimirColaReady()
 {
 	strCola = string_new();
 	queue_iterate(colaReady, (void*)imprimirPIDenCola);
-	log_info(infoLog,"Cola Ready =[%s]",strCola);
+	log_info(infoLog,"En estado Ready =[%s]",strCola);
 	free(strCola);
 }
 
@@ -485,31 +507,43 @@ void imprimirColaNew()
 {
 	strCola = string_new();
 	queue_iterate(colaNew, (void*)imprimirPIDenCola);
-	log_info(infoLog,"Cola New =[%s]",strCola);
+	log_info(infoLog,"En estado New =[%s]",strCola);
 	free(strCola);
+}
+
+void imprimirColaExec()
+{
+	strLista = string_new();
+	list_iterate(listaEjecucion, (void*)imprimirPIDenCola);
+	log_info(infoLog,"En estado Exec = [%s]",strLista);
+	free(strLista);
 }
 
 void imprimirColaBlock()
 {
-	strCola = string_new();
-	queue_iterate(colaBlock, (void*)imprimirPIDenCola);
-	log_info(infoLog,"Cola Block =[%s]",strCola);
-	free(strCola);
+	strLista = string_new();
+	bool _estaEnExec(t_proceso *p) {
+		return p->estado == EXEC;
+	}
+	t_list* listaBlock = list_filter(listaDeProcesos, _estaEnExec);
+	list_iterate(listaBlock, (void*)imprimirPIDenCola);
+	log_info(infoLog,"En estado Block =[%s]",strLista);
+	free(strLista);
 }
 
 void imprimirColaExit()
 {
 	strCola = string_new();
 	queue_iterate(colaExit, (void*)imprimirPIDenCola);
-	log_info(infoLog,"Cola Exit =[%s]",strCola);
+	log_info(infoLog,"En estado Exit =[%s]",strCola);
 	free(strCola);
 }
 
 void imprimirTodosLosProcesos()
 {
 	strCola = string_new();
-	queue_iterate(listaDeProcesos, (void*)imprimirPIDenCola);
-	log_info(infoLog,"Cola Exit =[%s]",strCola);
+	list_iterate(listaDeProcesos, (void*)imprimirPIDenCola);
+	log_info(infoLog,"Listado completo de procesos =[%s]",strCola);
 	free(strCola);
 }
 
@@ -527,6 +561,10 @@ void imprimir(t_proceso_estado estado){
 			imprimirColaReady();
 		break;
 
+		case EXEC:
+			imprimirColaExec();
+		break;
+
 		case BLOCK:
 			imprimirColaBlock();
 		break;
@@ -542,23 +580,65 @@ void imprimir(t_proceso_estado estado){
 	}
 }
 
+void realizarOperacionSobreProceso(t_proceso* proceso)
+{
+	puts("\nOperaciones:");
+	puts("1: Obtener cantidad de ráfagas ejecutadas");
+	puts("2: Obtener cantidad de operaciones privilegiadas ejecutadas");
+	puts("3: Obtener la tabla de archivos abiertos por el proceso");
+	puts("4: Procesos en EXIT");
+	puts("5: Todos los procesos\n");
+	char input[10];
+	if (fgets(input, sizeof(input), stdin) == NULL) {
+		log_error(errorLog, "Error al leer consola del Kernel! - input: %s", input);
+		return;
+	}
+	char* ptrInput;
+	int operacion = strtol(input, &ptrInput, 10);
+	if (operacion == 0) {
+		log_error("Error con el valor ingresado - input: %s", input);
+		return;
+	}
+	switch(operacion)
+	{
+		case 1:
+			rafagasPorProceso(proceso);
+			break;
+
+		case 2:
+			break;
+
+		case 3:
+			break;
+
+		case 4:
+			break;
+
+		case 5:
+			break;
+
+		default:
+			log_error(errorLog, "Operación no reconocida!");
+	}
+}
+
 void rafagasPorProceso(t_proceso* unProceso)
 {
 	char* rafagas = string_from_format("PID:|%d|, Rafagas: |%d|",
 			unProceso->pidProceso,
 			unProceso->rafagasTotales);
-	string_append(&strRafagas, rafagas);
+	log_info(infoLog,"[%s]", rafagas);
 
 	free(rafagas);
 }
 
-void imprimirRafagas()
-{
-	strRafagas = string_new();
-	list_iterate(listaDeProcesos, (void*)rafagasPorProceso);
-	log_info(infoLog,"Rafagas =[%s]", strRafagas);
-	free(strRafagas);
-}
+//void imprimirRafagas()
+//{
+//	strRafagas = string_new();
+//	list_iterate(listaDeProcesos, (void*)rafagasPorProceso);
+//	log_info(infoLog,"Rafagas =[%s]", strRafagas);
+//	free(strRafagas);
+//}
 
 void privilegiadasPorProceso(t_proceso* unProceso)
 {

@@ -119,6 +119,7 @@ void inicializarContexto() {
 
 	colaCPU = queue_create();
 	colaNew = queue_create();
+	colaBlock = queue_create();
 	colaReady = queue_create();
 	colaExit = queue_create();
 	listaEjecucion = list_create();
