@@ -265,7 +265,8 @@ void atenderAcciones(char* programaSolicitado)
 			if(recv(socketKernel, &codAccion, sizeof(int32_t), 0)>0){
 				recibeOrden(codAccion, socketKernel, inicio ,fin, pidRecibido);
 			}else{
-				printf("Proceso con PID %d finalizado por desconexion con Kernel", pidRecibido);
+				printf("Proceso con PID %d finalizado por desconexion con Kernel/n", pidRecibido);
+				break;
 			}
 
 	}
