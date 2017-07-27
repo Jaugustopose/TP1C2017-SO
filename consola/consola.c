@@ -158,15 +158,18 @@ void imprimeMenuUsuario()
 
 void* pidePathAlUsuario(char* path)
 {
-
-  programa = fopen(path,"rb");
-  if(programa == NULL){
-	  return NULL;
+	char* ruta = strdup("/home/utnso/Escritorio/scripts/");
+	string_append(&ruta, path);
+	string_append(&ruta, ".ansisop");
+	programa = fopen(ruta,"rb");
+	free(ruta);
+	if(programa == NULL){
+		return NULL;
     }
-  else
+	else
     {
-	  char* archivoTransformado = convertirArchivoACodigo();
-	  return archivoTransformado;
+		char* archivoTransformado = convertirArchivoACodigo();
+		return archivoTransformado;
     }
 }
 

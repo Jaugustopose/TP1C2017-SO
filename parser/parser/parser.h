@@ -30,7 +30,7 @@
 	#include <commons/error.h>
 
 	//Descriptores
-	#define DESCRIPTOR_SALIDA 1
+	#define DESCRIPTOR_SALIDA 0
 
 	//Tipos de datos
 	typedef u_int32_t t_puntero;
@@ -272,10 +272,10 @@
 		 * Informa al Kernel que el proceso requiere que se borre un archivo.
 		 *
 		 * @syntax 	TEXT_DELETE_FILE (borrar)
-		 * @param	descriptor_archivo		Descriptor de archivo del archivo a borrar
+		 * @param	direccion		Ruta al archivo a abrir
 		 * @return	void
 		 */
-		void (*AnSISOP_borrar)(t_descriptor_archivo descriptor_archivo);
+		void (*AnSISOP_borrar)(t_descriptor_archivo direccion);
 
 		/*
 		 * CERRAR ARCHIVO

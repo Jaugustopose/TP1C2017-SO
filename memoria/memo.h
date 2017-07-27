@@ -21,17 +21,18 @@
 #include "estructurasCompartidas.h"
 #include <commons/log.h>
 #include <commons/txt.h>
-
-
+#include <signal.h>
 
 
 typedef struct configMemo {
 	char* ip_kernel;
-	int puerto_kernel;
-	int puerto;
-	int marcos;
-	int marco_size;
-	int retardo_memoria;
+	int32_t puerto_kernel;
+	int32_t puerto;
+	int32_t marcos;
+	int32_t marco_size;
+	int32_t entradas_cache;
+	int32_t cache_x_proc;
+	int32_t retardo_memoria;
 } config_t;
 
 /**
@@ -56,9 +57,19 @@ int cantMarcosOcupaTablaPaginas;
 t_list** overflow;
 int retardoMemoria;
 int stack_size;//lo recibe del kernel
+char* cache;
+int tamanioCache;
+t_list* entradasLibresCache;
+t_list* entradasOcupadasCache;
+//t_list* listaProcesosActivos;
 t_log *memoLogger;
 t_log *memoConsoleLogger;
 char* directorioOutputMemoria = "output";
+char* memoriaLogFileName = "memoria";
+pthread_mutex_t lockMemoria;
+pthread_mutex_t lockTablaPaginas;
+pthread_mutex_t lockColisiones;
+
 
 enum accionConsolaMemoria {
 	retardo = 1,
@@ -75,6 +86,20 @@ typedef struct parametrosHiloDedicado{
 	int socketClie;
 	tablaPagina_t* tablaPaginasInvertida;
 }paramHiloDedicado;
+
+typedef struct administrativaCache {
+	int32_t pid;
+	int32_t nroPagina;
+	void* contenido;
+
+}entradaCache_t;
+
+static void entrada_destroyer(entradaCache_t *self) {
+    free(self->contenido);
+    free(self);
+}
+
+
 
 //Prototipos
 void cargarConfigFile();

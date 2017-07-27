@@ -32,13 +32,23 @@ void cargarConfigFile() {
 		config.marco_size = config_get_int_value(configMemo, "MARCO_SIZE");
 		log_info(memoConsoleLogger, "config.MARCO_SIZE: %d", config.marco_size);
 	}
+	if(config_has_property(configMemo,"ENTRADAS_CACHE")){
+		config.entradas_cache = config_get_int_value(configMemo,"ENTRADAS_CACHE");
+		log_info(memoConsoleLogger, "config.ENTRADAS_CACHE: %d", config.entradas_cache);
+	}
+	if(config_has_property(configMemo, "CACHE_X_PROC")){
+		config.cache_x_proc = config_get_int_value(configMemo, "CACHE_X_PROC");
+		log_info(memoConsoleLogger, "config.CACHE_X_PROC: %d", config.cache_x_proc);
+
+	}
 	if (config_has_property(configMemo, "RETARDO_MEMORIA")) {
 		config.retardo_memoria = config_get_int_value(configMemo, "RETARDO_MEMORIA");
 		log_info(memoConsoleLogger, "config.RETARDO_MEMORIA: %d", config.retardo_memoria);
 	}
 }
 
-/* Inicialización vector overflow. Cada posición tiene una lista enlazada que guarda números de frames.
+/* Inicialización vector overflow. Cada posición tiene una
+a enlazada que guarda números de frames.
  * Se llenará a medida que haya colisiones correspondientes a esa posición del vector. */
 void inicializarOverflow(int cantidad_de_marcos) {
 	overflow = malloc(sizeof(t_list*) * cantidad_de_marcos);
@@ -60,7 +70,8 @@ unsigned int calcularPosicion(int pid, int num_pagina) {
 	unsigned int indice = atoi(str1) % config.marcos + cantMarcosOcupaTablaPaginas;
 
 	/*Si al sumar los marcos que ocupa la tabla de páginas invertida me excedo,
-	 * recalculo la posición
+	 * recalculo la posición recomenzando desde el principio obviando de nuevo
+	 * la tabla de páginas invertida
 	 */
 	if (indice > ultimo_marco) {
 		indice = indice - ultimo_marco + cantMarcosOcupaTablaPaginas;
@@ -73,41 +84,66 @@ unsigned int calcularPosicion(int pid, int num_pagina) {
 int32_t buscarEnOverflow(int32_t indice, int32_t pid, int32_t pagina, tablaPagina_t* tablaPaginasInvertida) {
 	int32_t i = 0;
 	int32_t frame = -10;
+	//pthread_mutex_lock(&lockColisiones);
+	//pthread_mutex_lock(&lockTablaPaginas);
 	for (i = 0; i < list_size(overflow[indice]); i++) {
 		if (esMarcoCorrecto((int32_t)list_get(overflow[indice], i), pid, pagina, tablaPaginasInvertida)) {
 			frame = (int32_t)list_get(overflow[indice], i);
 		}
 	}
+	//pthread_mutex_unlock(&lockTablaPaginas);
+	//pthread_mutex_unlock(&lockColisiones);
 	return frame;
 }
 
 /* Si en la posición candidata de la tabla de páginas invertida se encuentran el pid y páginas recibidos
  * por parámetro, se trata del marco correcto */
 int esMarcoCorrecto(int pos_candidata, int pid, int pagina, tablaPagina_t* tablaPaginasInvertida) {
+	int esCorrecto = tablaPaginasInvertida[pos_candidata].pid == pid && tablaPaginasInvertida[pos_candidata].nroPagina == pagina;
 
-	return tablaPaginasInvertida[pos_candidata].pid == pid && tablaPaginasInvertida[pos_candidata].nroPagina == pagina;
+
+	return esCorrecto;
 
 }
 
 /* Agrega una entrada a la lista enlazada correspondiente a una posición del vector de overflow */
 void agregarSiguienteEnOverflow(int pos_inicial, int nro_frame) {
+	//pthread_mutex_lock(&lockColisiones);
 	list_add(overflow[pos_inicial], nro_frame);
+	//pthread_mutex_unlock(&lockColisiones);
 }
 
 /* Elimina un frame de la lista enlazada correspondiente a una determinada posición del vector de overflow  */
 void borrarDeOverflow(int posicion, int frame) {
 	int i = 0;
 	int index_frame;
-
+	//pthread_mutex_lock(&lockColisiones);
 	for (i = 0; i < list_size(overflow[posicion]); i++) {
 		if (frame == (int) list_get(overflow[posicion], i)) {
 			index_frame = i;
 			i = list_size(overflow[posicion]);
 		}
 	}
-
 	list_remove(overflow[posicion], index_frame);
+	//pthread_mutex_unlock(&lockColisiones);
 }
+
+void realizarDumpMemoriaCache(){
+	time_t tm = time(NULL);
+	char fechaFormateada[20];
+	strftime(fechaFormateada,20,"%Y%m%d_%H%M%S", localtime(&tm));
+	char* path = string_from_format("output/dumpMemoriaCache_%s.txt",fechaFormateada);
+	FILE* dumpFile = txt_open_for_append(path);
+	puts("CONTENIDO MEMORIA CACHÉ:\n\n");
+	fprintf(dumpFile,"CONTENIDO MEMORIA CACHÉ:\n\n");
+	printf("Se procede a imprimir el contenido de la memoria caché:\n");
+		fprintf(dumpFile, "Se procede a imprimir el contenido de la memoria caché:\n");
+		printf("%s", cache);
+		fprintf(dumpFile, cache);
+		fclose(dumpFile);
+	}
+
+
 
 void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	time_t tm = time(NULL);
@@ -117,6 +153,7 @@ void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	char* path = string_from_format("%s/dumpEstructuras_%s.txt", directorioOutputMemoria, fechaFormateada);
 	FILE* dumpFile = txt_open_for_append(path);
 	t_list* listaProcesosActivos = list_create();
+	//pthread_mutex_lock(&lockTablaPaginas);
 	puts("TABLA DE PÁGINAS INVERTIDA");
 	fprintf(dumpFile, "TABLA DE PÁGINAS INVERTIDA\n");
 	printf("||%*s||%*s||%*s||\n", 9, "Marco  ", 9, "PID   ", 13, "Nro Página");
@@ -135,6 +172,7 @@ void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 		}
 
 	}
+	//pthread_mutex_unlock(&lockTablaPaginas);
 	printf("======================================\n\n");
 	fprintf(dumpFile, "======================================\n\n");
 	puts("LISTADO DE PROCESOS ACTIVOS");
@@ -165,6 +203,8 @@ void realizarDumpContenidoMemoriaCompleta(tablaPagina_t* tablaPaginasInvertida) 
 	char* bufferPagina = malloc(config.marco_size);
 	printf("Se procede a imprimir el contenido de cada marco:\n");
 	fprintf(dumpFile, "Se procede a imprimir el contenido de cada marco:\n");
+	//pthread_mutex_lock(&lockTablaPaginas);
+	//pthread_mutex_lock(&lockMemoria);
 	for (i = 0; i < config.marcos; i++) {
 		memcpy(bufferPagina, memoria + i * config.marco_size, config.marco_size);
 		printf("Marco: %d, pid: %d, pag: %d, contenido: %s\n", i,
@@ -175,6 +215,8 @@ void realizarDumpContenidoMemoriaCompleta(tablaPagina_t* tablaPaginasInvertida) 
 				tablaPaginasInvertida[i].pid,
 				tablaPaginasInvertida[i].nroPagina, bufferPagina);
 	}
+	//pthread_mutex_unlock(&lockMemoria);
+	//pthread_mutex_unlock(&lockTablaPaginas);
 	fclose(dumpFile);
 	free(bufferPagina);
 }
@@ -204,17 +246,21 @@ void realizarDumpContenidoProceso(tablaPagina_t* tablaPaginasInvertida) {
 	fprintf(dumpFile, "Se procede a imprimir el contenido de cada marco del pid %d:\n", pid);
 	int marco;
 	int i = 0;
+	//pthread_mutex_lock(&lockTablaPaginas);
 	while (true) {
 		marco = buscarMarco(pid, i, tablaPaginasInvertida);
 		if (marco != -10) {
+			//pthread_mutex_lock(&lockMemoria);
 			memcpy(bufferPagina, memoria + marco * config.marco_size, config.marco_size);
 			printf("pag: %d, marco: %d, contenido: %s\n", tablaPaginasInvertida[marco].nroPagina, marco, bufferPagina);
 			fprintf(dumpFile, "pag: %d, marco: %d, contenido: %s\n", tablaPaginasInvertida[marco].nroPagina, marco, bufferPagina);
+			//pthread_mutex_unlock(&lockMemoria);
 		} else {
 			break;
 		}
 		i++;
 	}
+	//pthread_mutex_unlock(&lockTablaPaginas);
 
 	if (i == 0) {
 		printf("El proceso de pid %d no se encuentra cargado en memoria\n\n", pid);
@@ -228,14 +274,29 @@ int finalizarPrograma(int pid, tablaPagina_t* tablaPaginasInvertida) {
 	int i;
 	//-14 = pid no encontrado
 	int retorno = -14;
-	for (i = 0; i < config.marcos; i++) {
-		//Chequeamos, aparte de que coincida el pid, que no sea -1 (corresponde a estructuras administrativas)
-		if (tablaPaginasInvertida[i].pid == pid && tablaPaginasInvertida[i].pid != -1) {
-			tablaPaginasInvertida[i].pid = -10;
-			tablaPaginasInvertida[i].nroPagina = -1;
+	int nroPagina = 0;
+	bool finaliza = false;
+	//pthread_mutex_lock(&lockTablaPaginas);
+	while(!finaliza){
+		int marco_candidato = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
+		if (tablaPaginasInvertida[marco_candidato].pid == pid && tablaPaginasInvertida[marco_candidato].pid != -1) {
+			tablaPaginasInvertida[marco_candidato].pid = -10;
+			tablaPaginasInvertida[marco_candidato].nroPagina = -1;
 			retorno = EXIT_SUCCESS;
+		} else {
+			int marco_real = buscarEnOverflow(marco_candidato, pid, nroPagina, tablaPaginasInvertida);
+			if (marco_real > -10 && tablaPaginasInvertida[marco_real].pid == pid && tablaPaginasInvertida[marco_real].pid != -1) {
+				tablaPaginasInvertida[marco_real].pid = -10;
+				tablaPaginasInvertida[marco_real].nroPagina = -1;
+				retorno = EXIT_SUCCESS;
+				borrarDeOverflow(marco_candidato, marco_real);
+			} else {
+				finaliza = true;
+			}
 		}
+		nroPagina++;
 	}
+	//pthread_mutex_unlock(&lockTablaPaginas);
 	if (retorno == -14) {
 		log_error(memoLogger, "finalizarPrograma - No se encontró el pid %d. Error code -14", pid);
 	}
@@ -245,16 +306,19 @@ int finalizarPrograma(int pid, tablaPagina_t* tablaPaginasInvertida) {
 int liberarPaginaPid(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida) {
 
 	int resultAccion;
-
+	//pthread_mutex_lock(&lockTablaPaginas);
 	int marco = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
+	//pthread_mutex_unlock(&lockTablaPaginas);
 	printf("Marco encontrado solicitarBytes: %d\n", marco);
 	if (marco == -10) {
 		printf("El nro de página %d para el pid %d no existe\n", pid, nroPagina);
 		resultAccion = marco;
 	} else {
+		//pthread_mutex_lock(&lockTablaPaginas);
 		//Liberamos Marco
 		tablaPaginasInvertida[marco].pid = -10;
 		tablaPaginasInvertida[marco].nroPagina = -1;
+		//pthread_mutex_unlock(&lockTablaPaginas);
 		resultAccion = EXIT_SUCCESS;
 	}
 
@@ -262,8 +326,7 @@ int liberarPaginaPid(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertid
 }
 
 int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPaginasInvertida) {
-	log_info(memoLogger, "solicitarAsignacionPaginas - Comienza asignación de páginas para pid %d: %d páginas"
-				 , pid, cantPaginas);
+	log_info(memoLogger, "solicitarAsignacionPaginas - Comienza asignación de páginas para pid %d: %d páginas" , pid, cantPaginas);
 	int i;
 	int nroPag = -1, nroPagUltimo = -1;
 	int cantidadPosicionesEncontradas=0;
@@ -277,7 +340,7 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPag
 		marcosLibres[i][1] = -1;
 	}
 
-	//TODO Esta sección está hecha para averiguar los nros de página que debemos
+	//		Esta sección está hecha para averiguar los nros de página que debemos
 	//		otorgarle al PID.
 	//		¿Es correcto o los nros de página los setea el kernel antes?
 	//		Debiera ser así porque recorrer toda la tabla cada vez que se inicia
@@ -293,8 +356,9 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPag
 	log_info(memoLogger, "solicitarAsignacionPaginas - Último nro de página encontrado para pid %d es: %d", pid, nroPagUltimo);
 	//Fin búsqueda nro de página del pid
 	nroPag = nroPagUltimo;
-	//TODO SEMAFORO DESDE ACÁ
+
 	//Recorro la memoria hasta que se termine o la cantidad de marcos libres encontrados satisfaga el pedido
+	//pthread_mutex_lock(&lockTablaPaginas);
 	for (i = 0; cantidadPosicionesEncontradas < cantPaginas; ++i) {
 		nroPag++;
 		int marco_candidato = calcularPosicion(pid, nroPag);
@@ -342,8 +406,9 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPag
 	 */
 	char* buffer = malloc(config.marco_size);
 	memset(buffer, '\0', config.marco_size);
+	//pthread_mutex_lock(&lockMemoria);
 	for (i = 0; i < cantPaginas; i++) {
-		//Si la segunda columna es -1 significa que se el marco es el devuelto por la función hash
+		//Si la segunda columna es -1 significa que el marco es el devuelto por la función hash
 		//Si no, el marco utilizado es el encontrado en el recorrido hecho luego de la colisión
 		//También se limpia el contenido de cada marco cuando es asignado
 		nroPagUltimo++;
@@ -358,10 +423,11 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPag
 			memcpy(memoria + marcosLibres[i][1] * config.marco_size, buffer, config.marco_size);
 		}
 	}
+	//pthread_mutex_unlock(&lockMemoria);
+	//pthread_mutex_unlock(&lockTablaPaginas);
 
 	free(buffer);
 
-	//TODO SEMAFORO HASTA ACÁ
 	log_info(memoLogger, "solicitarAsignacionPaginas - Paginas asignadas con éxito");
 
 	return EXIT_SUCCESS;
@@ -378,13 +444,15 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPag
  * codResult = int
  * bytesSolicitados = char*
  */
-char* solicitarBytes(int pid, int nroPagina, int offset, int tamanio, tablaPagina_t* tablaPaginasInvertida) {
+char* solicitarBytesMemoria(int pid, int nroPagina, int offset, int tamanio, tablaPagina_t* tablaPaginasInvertida) {
 	int codResult;
 	char* respuesta = malloc(tamanio + sizeof(codResult));
 	char* bytesSolicitados = malloc(tamanio);
 	memset(bytesSolicitados, '\0', tamanio);
 	memset(respuesta, '\0', tamanio + sizeof(codResult));
+	//pthread_mutex_lock(&lockTablaPaginas);
 	int marco = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
+	//pthread_mutex_unlock(&lockTablaPaginas);
 	log_info(memoLogger, "solicitarBytes - Marco encontrado: %d", marco);
 	if (marco == -10) {
 		codResult = marco;
@@ -393,10 +461,12 @@ char* solicitarBytes(int pid, int nroPagina, int offset, int tamanio, tablaPagin
 		codResult = -12;
 		log_error(memoLogger, "solicitarBytes - El pedido de lectura excede el tamaño de la página");
 	} else {
+		//pthread_mutex_lock(&lockMemoria);
 		log_info(memoLogger, "solicitarBytes - Tamaño solicitado: %d", tamanio);
 		codResult = EXIT_SUCCESS;
 		usleep(config.retardo_memoria * 1000);
 		memcpy(bytesSolicitados, memoria + marco * config.marco_size + offset, tamanio);
+		//pthread_mutex_unlock(&lockMemoria);
 	}
 	memcpy(respuesta, &codResult, sizeof(codResult));
 	memcpy(respuesta + sizeof(codResult), bytesSolicitados, tamanio);
@@ -405,7 +475,7 @@ char* solicitarBytes(int pid, int nroPagina, int offset, int tamanio, tablaPagin
 }
 
 int buscarMarco(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida) {
-
+	//Los locks se hacen dentro de las funciones esMarcoCorrecto y buscarEnOverflow
 	int marco_candidato = calcularPosicion(pid, nroPagina);
 	if (esMarcoCorrecto(marco_candidato, pid, nroPagina, tablaPaginasInvertida)){
 		return marco_candidato;
@@ -431,25 +501,28 @@ int buscarMarco(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida) {
  * 			-12: El pedido excede le tamaño de página
  */
 int almacenarBytes(int pid, int nroPagina, int offset, int tamanio, void* buffer, tablaPagina_t* tablaPaginasInvertida) {
-	//TODO SEMÁFORO DESDE ACÁ
+
 	log_info(memoLogger, "almacenarBytes - Inicia almacenarBytes");
 	if ((offset + tamanio) > config.marco_size) {
 		log_error(memoLogger, "almacenarBytes - El pedido excede el tamaño de la página. Error code -12");
 		return -12;
 	} else {
+		//pthread_mutex_lock(&lockTablaPaginas);
 		int marcoPagina = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
+		//pthread_mutex_unlock(&lockTablaPaginas);
 		log_info(memoLogger, "almacenarBytes - Marco candidato para pid %d y nroPagina %d: %d", pid, nroPagina, marcoPagina);
 		if (marcoPagina > -1) {
+			//pthread_mutex_lock(&lockMemoria);
 			char* destino = memoria + marcoPagina * config.marco_size + offset;
 			usleep(config.retardo_memoria * 1000);
 			memcpy(destino, buffer, tamanio);
+			//pthread_mutex_unlock(&lockMemoria);
 			log_info(memoLogger, "almacenarBytes - El pedido quedó almacenado");
 		} else {
 			log_info(memoLogger, "almacenarBytes - Marco no encontrado para pid y nroPagina especificados. Error code -10");
 			return -10;
 		}
 	}
-	//TODO SEMÁFORO HASTA ACÁ
 
 	return EXIT_SUCCESS;
 }
@@ -471,8 +544,8 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 		marcosLibres[i][1] = -1;
 	}
 
-	//TODO SEMAFORO DESDE ACÁ
 	//Recorro la memoria hasta que se termine o la cantidad de marcos libres encontrados satisfaga el pedido
+	//pthread_mutex_lock(&lockTablaPaginas);
 	for (i = 0; cantPosicionesEncontradas < cantRealPaginasSolicitadas; ++i) {
 
 		int marco_candidato = calcularPosicion(pid, i);
@@ -520,6 +593,7 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 	 */
 	char* buffer = malloc(config.marco_size);
 	memset(buffer, '\0', config.marco_size);
+	//pthread_mutex_lock(&lockMemoria);
 	for (i = 0; i < cantRealPaginasSolicitadas; i++) {
 
 		//Si la segunda columna es -1 significa que se el marco es el devuelto por la función hash
@@ -535,9 +609,10 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 			memcpy(memoria + marcosLibres[i][1] * config.marco_size, buffer, config.marco_size);
 		}
 	}
+	//pthread_mutex_unlock(&lockMemoria);
+	//pthread_mutex_unlock(&lockTablaPaginas);
 	free(buffer);
 
-	//TODO SEMAFORO HASTA ACÁ
 	log_info(memoLogger, "inicializarPrograma - Paginas asignadas con éxito");
 
 	return EXIT_SUCCESS;
@@ -557,11 +632,13 @@ bool estaElMarcoReservado(int marcoBuscado, int cantPaginasSolicitadas, int marc
 void obtenerSizeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	int i;
 	int cantLibres = 0;
+	//pthread_mutex_lock(&lockTablaPaginas);
 	for (i = 0; i < config.marcos; i++) {
 		if (tablaPaginasInvertida[i].pid == -10) {
 			cantLibres++;
 		}
 	}
+	//pthread_mutex_unlock(&lockTablaPaginas);
 	log_info(memoConsoleLogger, "obtenerSizeMemoria - Tamaño total de la memoria en frames: %d", config.marcos);
 	log_info(memoConsoleLogger, "obtenerSizeMemoria - Cantidad de frames ocupados: %d", config.marcos - cantLibres);
 	log_info(memoConsoleLogger, "obtenerSizeMemoria - Cantidad de frames libres: %d", cantLibres);
@@ -599,11 +676,13 @@ void obtenerSizePid(tablaPagina_t* tablaPaginasInvertida) {
 	int i;
 	int cantMarcos = 0;
 	log_info(memoLogger, "obtenerSizePid - Se busca pid %d\n", pid);
+	//pthread_mutex_lock(&lockTablaPaginas);
 	for (i = 0; i < config.marcos; i++) {
 		if (tablaPaginasInvertida[i].pid == pid) {
 			cantMarcos++;
 		}
 	}
+	//pthread_mutex_unlock(&lockTablaPaginas);
 	if (cantMarcos == 0) {
 		log_warning(memoConsoleLogger, "El pid %d no se encuentra cargado en memoria!", pid);
 	} else {
@@ -642,7 +721,7 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 			log_info(memoLogger, "Retardo reconfigurado en %d milisegundos", config.retardo_memoria);
 			break;
 		case dumpCache:
-			printf("Codificar dumpCache!\n");
+			realizarDumpMemoriaCache();
 			break;
 		case dumpEstructurasDeMemoria:
 			realizarDumpEstructurasDeMemoria(tablaPaginasInvertida);
@@ -654,7 +733,7 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 			realizarDumpContenidoProceso(tablaPaginasInvertida);
 			break;
 		case flushCache:
-			printf("Codificar flushCache!\n");
+			realizarFlushMemoriaCache();
 			break;
 		case sizeMemoria:
 			obtenerSizeMemoria(tablaPaginasInvertida);
@@ -668,9 +747,155 @@ void escucharConsolaMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	}
 }
 
+void realizarFlushMemoriaCache(){
+
+
+	if(!list_is_empty(entradasOcupadasCache))
+	{
+		list_clean_and_destroy_elements(entradasOcupadasCache,free);
+	}
+
+	if(!list_is_empty(entradasLibresCache))
+	{
+		list_clean_and_destroy_elements(entradasLibresCache,free);
+	}
+
+	list_destroy(entradasOcupadasCache);
+
+	list_destroy(entradasLibresCache);
+
+	free(cache);
+
+	inicializarCache();
+
+	//signal(&semaforoCache);
+
+	printf("Cache limpia\n");
+}
+
+int32_t entradas_Proceso_En_Cache(int32_t unPid)
+{
+	int32_t i = 0;
+	int32_t cantidadEntradasProceso = 0;
+	entradaCache_t* unaEntrada;
+
+	for(i=0;i<list_size(entradasOcupadasCache);i++)
+	{
+		unaEntrada = list_get(entradasOcupadasCache,i);
+		if(unaEntrada->pid == unPid)
+			cantidadEntradasProceso ++;
+	}
+
+	return cantidadEntradasProceso;
+}
+
+int32_t obtener_Indice_Antiguedad_En_Cache(int32_t unPid) {  // Donde 0 es el mas viejo y list_size(entradasOcupadasCache) el mas nuevo.
+
+	int32_t i;
+	entradaCache_t* unaEntrada;
+
+	for(i=0;i<list_size(entradasOcupadasCache);i++)
+	{
+		unaEntrada = list_get(entradasOcupadasCache,i);
+		if((unaEntrada->pid) == unPid)
+			return i;
+	}
+
+	return -1; // Significa que no esta en cache
+}
+
+
+
+void inicializar_Lista_Entradas_Libres_Cache(t_list* entradasLibresCache){
+	int i;
+	entradaCache_t* unaEntrada;
+	for(i=0;i<config.entradas_cache;i++){
+		unaEntrada = malloc(sizeof(entradaCache_t));
+		unaEntrada->pid = -1;
+		unaEntrada->nroPagina = -1;
+		unaEntrada->contenido = cache + i*config.marco_size;
+		list_add(entradasLibresCache, unaEntrada);
+	}
+}
+
+void inicializarCache(){
+	tamanioCache = (config.marco_size * config.entradas_cache);
+	cache = malloc(tamanioCache);
+
+	entradasLibresCache = list_create();
+	entradasOcupadasCache = list_create();
+
+	inicializar_Lista_Entradas_Libres_Cache(entradasLibresCache);
+
+}
+
+bool proceso_Alcanzo_Max_Entradas_Cache(int32_t unPid) {
+
+	return (entradas_Proceso_En_Cache(unPid) == (config.cache_x_proc));
+}
+
+int32_t numero_Entrada_Ocupada_Cache(int32_t unPid, int32_t unNroPag){
+
+	uint32_t i;
+	entradaCache_t* unaEntrada;
+
+	for (i = 0; i < list_size(entradasOcupadasCache); i++) {
+		unaEntrada = list_get(entradasOcupadasCache,i);
+		if ((unaEntrada->pid == unPid) && (unaEntrada->nroPagina == unNroPag))
+			return i;
+	}
+	return -1;
+}
+
+char* solicitarBytesCache(int32_t unPid, int32_t unNroPag, int32_t unOffset, int32_t unTamanio, int32_t unIndiceCache){
+
+	int32_t codResult = EXIT_SUCCESS;
+	entradaCache_t* nuevaEntrada;
+	char* bufferAux = malloc(unTamanio);
+	char* respuesta = malloc(unTamanio + sizeof(int32_t));
+	memset(bufferAux, '\0', unTamanio);
+	memset(respuesta, '\0', unTamanio + sizeof(codResult));
+	nuevaEntrada = list_get(entradasOcupadasCache,unIndiceCache);
+	list_remove(entradasOcupadasCache, unIndiceCache);
+	list_add(entradasOcupadasCache, nuevaEntrada);
+	usleep(config.retardo_memoria * 1000);
+	memcpy(bufferAux,nuevaEntrada->contenido + unOffset, unTamanio);
+	memcpy(respuesta, &codResult,sizeof(codResult));
+	memcpy(respuesta + sizeof(codResult), bufferAux,unTamanio);
+	return respuesta;
+}
+
+void cargar_Nueva_Entrada_En_Cache(int32_t unPid, int32_t unNroPag, tablaPagina_t* tablaPaginasInvertida){
+
+		entradaCache_t* nuevaEntrada;
+		int32_t indice;
+
+		if(proceso_Alcanzo_Max_Entradas_Cache(unPid)){ //Proceso alcanza max cantidad de entradas en cache.
+
+			indice = obtener_Indice_Antiguedad_En_Cache(unPid);
+			nuevaEntrada = list_get(entradasOcupadasCache,indice);
+			list_remove(entradasOcupadasCache,indice);
+		}else{ //Proceso no alcanza max cantidad de entradas en cache.
+			if(! list_is_empty(entradasLibresCache)){ //Nueva entrada en cache. Todavía tengo espacio libre.
+				nuevaEntrada = list_get(entradasLibresCache,0);
+				list_remove(entradasLibresCache,0);
+			}else{//No tengo espacio en cache. Reemplazo por LRU una pag en cache de otro proceso.
+				nuevaEntrada = list_get(entradasOcupadasCache,0);
+				list_remove(entradasOcupadasCache,0);
+			}
+			nuevaEntrada->pid = unPid;
+		}
+		nuevaEntrada->nroPagina = unNroPag;
+		char* buffer = solicitarBytesMemoria(unPid,unNroPag,0,config.marco_size, tablaPaginasInvertida);
+		memcpy(nuevaEntrada->contenido,buffer+sizeof(int32_t),config.marco_size);
+		list_add(entradasOcupadasCache,nuevaEntrada);
+
+}
+
 void atenderHilo(paramHiloDedicado* parametros) {
 	int cantBytesRecibidos;
-	for (;;) {
+	int salir=0;
+	while (!salir) {
 		// Gestionar datos de un cliente. Recibimos el código de acción que quiere realizar.
 		int codAccion;
 		if ((cantBytesRecibidos = recv(parametros->socketClie, &codAccion, sizeof(codAccion), 0)) <= 0) {
@@ -679,10 +904,12 @@ void atenderHilo(paramHiloDedicado* parametros) {
 				// conexión cerrada
 				log_error(memoLogger, "atenderHilo - Server: socket %d termino la conexion", parametros->socketClie);
 				close(parametros->socketClie);
+				salir=true;
 				break;
 			} else {
 				log_error(memoLogger, "Se ha producido un error en el Recv");
 				perror("Se ha producido un error en el Recv");
+				salir=true;
 				break;
 			}
 		} else {
@@ -691,9 +918,20 @@ void atenderHilo(paramHiloDedicado* parametros) {
 			pedidoBytesMemoria_t pedidoBytes;
 			pedidoAlmacenarBytesMemoria_t pedidoAlmacenarBytes;
 			char* bytesSolicitados;
-			int resultAccion;
-			int pidAFinalizar;
-			int pagALiberar;
+
+			int32_t resultAccion;
+			int32_t pidAFinalizar;
+			int32_t pagALiberar;
+			int32_t indiceCache;
+			//int32_t indicePidEnCache;
+			//entradaCache_t* entradaCache;
+			//entradaCache_t* entradaCacheAntigua;
+			//entradaCache_t* entradaLibre;
+
+			/*//Función para el closure de find
+			bool _soy_pid_buscado_en_cache(entradaCache_t *p) {
+			return p->pid == pedidoBytes.pid;
+			}*/
 
 			switch (codAccion) {
 
@@ -739,27 +977,57 @@ void atenderHilo(paramHiloDedicado* parametros) {
 						pedidoAlmacenarBytes.pedidoBytes.tamanio,
 						pedidoAlmacenarBytes.buffer,
 						parametros->tablaPaginasInvertida);
+
 				log_info(memoLogger, "atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: %d", resultAccion);
 				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
+
+				//VERIFICO SI EXISTE DATA EN CACHE
+				if ((indiceCache = numero_Entrada_Ocupada_Cache(pedidoBytes.pid,pedidoBytes.nroPagina)) != -1){ //Esta en cache. Hay que actualizarla.
+					cargar_Nueva_Entrada_En_Cache(pedidoBytes.pid,pedidoBytes.nroPagina,parametros->tablaPaginasInvertida); //Decisión de diseño: Si actualizó páginas en MR también actualizó cache, por lo que esta utilizando la entrada y sería la última entrada utilizada (última en la cola))
+				}
 				free(pedidoAlmacenarBytes.buffer);
 				break;
 
 			case solicitarBytesAccion:
-				recv(parametros->socketClie, &pedidoBytes, sizeof(pedidoBytes),0);
+
+				recv(parametros->socketClie, &pedidoBytes, sizeof(pedidoBytes), 0);
 				log_info(memoLogger, "atenderHilo[solicitarBytesAccion] - Recibida solicitud de %d bytes para el pid %d en su página %d con un offset de %d",
-						pedidoBytes.tamanio, pedidoBytes.pid,
-						pedidoBytes.nroPagina, pedidoBytes.offset);
+									pedidoBytes.tamanio, pedidoBytes.pid,
+									pedidoBytes.nroPagina, pedidoBytes.offset);
 				log_info(memoLogger, "atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes");
-				bytesSolicitados = solicitarBytes(pedidoBytes.pid,
+
+				//VERIFICO SI EXISTE DATA EN CACHE
+					if ((indiceCache = numero_Entrada_Ocupada_Cache(pedidoBytes.pid,pedidoBytes.nroPagina)) != -1){ //Tenia data en cache
+						bytesSolicitados = solicitarBytesCache(pedidoBytes.pid,pedidoBytes.nroPagina,pedidoBytes.offset,pedidoBytes.tamanio, indiceCache);
+						send(parametros->socketClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), 0);
+						free(bytesSolicitados);
+
+						break;
+
+					}else{ //Voy a buscar la data a memoria. Cargo una nueva entrada en cache.
+						bytesSolicitados = solicitarBytesMemoria(pedidoBytes.pid, pedidoBytes.nroPagina, pedidoBytes.offset, pedidoBytes.tamanio, parametros->tablaPaginasInvertida);
+						memcpy(&resultAccion, bytesSolicitados, sizeof(resultAccion));
+						send(parametros->socketClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), 0);
+						cargar_Nueva_Entrada_En_Cache(pedidoBytes.pid,pedidoBytes.nroPagina,parametros->tablaPaginasInvertida);
+						free(bytesSolicitados);
+
+						break;
+
+					}
+
+				/*printf("Se procede a solicitar bytes\n");
+				bytesSolicitados = solicitarBytesMemoria(pedidoBytes.pid,
 						pedidoBytes.nroPagina, pedidoBytes.offset,
 						pedidoBytes.tamanio, parametros->tablaPaginasInvertida);
 				memcpy(&resultAccion, bytesSolicitados, sizeof(resultAccion));
 				log_info(memoLogger, "atenderHilo[solicitarBytesAccion] - Solicitud de solicitar bytes terminó con resultado de acción: %d", resultAccion);
 				log_info(memoLogger, "atenderHilo[solicitarBytesAccion] - Solicitar bytes devolvió los Bytes solicitados: %s",
-						bytesSolicitados + sizeof(resultAccion));
-				send(parametros->socketClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), 0);
+										bytesSolicitados + sizeof(resultAccion));
+				send(parametros->socketClie, bytesSolicitados,
+						pedidoBytes.tamanio + sizeof(resultAccion), 0);
 				free(bytesSolicitados);
-				break;
+
+				break;*/
 
 			case finalizarProgramaAccion:
 				recv(parametros->socketClie, &pidAFinalizar, sizeof(pidAFinalizar), 0);
@@ -802,37 +1070,23 @@ void atenderHilo(paramHiloDedicado* parametros) {
 	}
 }
 
-int main(void) {
+void inicializarLog() {
+	char* filepath = string_new();
+	string_append(&filepath, directorioOutputMemoria);
+	string_append(&filepath, "/");
+	string_append(&filepath, memoriaLogFileName);
+	memoLogger = log_create(string_from_format("%s.log", filepath), "Memoria", false, LOG_LEVEL_INFO);
+	memoConsoleLogger = log_create(string_from_format("%s.log", filepath), "Memoria", true, LOG_LEVEL_INFO);
+}
 
-	struct stat st = {0};
-	if (stat("output", &st) == -1) {
-	    mkdir("output", 0700);
-	}
-
-	char* filename = string_new();
-	string_append(&filename, directorioOutputMemoria);
-	string_append(&filename, "/");
-	string_append(&filename, "memoria");
-	memoLogger = log_create(string_from_format("%s.log",filename),"Memoria",false,LOG_LEVEL_INFO);
-	memoConsoleLogger = log_create(string_from_format("%s.log",filename),"Memoria",true,LOG_LEVEL_INFO);
-
-	//Setea config_t config
-	cargarConfigFile();
-
-	/***********************************************************/
-
-	//Inicializacion tabla de páginas invertida
-	tablaPagina_t tablaPaginasInvertida[config.marcos];
-	tamanioTablaPagina = config.marcos * sizeof(tablaPagina_t);
-
-
+void inicializarTablaPaginas(tablaPagina_t tablaPaginasInvertida[config.marcos]) {
 	if (tamanioTablaPagina % config.marco_size == 0) {
 		cantMarcosOcupaTablaPaginas = (tamanioTablaPagina / config.marco_size);
 	} else {
 		cantMarcosOcupaTablaPaginas = (tamanioTablaPagina / config.marco_size) + 1;
 	}
-	log_info(memoLogger, "Cantidad de marcos que ocupa la tabla de páginas invertida: %d", cantMarcosOcupaTablaPaginas);
-
+	log_info(memoLogger, "Cantidad de marcos que ocupa la tabla de páginas invertida: %d",
+			cantMarcosOcupaTablaPaginas);
 	int i;
 	for (i = 0; i < config.marcos; ++i) {
 		//Si son los primeros espacios, ya está ocupada por la tabla de páginas invertida
@@ -845,15 +1099,65 @@ int main(void) {
 		}
 	}
 	log_info(memoLogger, "Tabla de páginas invertida inicializada");
-	//Fin inicialización tabla de páginas invertida
+}
+
+void inicializarMutex() {
+	//pthread_mutex_init(&lockMemoria, NULL);
+	//pthread_mutex_init(&lockTablaPaginas, NULL);
+	//pthread_mutex_init(&lockColisiones, NULL);
+}
+
+void finalizar() {
+	log_destroy(memoLogger);
+	log_destroy(memoConsoleLogger);
+	//pthread_mutex_destroy(&lockMemoria);
+	//pthread_mutex_destroy(&lockTablaPaginas);
+	//pthread_mutex_destroy(&lockColisiones);
+	free(memoria);
+}
+
+void sig_handler(int signo) {
+  if (signo == SIGINT) {
+	  printf("SIGINT interceptado. Finalizando... \n");
+	  //TODO IMPLEMENTAR LO NECESARIO PARA NO ROMPER A LOS OTROS PROCESOS
+	  exit(EXIT_SUCCESS);
+  }
+}
+
+int main(void) {
+
+	if (signal(SIGINT, sig_handler) == SIG_ERR)
+	  printf("Error al interceptar SIGINT\n");
+
+	/***********************************************************
+	***Si no existe el directorio de output lo crea*************/
+	struct stat st = {0};
+	if (stat(directorioOutputMemoria, &st) == -1) {
+	    mkdir(directorioOutputMemoria, 0700);
+	}
+	/***********************************************************/
+
+	inicializarLog();
+
+	/***********************************************************/
+	//Setea config_t config
+	cargarConfigFile();
 
 	/***********************************************************/
 
+	//Inicializacion tabla de páginas invertida
+	tablaPagina_t tablaPaginasInvertida[config.marcos];
+	tamanioTablaPagina = config.marcos * sizeof(tablaPagina_t);
+
+
+	inicializarTablaPaginas(tablaPaginasInvertida);
+	//Fin inicialización tabla de páginas invertida
+
+	/***********************************************************/
 	//Inicialización Overflow Tabla Páginas
 	inicializarOverflow(config.marcos);
 
 	/***********************************************************/
-
 	//Inicialización memoria
 	tamanioMemoria = config.marco_size * config.marcos;
 	log_info(memoLogger, "Inicializando la memoria de %d bytes", tamanioMemoria);
@@ -862,6 +1166,14 @@ int main(void) {
 	memcpy(memoria, tablaPaginasInvertida, tamanioTablaPagina);
 	//Fin inicialización memoria
 	log_info(memoLogger, "Memoria inicializada");
+
+	/***********************************************************/
+	//Inicialización memoria caché
+
+	inicializarCache();
+
+	/***********************************************************/
+	inicializarMutex();
 
 	/***********************************************************/
 
@@ -898,7 +1210,6 @@ int main(void) {
 
 		}
 	}
-	log_destroy(memoLogger);
-	log_destroy(memoConsoleLogger);
-	free(memoria);
+
+	finalizar();
 }

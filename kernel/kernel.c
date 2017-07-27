@@ -321,14 +321,13 @@ void Colocar_en_respectivo_fdset() {
 		break;
 
 	case soyCPU:
-
-		FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
-		encolarCPU(colaCPU, sockClie);
-		enviar_algoritmo_a_cpu();
-
-		break;
-		printf("Se ha conectado un nuevo CPU  \n");
+			FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
+			encolarCPU(colaCPU, sockClie);
+			enviar_algoritmo_a_cpu();
+			printf("Se ha conectado un nuevo CPU  \n");
+			break;
 	}
+
 	if (sockClie > maxFd) {
 		maxFd = sockClie;
 	}
@@ -352,7 +351,7 @@ void conexion_de_cliente_finalizada() {
 
 	} else {
 		FD_CLR(fdCliente, &bolsaCpus);
-		printf("Se desconecto cpu del socket %d", fdCliente);
+		printf("Se desconecto cpu del socket %d\n", fdCliente);
 	    colaCPU = queue_remove(colaCPU, fdCliente);
 		liberar_procesos_de_cpu(fdCliente, listaDeProcesos);
 	}
