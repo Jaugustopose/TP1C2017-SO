@@ -21,12 +21,6 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-pthread_t hiloPrograma;
-pthread_mutex_t mutexCreaPrograma;
-pthread_mutex_t mutexA;
-pthread_mutex_t mutexB;
-int kernelSock;
-
 typedef struct configuracion{
 	char* IP_KERNEL;
 	int PUERTO_KERNEL;
@@ -51,6 +45,12 @@ config_t config;
 char path[200];
 FILE* programa;
 struct sockaddr_in dirKernel;
+t_dictionary* infoThreads;
+
+typedef struct{
+	int socket;
+	pthread_t threadId;
+}infoThread_t;
 
 t_list* listaPIDs;
 char* programasExec;
