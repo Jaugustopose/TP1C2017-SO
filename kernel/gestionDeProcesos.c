@@ -190,6 +190,9 @@ void cambiarEstado(t_proceso* proceso, int estado) {
 	legalidad = matrizEstados[proceso->estado][estado];
 	if (legalidad) {
 
+		if (estado == BLOCK){
+			//queue_push(colaReady, proceso);
+		}
 		if (estado == READY){
 			queue_push(colaReady, proceso);
 		}
@@ -281,11 +284,11 @@ void expulsarProceso(t_proceso* proceso) {
 
 	actualizarPCB(proceso, pcb);
 
-		if (!proceso->abortado){
-			cambiarEstado(proceso, READY);
-		}else{
-			finalizarProceso(proceso);
-		}
+	if (proceso->abortado){
+		finalizarProceso(proceso);
+	}else if(proceso->estado == EXEC){
+		cambiarEstado(proceso, READY);
+	}
 	desasignarCPU(proceso);
 
 	proceso->rafagas = 0;
@@ -406,9 +409,13 @@ void recibirFinalizacion(int cliente) {
 	t_proceso* proceso = obtenerProceso(cliente);
 	if (proceso != NULL) {
 		proceso->PCB = recibirPCBDeCPU(cliente);
+		finalizarProceso(proceso);
 		if (!proceso->abortado)
 		{
-			finalizarProceso(proceso);
+			//TODO: Avisar a consola finalizacion OK
+
+		}else{
+			//TODO: Avisar a consola finalizacion NOK proceso->PCB->exitCode
 		}
 	}
 }

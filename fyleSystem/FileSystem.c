@@ -265,6 +265,7 @@ int crearArchivo(char *path)
 {
 	int *bloque = buscarBloquesLibres(1);
 	if(bloque == NULL){
+		log_error(debugLog, "No hay bloques libres para crear un archivo");
 		return -1;
 	}
 	char *pat = string_new();
@@ -482,10 +483,10 @@ void sockets(){
 						recv(sockClie, &largoPath, sizeof(largoPath), 0);
 						path = malloc(largoPath);
 						recv(sockClie, path, largoPath, 0);
-						res = validarArchivo(path);
-						send(sockClie, &res, sizeof(res),0);
 						log_debug(debugLog, ANSI_COLOR_YELLOW "ABRIR");
 						log_debug(debugLog, "Path: %s", path);
+						res = validarArchivo(path);
+						send(sockClie, &res, sizeof(res),0);
 						free(path);
 						break;
 
@@ -493,10 +494,10 @@ void sockets(){
 						recv(sockClie, &largoPath, sizeof(largoPath), 0);
 						path = malloc(largoPath);
 						recv(sockClie, path, largoPath, 0);
-						res = borrarArchivo(path);
-						send(sockClie, &res, sizeof(res),0);
 						log_debug(debugLog, ANSI_COLOR_YELLOW "BORRAR");
 						log_debug(debugLog, "Path: %s", path);
+						res = borrarArchivo(path);
+						send(sockClie, &res, sizeof(res),0);
 						free(path);
 						break;
 
@@ -504,10 +505,10 @@ void sockets(){
 						recv(sockClie, &largoPath, sizeof(largoPath), 0);
 						path = malloc(largoPath);
 						recv(sockClie, path, largoPath, 0);
-						res = crearArchivo(path);
-						send(sockClie, &res, sizeof(res),0);
 						log_debug(debugLog, ANSI_COLOR_YELLOW "CREAR");
 						log_debug(debugLog, "Path: %s", path);
+						res = crearArchivo(path);
+						send(sockClie, &res, sizeof(res),0);
 						free(path);
 						break;
 
