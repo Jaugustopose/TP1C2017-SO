@@ -284,7 +284,9 @@ void enviarSolicitudBytes(int32_t pid, int32_t pagina, int32_t offset, int32_t s
 
 				log_debug(debugLog, ANSI_COLOR_RED "OVERFLOW!");
 				ejecutando= false;
+				ejecucionInterrumpida = true;
 				lanzar_excepcion(pcbNuevo, ERROR_MEMORIA);
+				error = true;
 			}
 
     	free(solicitud);
@@ -322,8 +324,9 @@ void enviarAlmacenarBytes(int32_t pid, int32_t pagina, int32_t offset, int32_t s
 			log_debug(debugLog, ANSI_COLOR_RED "OVERFLOW!");
 			ejecutando = false;
 			ejecucionInterrumpida = true;
+			error = true;
 			lanzar_excepcion(pcbNuevo, overflow);
-			finalizar_proceso(false, true);
+
 		}
 
      free(solicitud);
@@ -440,27 +443,27 @@ int32_t sentenciaNoFinaliza(char* sentencia){
 		&& strcmp(sentencia,"\t\tend")!=0;
 }
 
-void finalizar_proceso(bool terminaNormalmente, bool error)
+void finalizar_proceso(bool terminaNormalmente)
 {
 	if(terminaNormalmente)
 	{
 		log_debug(debugLog, ANSI_COLOR_GREEN "El proceso ansisop ejecutó su última instrucción." ANSI_COLOR_RESET);
 
-		pcbNuevo->exitCode = FIN_PROGRAMA;
+		pcbNuevo->exitCode = FINALIZO_CORRECTAMENTE;
 		serializar_PCB(pcbNuevo, kernel, accionFinProceso);
 
 	}else
 	{
 		if(error)
 		{
-			log_debug(debugLog, ANSI_COLOR_RED "El proceso ansisop finaliza por un error en el programa." ANSI_COLOR_RESET);
-			serializar_PCB(pcbNuevo, kernel, accionError);
+				log_debug(debugLog, ANSI_COLOR_RED "El proceso ansisop finaliza por un error en el programa." ANSI_COLOR_RESET);
+				serializar_PCB(pcbNuevo, kernel, accionError);
+		}else{
 
-		}else
-		{
 			log_debug(debugLog, ANSI_COLOR_GREEN "El proceso ansisop finaliza por SIGUSR1" ANSI_COLOR_RESET);
 			serializar_PCB(pcbNuevo, kernel, accionQuantumInterrumpido);
 		}
+
 	}
 
 
@@ -491,8 +494,7 @@ void parsear(char* sentencia)
 		}
 		else
 		{
-			bool terminaNormalmente = true;
-			finalizar_proceso(terminaNormalmente, error);
+			finalizar_proceso(true);
 		}
 }
 
@@ -608,7 +610,7 @@ void handler(int32_t sign) {
 //			send(kernel, buffer, sizeof(codAccion), 0);
 
 			serializar_PCB(pcbNuevo, kernel, accionQuantumInterrumpido);
-			finalizar_proceso(true, false);
+			finalizar_proceso(true);
 			finalizar_todo();
 
 		}else{
