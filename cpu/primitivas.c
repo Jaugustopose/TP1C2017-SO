@@ -714,7 +714,7 @@ void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valo
 
 	int res;
 	recv(kernel, &res, sizeof(int32_t),0);
-	if(res != 1)
+	if(res == 1)
 	{
 		char *recibido = malloc(tamanio);
 		recv(kernel, recibido, tamanio, 0);

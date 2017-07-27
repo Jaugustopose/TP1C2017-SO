@@ -409,10 +409,25 @@ void obtenerSentencia(int32_t* tamanio)
 
 }
 
+bool _esEspacio(char caracter){
+	return caracter==' ' || caracter=='\t' || caracter=='\f' || caracter=='\r' || caracter=='\v';
+}
+
+char* _string_trim(char* texto){
+    int i;
+    while (_esEspacio (*texto)) texto++;   //Anda a el primer no-espacio
+    for (i = strlen (texto) - 1; i>0 && (_esEspacio (texto[i])); i--);   //y de atras para adelante
+    texto[i + 1] = '\0';
+    return texto;
+}
+
 int32_t sentenciaNoFinaliza(char* sentencia){
-	return strcmp(sentencia,"end")!=0
-		&& strcmp(sentencia,"\tend")!=0
-		&& strcmp(sentencia,"\t\tend")!=0;
+	char *linea, *lineaTemporal = linea = strdup( sentencia );
+	linea = strdup( _string_trim(linea) );
+	int32_t retorno = string_starts_with(linea, "end");
+	free(lineaTemporal);
+	free(linea);
+	return !retorno;
 }
 
 void finalizar_proceso(bool terminaNormalmente)
