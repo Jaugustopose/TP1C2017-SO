@@ -116,6 +116,9 @@ void cargarConfiguracion() {
 		}
 }
 
+
+
+
 void enviar_stack_size(int sock)
 {
 	int codigoAccion = accionEnviarStackSize;
@@ -151,9 +154,11 @@ void inicializarContexto() {
 
 	colaCPU = queue_create();
 	colaNew = queue_create();
+	colaBlock = queue_create();
 	colaReady = queue_create();
 	colaExit = queue_create();
 	listaEjecucion = list_create();
+	planificacionDetenida = 0;
 
 }
 
@@ -255,17 +260,6 @@ void comprobarSockets(int maxSock, fd_set* read_fds) {
 		perror("select");
 		exit(1);
 	}
-}
-
-void interactuar_con_usuario() {
-
-	printf(
-				"--------------Configuración cargada exitosamente--------------\n\n");
-		printf("Seleccione la opción que desee realizar:\n"
-				"1) Listado de procesos del sistema\n"
-				"2) Finalizar un proceso\n"
-				"3) Consultar estado de un proceso\n"
-				"4) Detener planificación\n");
 }
 
 void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProcesos) {
@@ -646,7 +640,6 @@ void procesarCambiosConfiguracion(){
 	}
 }
 
-
 /************************************** MAIN ****************************************************************/
 
 
@@ -657,7 +650,9 @@ int main(void) {
 	identificadorProceso = 0;
 	yes = 1;
 	cargarConfiguracion();
+	crearLog(string_from_format("kernel_%d", getpid()), "KERNEL", 1);
 	inicializarContexto();
+
 
 	//Crear socket. Dejar reutilizable. Crear direccion del servidor. Bind. Listen.
 	sockServ = crearSocket();
@@ -699,6 +694,10 @@ int main(void) {
 	//pthread_t hiloInteraccionUsuario;
 	//pthread_create(&hiloInteraccionUsuario, NULL,
 	//		(void*) interactuar_con_usuario, NULL);
+
+	//Abrimos hilo para escuchar al usuario desde la consola
+	pthread_t hiloConsolaKernal;
+	pthread_create(&hiloConsolaKernal, NULL, (void*)escucharConsolaKernel, NULL);
 
 	//Bucle principal
 	for (;;) {

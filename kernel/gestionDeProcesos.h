@@ -7,6 +7,7 @@ void transformarCodigoToMetadata(t_proceso* proceso);
 t_PCB* crearPCB(t_proceso* proceso, int32_t cantidadDePaginas);
 
 
+void escucharConsolaKernel();
 void desasignarCPU(t_proceso* proceso);
 t_proceso* buscarProcesoPorPID(int PID);
 t_proceso* obtenerProceso(int cliente);
@@ -32,7 +33,7 @@ void asignarCPU(t_proceso* proceso, int cpu);
 void ejecutarProceso(t_proceso* proceso, int cpu);
 void recibirFinalizacion(int cliente);
 void recibirAccionDelUsuarioKernel(int32_t orden);
-void modificarGradoDeMultiprogramacion(int nuevoGradoMulti);
+void modificarGradoDeMultiprogramacion();
 void queue_iterate(t_queue* self, void (*closure)(void*));
 void imprimirPIDenCola(t_proceso* procesoEnCola);
 void imprimirPIDenLista(t_proceso* procesoEnLista);
@@ -51,6 +52,7 @@ void imprimirAlocacionPaginasHeap();
 void liberacionHEAPPorProceso(t_proceso* unProceso);
 void imprimirLiberacionPaginasHeap();
 void imprimirTablaGlobalDeArchivos(int pid);
+
 
 
 #endif /* GESTIONDEPROCESOS_H_ */

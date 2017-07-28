@@ -70,9 +70,8 @@ t_config* configKernel;
 config_t config;
 
 typedef enum t_proceso_estado {
-	NEW, READY, EXEC, BLOCK, EXIT
+	NEW, READY, EXEC, BLOCK, EXIT, ALL
 }t_proceso_estado;
-
 
 typedef struct t_consola{
 	int32_t consolaID;
@@ -103,6 +102,7 @@ int identificadorProceso;
 int memoria; //NECESITO GUARDAR EL FD DE MEMORIA ACA PARA LLAMARLO SIEMPRE QUE QUIERA
 int socketFS;
 int cambiosConfiguracion;
+int planificacionDetenida;
 
 t_list* listaDeProcesos;
 t_queue* colaNew;
@@ -117,14 +117,15 @@ t_dictionary* tablaSemaforos;
 
 char* strCola;
 char* strLista;
-char* strRafagas;
-char* strPrivilegiadas;
-char* strPaginasHeapAlocar;
-char* strPaginasHeapLiberar;
-char* strAlocar;
 char* strLiberar;
 char* strBytesAlocados;
 char* stryBytesLiberados;
+
+//Prototipos
+
+void imprimir(t_proceso_estado estado);
+void enviarPCBaCPU(t_PCB* pcb, int cpu, int32_t accion);
+
 
 
 #endif
