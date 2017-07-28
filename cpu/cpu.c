@@ -55,8 +55,8 @@ char* lecturaLargoMensajeASerializar(int32_t sock){
 void enviarLargoMensajeASerializar(int32_t sock, int32_t largo, char* mensaje){
 
 	char* serialLargo = intToChar4(largo);
-	send(sock,serialLargo, sizeof(int32_t), 0);
-	send(sock, mensaje, largo, 0);
+	send(sock,serialLargo, sizeof(int32_t), MSG_WAITALL);
+	send(sock, mensaje, largo, MSG_WAITALL);
 
 	free(serialLargo);
 }
@@ -94,6 +94,7 @@ void sacarSaltoDeLinea(char* texto, int32_t ultPos){
 
 void cargarConfiguracion(char* path)
 {
+	printf("Path ingresado: %s\n", path);
 	/*char* pat = string_new();
 		char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 		string_append(&pat, getcwd(cwd, sizeof(cwd)));
@@ -161,7 +162,7 @@ void conectarConKernel() {
 	connect_w(kernel, &dirKernel);
 	log_debug(debugLog,"Conectado a Kernel");
 
-	send(kernel,&identidadCpu, sizeof(int32_t),0);
+	send(kernel,&identidadCpu, sizeof(int32_t),MSG_WAITALL);
 	recv(kernel, &algoritmo, sizeof(int32_t), MSG_WAITALL);
 	log_debug(debugLog,"Algoritmo: %d", algoritmo);
 
@@ -243,7 +244,7 @@ void enviarSolicitudBytes(int32_t pid, int32_t pagina, int32_t offset, int32_t s
 	int32_t tamanio = sizeof(codAccion) + sizeof(pedidoBytesMemoria_t);
 
 
-	send(memoria, solicitud, tamanio, 0);
+	send(memoria, solicitud, tamanio, MSG_WAITALL);
 
 	char* stackOverflow = malloc(sizeof(int32_t));
 	int32_t bytesRecibidos = recv(memoria, stackOverflow, sizeof(int32_t), MSG_WAITALL);
@@ -282,7 +283,7 @@ void enviarAlmacenarBytes(int32_t pid, int32_t pagina, int32_t offset, int32_t s
 	memcpy(solicitud + sizeof(codAccion), &pedido, sizeof(pedidoAlmacenarBytesMemoria_t));
 	int32_t tamanio = sizeof(codAccion) + sizeof(pedidoAlmacenarBytesMemoria_t);
 
-	send(memoria, solicitud, tamanio, 0);
+	send(memoria, solicitud, tamanio, MSG_WAITALL);
 
 	char* stackOverflow = malloc(sizeof(int32_t));
 	recv(memoria, stackOverflow, sizeof(int32_t), MSG_WAITALL);
@@ -463,7 +464,7 @@ void parsear(char* sentencia)
 			int32_t codAccion = accionFinInstruccion;
 			void* buffer = malloc(sizeof(int32_t));
 			memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
-			send(kernel, buffer, sizeof(codAccion), 0);
+			send(kernel, buffer, sizeof(codAccion), MSG_WAITALL);
 		}
 
 	}else{
@@ -552,8 +553,8 @@ void esperarProgramas()
 int32_t obtenerTamanioPagina(int32_t memoria) {
 	int32_t valorRecibido;
 	int32_t idMensaje = 6;
-	send(memoria, &idMensaje, sizeof(int32_t), 0);
-	recv(memoria, &valorRecibido, sizeof(int32_t), 0);
+	send(memoria, &idMensaje, sizeof(int32_t), MSG_WAITALL);
+	recv(memoria, &valorRecibido, sizeof(int32_t), MSG_WAITALL);
 
 	return valorRecibido;
 }

@@ -424,10 +424,10 @@ int guardarDatos(char *path, int offset, int size, void* buffer)
 
 int verificarIdentidad(){
 	int identidad;
-	recv(sockClie, &identidad, sizeof(int), 0);
+	recv(sockClie, &identidad, sizeof(int), MSG_WAITALL);
 	if(identidad==SOYKERNEL){
 		int res = SOYFS;
-		send(sockClie, &res, sizeof(res),0);
+		send(sockClie, &res, sizeof(res),MSG_WAITALL);
 		return 1;
 	}
 	return 0;
@@ -460,7 +460,7 @@ void sockets(){
 			for (;;) {
 				// Gestionar datos de un cliente. Recibimos el código de acción que quiere realizar.
 				int codAccion;
-				if ((cantBytesRecibidos = recv(sockClie, &codAccion, sizeof(int), 0)) <= 0) {
+				if ((cantBytesRecibidos = recv(sockClie, &codAccion, sizeof(int), MSG_WAITALL)) <= 0) {
 					// error o conexión cerrada por el cliente
 					if (cantBytesRecibidos == 0) {
 						// conexión cerrada
@@ -485,44 +485,44 @@ void sockets(){
 					switch (codAccion) {
 
 					case accionAbrirArchivo:
-						recv(sockClie, &largoPath, sizeof(largoPath), 0);
+						recv(sockClie, &largoPath, sizeof(largoPath), MSG_WAITALL);
 						path = malloc(largoPath);
-						recv(sockClie, path, largoPath, 0);
+						recv(sockClie, path, largoPath, MSG_WAITALL);
 						log_debug(debugLog, ANSI_COLOR_YELLOW "ABRIR");
 						log_debug(debugLog, "Path: %s", path);
 						res = validarArchivo(path);
-						send(sockClie, &res, sizeof(res),0);
+						send(sockClie, &res, sizeof(res), MSG_WAITALL);
 						free(path);
 						break;
 
 					case accionBorrarArchivo:
-						recv(sockClie, &largoPath, sizeof(largoPath), 0);
+						recv(sockClie, &largoPath, sizeof(largoPath), MSG_WAITALL);
 						path = malloc(largoPath);
-						recv(sockClie, path, largoPath, 0);
+						recv(sockClie, path, largoPath, MSG_WAITALL);
 						log_debug(debugLog, ANSI_COLOR_YELLOW "BORRAR");
 						log_debug(debugLog, "Path: %s", path);
 						res = borrarArchivo(path);
-						send(sockClie, &res, sizeof(res),0);
+						send(sockClie, &res, sizeof(res),MSG_WAITALL);
 						free(path);
 						break;
 
 					case accionCrearArchivo:
-						recv(sockClie, &largoPath, sizeof(largoPath), 0);
+						recv(sockClie, &largoPath, sizeof(largoPath), MSG_WAITALL);
 						path = malloc(largoPath);
-						recv(sockClie, path, largoPath, 0);
+						recv(sockClie, path, largoPath, MSG_WAITALL);
 						log_debug(debugLog, ANSI_COLOR_YELLOW "CREAR");
 						log_debug(debugLog, "Path: %s", path);
 						res = crearArchivo(path);
-						send(sockClie, &res, sizeof(res),0);
+						send(sockClie, &res, sizeof(res),MSG_WAITALL);
 						free(path);
 						break;
 
 					case accionObtenerDatosArchivo:
-						recv(sockClie, &largoPath, sizeof(largoPath), 0);
+						recv(sockClie, &largoPath, sizeof(largoPath), MSG_WAITALL);
 						path = malloc(largoPath);
-						recv(sockClie, path, largoPath, 0);
-						recv(sockClie, &offset, sizeof(offset), 0);
-						recv(sockClie, &size, sizeof(size), 0);
+						recv(sockClie, path, largoPath, MSG_WAITALL);
+						recv(sockClie, &offset, sizeof(offset), MSG_WAITALL);
+						recv(sockClie, &size, sizeof(size), MSG_WAITALL);
 
 						log_debug(debugLog, ANSI_COLOR_YELLOW "LEER");
 						log_debug(debugLog, "Path: %s | Offset: %d | Size: %d", path, offset, size);
@@ -530,11 +530,11 @@ void sockets(){
 						datos = obtenerDatos(path, offset, size);
 						if(datos==NULL){
 							int error = -1;
-							send(sockClie, &error, sizeof(int),0);
+							send(sockClie, &error, sizeof(int),MSG_WAITALL);
 						}else{
 							int error = 1;
-							send(sockClie, &error, sizeof(int),0);
-							send(sockClie, datos, size,0);
+							send(sockClie, &error, sizeof(int), MSG_WAITALL);
+							send(sockClie, datos, sizeof(int), MSG_WAITALL);
 							printf("Datos leidos: ");
 							texto = datos;
 							for (i = 0; i < size; ++i) {
@@ -549,13 +549,13 @@ void sockets(){
 						break;
 
 					case accionEscribir:
-						recv(sockClie, &largoPath, sizeof(largoPath), 0);
+						recv(sockClie, &largoPath, sizeof(largoPath), MSG_WAITALL);
 						path = malloc(largoPath);
-						recv(sockClie, path, largoPath, 0);
-						recv(sockClie, &offset, sizeof(offset), 0);
-						recv(sockClie, &size, sizeof(size), 0);
+						recv(sockClie, path, largoPath, MSG_WAITALL);
+						recv(sockClie, &offset, sizeof(offset), MSG_WAITALL);
+						recv(sockClie, &size, sizeof(size), MSG_WAITALL);
 						datos = malloc(size);
-						recv(sockClie, datos, size, 0);
+						recv(sockClie, datos, size, MSG_WAITALL);
 
 						log_debug(debugLog, ANSI_COLOR_YELLOW "ESCRIBIR");
 						log_debug(debugLog, "Path: %s | Offset: %d | Size: %d", path, offset, size);
@@ -570,7 +570,7 @@ void sockets(){
 
 						res = guardarDatos(path, offset, size, datos);
 						free(datos);
-						send(sockClie, &res, sizeof(res),0);
+						send(sockClie, &res, sizeof(res),MSG_WAITALL);
 						free(path);
 						break;
 
@@ -579,7 +579,7 @@ void sockets(){
 						log_debug(debugLog, ANSI_COLOR_YELLOW "OPERACION DESCONOCIDA");
 						log_debug(debugLog, "Codigo de accion: %d", codAccion);
 						resultAccion = -13;
-						send(sockClie, &resultAccion, sizeof(resultAccion), 0);
+						send(sockClie, &resultAccion, sizeof(resultAccion), MSG_WAITALL);
 					}
 				}
 			}

@@ -218,7 +218,7 @@ void continuarProceso(t_proceso* proceso) {
 	memcpy(buffer, &codAccion, sizeof(codAccion));
 	memcpy(buffer + sizeof(codAccion), &quantum, sizeof(quantum)); //QUANTUM_sleep
 
-    send(proceso->CpuDuenio, buffer, sizeof(codAccion) + sizeof(quantum), 0);
+    send(proceso->CpuDuenio, buffer, sizeof(codAccion) + sizeof(quantum), MSG_WAITALL);
 
 	proceso->rafagas++;
 
@@ -265,7 +265,7 @@ void expulsarProceso(t_proceso* proceso) {
 	void* buffer = malloc(sizeof(int));
 	memcpy(buffer, &codAccion, sizeof(codAccion)); //CODIGO DE ACCION
 
-	send(proceso->CpuDuenio, buffer, sizeof(codAccion), 0);
+	send(proceso->CpuDuenio, buffer, sizeof(codAccion), MSG_WAITALL);
 
 	int tamanio;
 	recv(proceso->CpuDuenio, &codAccion, sizeof(codAccion), MSG_WAITALL);
@@ -302,7 +302,7 @@ void liberarRecursos(t_proceso* proceso)
 	memcpy(buffer, &codAccion, sizeof(codAccion));
 	memcpy(buffer + sizeof(codAccion), &pidParaLiberar, sizeof(pidParaLiberar));
 
-	send(memoria, buffer, sizeof(int32_t)*2, 0);
+	send(memoria, buffer, sizeof(int32_t)*2, MSG_WAITALL);
 	recv(memoria, &result, sizeof(int32_t), MSG_WAITALL);
 
 }
@@ -413,14 +413,14 @@ void recibirFinalizacion(int cliente) {
 		if (!proceso->abortado)
 		{
 			int32_t codigo = accionConsolaFinalizarNormalmente;
-			send(proceso->ConsolaDuenio,&codigo,sizeof(codigo),0);
+			send(proceso->ConsolaDuenio,&codigo,sizeof(codigo),MSG_WAITALL);
 
 		}else{
 			void* buffer = malloc(sizeof(int32_t)*2);
 			int32_t codigo = accionConsolaFinalizarErrorInstruccion;
 			memcpy(buffer,&codigo,sizeof(int32_t));
 			memcpy(buffer + sizeof(int32_t),&proceso->PCB->exitCode,sizeof(int32_t));
-			send(proceso->ConsolaDuenio,buffer,sizeof(int32_t)*2,0);
+			send(proceso->ConsolaDuenio,buffer,sizeof(int32_t)*2,MSG_WAITALL);
 			free(buffer);
 		}
 	}

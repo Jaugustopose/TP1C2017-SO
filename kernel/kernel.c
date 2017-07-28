@@ -128,7 +128,7 @@ void enviar_stack_size(int sock)
 	memcpy(buffer, &codigoAccion, sizeof(codigoAccion));
 	memcpy(buffer + sizeof(codigoAccion), &stackSize, sizeof(codigoAccion));
 
-	send(sock, buffer, sizeof(int32_t)*2, 0);
+	send(sock, buffer, sizeof(int32_t)*2, MSG_WAITALL);
 
 	//VERIFICAR
 	free(buffer);
@@ -137,7 +137,7 @@ void enviar_stack_size(int sock)
 int obtener_tamanio_pagina(int memoria) {
 	int valorRecibido;
 	int idMensaje = 6;
-	send(memoria, &idMensaje, sizeof(int32_t), 0);
+	send(memoria, &idMensaje, sizeof(int32_t), MSG_WAITALL);
 	recv(memoria, &valorRecibido, sizeof(int32_t), MSG_WAITALL);
 
 	return valorRecibido;
@@ -239,7 +239,7 @@ int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffe
 
 	}
 
-	int bytesEnviados = send(memoria, bufferParaAlmacenarEnMemoria, tamanioBufferParaMemoria,0);
+	int bytesEnviados = send(memoria, bufferParaAlmacenarEnMemoria, tamanioBufferParaMemoria,MSG_WAITALL);
 	int k;
 	for (k=0; k < m; k++){
 		recv(memoria, &resultAccion, sizeof(resultAccion), MSG_WAITALL);
@@ -293,7 +293,7 @@ void liberar_procesos_de_cpu(int fileDescriptor, t_list* listaConProcesos) {
 void enviar_algoritmo_a_cpu()
 {
 	int algoritmo = (strcmp(config.ALGORITMO, FIFO) == 0)? SOY_FIFO : SOY_RR;
-	send(sockClie, &algoritmo, sizeof(int32_t), 0);
+	send(sockClie, &algoritmo, sizeof(int32_t), MSG_WAITALL);
 }
 void Colocar_en_respectivo_fdset() {
 	//Recibo identidad y coloco en la bolsa correspondiente
@@ -388,7 +388,7 @@ void Accion_envio_script(int memoria, int consola, int idMensaje)
 	t_proceso* proceso = crearProceso(identificadorProceso, consola, (char*)buff, tamanioScript);
     list_add(listaDeProcesos, proceso);
     queue_push(colaNew, proceso);
-    send(consola, &identificadorProceso, sizeof(int32_t),0);
+    send(consola, &identificadorProceso, sizeof(int32_t),MSG_WAITALL);
 
 	if (config.GRADO_MULTIPROG > queue_size(colaReady) && !queue_is_empty(colaNew)) {
 		t_proceso* proceso = (t_proceso*)queue_pop(colaNew);
@@ -491,7 +491,7 @@ void finalizar_programa_por_consola(int consola)
 	int32_t codigo = accionConsolaFinalizarErrorInstruccion;
 	memcpy(buffer,&codigo,sizeof(int32_t));
 	memcpy(buffer + sizeof(int32_t),&proceso->PCB->exitCode,sizeof(int32_t));
-	send(proceso->ConsolaDuenio,buffer,sizeof(int32_t)*2,0);
+	send(proceso->ConsolaDuenio,buffer,sizeof(int32_t)*2,MSG_WAITALL);
 	free(buffer);
 
 //	int codAccion = accionDesalojarProceso;
@@ -717,7 +717,7 @@ int main(int argc, char *argv[]) {
 
 						int idMensaje;
 
-						if ((cantBytes = recv(fdCliente, &idMensaje, sizeof(int32_t), MSG_WAITALL))
+						if ((cantBytes = recv(fdCliente, &idMensaje, sizeof(int32_t), 0))
 								<= 0) {
 
 							if (FD_ISSET(fdCliente, &configuracionCambio)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO INOTIFY

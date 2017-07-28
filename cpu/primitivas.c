@@ -151,7 +151,7 @@ t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 
 		//manda codigo de accion
 		char* accion = (char*)solicitarBytesAccion;
-		send(memoria, accion, sizeof(accion), 0);
+		send(memoria, accion, sizeof(accion), MSG_WAITALL);
 
 		//manda pedidoa memoria
 		enviarDireccionAMemoria(direccion_variable);
@@ -255,9 +255,9 @@ t_valor_variable obtener_valor_compartida(t_nombre_compartida nombreVariableComp
 	memcpy(buffer + sizeof(codigoAccion), &tamanioNombreCom, sizeof(tamanioNombreCom));
 	memcpy(buffer + sizeof(codigoAccion) + sizeof(tamanioNombreCom), nombreVariableCompartida, tamanioNombreCom);
 
-	send(kernel, buffer, sizeof(int32_t)*2 + tamanioNombreCom, 0);
+	send(kernel, buffer, sizeof(int32_t)*2 + tamanioNombreCom, MSG_WAITALL);
 
-	recv(kernel, &valorCompartida, sizeof(int32_t), 0);
+	recv(kernel, &valorCompartida, sizeof(int32_t), MSG_WAITALL);
 
 	log_debug(debugLog, "El valor es: |%d| ", valorCompartida);
 	loggearFinDePrimitiva("obtener_valor_compartida");
@@ -290,7 +290,7 @@ t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableComp
 	memcpy(buffer + sizeof(codigoAccion) + sizeof(tamanioNombreCom), nombreVariableCompartida, tamanioNombreCom);
 	memcpy(buffer + sizeof(codigoAccion) + sizeof(tamanioNombreCom) + tamanioNombreCom, &valorCompartida, sizeof(valorCompartida));
 
-	send(kernel, buffer, sizeof(int32_t)*3 + tamanioNombreCom, 0);
+	send(kernel, buffer, sizeof(int32_t)*3 + tamanioNombreCom, MSG_WAITALL);
 
 	recv(kernel, &valorAsignado,sizeof(int32_t), MSG_WAITALL);
 
@@ -395,7 +395,7 @@ void retornar(t_valor_variable unaVariable)
 
 	 //Manda codigo de accion
      char* accion = (char*)almacenarBytesAccion;
-     send(memoria, accion, sizeof(accion), 0);
+     send(memoria, accion, sizeof(accion), MSG_WAITALL);
 
 	//Manda pedido a memoria
      enviarSolicitudBytes(pcbNuevo->PID,
@@ -435,7 +435,7 @@ void wait(t_nombre_semaforo identificador_semaforo)
 	memcpy(buffer + sizeof(codigoAccion), &tamanioNombreSem, sizeof(tamanioNombreSem));
 	memcpy(buffer + sizeof(codigoAccion) + sizeof(tamanioNombreSem), nombreSemaforo, tamanioNombreSem);
 
-	send(kernel, buffer, sizeof(int32_t)*2 + tamanioNombreSem, 0);
+	send(kernel, buffer, sizeof(int32_t)*2 + tamanioNombreSem, MSG_WAITALL);
 
 	loggearFinDePrimitiva("wait");
 	}
@@ -471,7 +471,7 @@ t_puntero reservar(t_valor_variable espacio)
 	memcpy(buffer + sizeof(codigoAccion), &pid, sizeof(pid));
 	memcpy(buffer + sizeof(codigoAccion) + sizeof(int32_t), &espacioParaAlocar, sizeof(pid));
 
-	send(kernel, buffer, sizeof(int32_t)*3, 0);
+	send(kernel, buffer, sizeof(int32_t)*3, MSG_WAITALL);
 
 	int32_t puntero;
 	recv(kernel, &puntero, sizeof(int32_t), MSG_WAITALL);
@@ -555,7 +555,7 @@ t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 	memcpy(buffer + offset, direccion, tamanioPath);
 	offset += tamanioPath;
 	memcpy(buffer + offset, permisos, tamanioPermisos);
-	send(kernel, buffer, tamanioBuffer, 0);
+	send(kernel, buffer, tamanioBuffer, MSG_WAITALL);
 
 	int32_t fd;
 	recv(kernel, &fd, sizeof(int32_t), MSG_WAITALL);
@@ -596,7 +596,7 @@ void borrar(t_descriptor_archivo direccion)
 	memcpy(buffer + offset, &fd, sizeof(int32_t));
 	offset += sizeof(int32_t);
 	memcpy(buffer + offset, &pid, sizeof(int32_t));
-	send(kernel, buffer, tamanioBuffer, 0);
+	send(kernel, buffer, tamanioBuffer, MSG_WAITALL);
 
 	loggearFinDePrimitiva("borrar");
 	}
@@ -620,7 +620,7 @@ void cerrar(t_descriptor_archivo descriptor_archivo)
 	memcpy(buffer + offset, &fd, sizeof(int32_t));
 	offset += sizeof(int32_t);
 	memcpy(buffer + offset, &pid, sizeof(int32_t));
-	send(kernel, buffer, tamanioBuffer, 0);
+	send(kernel, buffer, tamanioBuffer, MSG_WAITALL);
 
 	loggearFinDePrimitiva("cerrar");
 	}
@@ -646,7 +646,7 @@ void mover_cursor(t_descriptor_archivo descriptor_archivo, t_valor_variable posi
 	memcpy(buffer + offset, &pid, sizeof(int32_t));
 	offset += sizeof(int32_t);
 	memcpy(buffer + offset, &posicion, sizeof(int32_t));
-	send(kernel, buffer, tamanioBuffer, 0);
+	send(kernel, buffer, tamanioBuffer, MSG_WAITALL);
 
 	loggearFinDePrimitiva("mover_cursor");
 	}
@@ -674,7 +674,7 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 	memcpy(buffer + offset, &tamanio, sizeof(int32_t));
 	offset += sizeof(int32_t);
 	memcpy(buffer + offset, informacion, tamanio);
-	send(kernel, buffer, tamanioBuffer, 0);
+	send(kernel, buffer, tamanioBuffer, MSG_WAITALL);
 
 
 	int res;
@@ -710,7 +710,7 @@ void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valo
 	memcpy(buffer + offset, &pid, sizeof(int32_t));
 	offset += sizeof(int32_t);
 	memcpy(buffer + offset, &tamanio, sizeof(int32_t));
-	send(kernel, buffer, tamanioBuffer, 0);
+	send(kernel, buffer, tamanioBuffer, MSG_WAITALL);
 
 	int res;
 	recv(kernel, &res, sizeof(int32_t),MSG_WAITALL);

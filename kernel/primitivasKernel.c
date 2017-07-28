@@ -79,7 +79,7 @@ void obtenerValorCompartida(int cliente)
 	if(valor != -1)
 	{
 		char* valorSerial = intToChar4(valor);
-		send(fdCliente, valorSerial, sizeof(int32_t), 0);
+		send(fdCliente, valorSerial, sizeof(int32_t), MSG_WAITALL);
 	}else
 	{
 		//ERROR:ABORTAR
@@ -107,7 +107,7 @@ void obtenerAsignarCompartida(int cliente){
 	if(resultado != -1)
 	{
 		int valorAsignado = devolverCompartida(compartida);
-		send(fdCliente, &valorAsignado,sizeof(int),0);
+		send(fdCliente, &valorAsignado,sizeof(int),MSG_WAITALL);
 	}else
 	{
 		//ERROR:ABORTAR
@@ -168,7 +168,7 @@ void atenderSolicitudMemoriaDinamica()
 	//Puede devolver un puntero negativo, pero se ocupara la CPU de darse cuenta
 	int puntero = alocarMemoria(espacioSolicitado, pid);
 
-	send(fdCliente, &puntero, sizeof(int), 0);
+	send(fdCliente, &puntero, sizeof(int), MSG_WAITALL);
 }
 
 void atenderLiberacionMemoriaDinamica()
@@ -184,5 +184,5 @@ void atenderLiberacionMemoriaDinamica()
 	proceso->privilegiadas++;
 
 	int result = liberarMemoria(punteroRecibido, pid, cantPaginasCodigo);
-	send(fdCliente, &result, sizeof(int32_t),0);
+	send(fdCliente, &result, sizeof(int32_t),MSG_WAITALL);
 }

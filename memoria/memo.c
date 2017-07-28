@@ -934,7 +934,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 				log_info(memoLogger, "atenderHilo[inicializarProgramaAccion] - Se procede a inicializar programa");
 				resultAccion = inicializarPrograma(pedidoPaginas.pid, pedidoPaginas.cantidadPaginas, parametros->tablaPaginasInvertida);
 				log_info(memoLogger, "atenderHilo[inicializarProgramaAccion] - Inicializar programa en Memoria terminó con resultado de acción: %d", resultAccion);
-				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
+				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), MSG_WAITALL);
 				break;
 
 			case solicitarPaginasAccion:
@@ -945,7 +945,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 						pedidoPaginas.cantidadPaginas,
 						parametros->tablaPaginasInvertida);
 				log_info(memoLogger, "atenderHilo[solicitarPaginasAccion] - Solicitar páginas adicionales terminó con resultado de acción: %d", resultAccion);
-				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
+				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), MSG_WAITALL);
 				break;
 
 			case almacenarBytesAccion:
@@ -972,7 +972,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 						parametros->tablaPaginasInvertida);
 
 				log_info(memoLogger, "atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: %d", resultAccion);
-				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
+				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), MSG_WAITALL);
 
 				//VERIFICO SI EXISTE DATA EN CACHE
 				if ((indiceCache = numero_Entrada_Ocupada_Cache(pedidoBytes.pid,pedidoBytes.nroPagina)) != -1){ //Esta en cache. Hay que actualizarla.
@@ -992,7 +992,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 				//VERIFICO SI EXISTE DATA EN CACHE
 					if ((indiceCache = numero_Entrada_Ocupada_Cache(pedidoBytes.pid,pedidoBytes.nroPagina)) != -1){ //Tenia data en cache
 						bytesSolicitados = solicitarBytesCache(pedidoBytes.pid,pedidoBytes.nroPagina,pedidoBytes.offset,pedidoBytes.tamanio, indiceCache);
-						send(parametros->socketClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), 0);
+						send(parametros->socketClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), MSG_WAITALL);
 						free(bytesSolicitados);
 
 						break;
@@ -1000,7 +1000,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 					}else{ //Voy a buscar la data a memoria. Cargo una nueva entrada en cache.
 						bytesSolicitados = solicitarBytesMemoria(pedidoBytes.pid, pedidoBytes.nroPagina, pedidoBytes.offset, pedidoBytes.tamanio, parametros->tablaPaginasInvertida);
 						memcpy(&resultAccion, bytesSolicitados, sizeof(resultAccion));
-						send(parametros->socketClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), 0);
+						send(parametros->socketClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), MSG_WAITALL);
 						cargar_Nueva_Entrada_En_Cache(pedidoBytes.pid,pedidoBytes.nroPagina,parametros->tablaPaginasInvertida);
 						free(bytesSolicitados);
 
@@ -1030,12 +1030,12 @@ void atenderHilo(paramHiloDedicado* parametros) {
 				resultAccion = finalizarPrograma(pidAFinalizar, parametros->tablaPaginasInvertida);
 				log_info(memoLogger, "atenderHilo[finalizarProgramaAccion] - Solicitud de finalizar programa terminó con resultado de acción: %d",
 						resultAccion);
-				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
+				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), MSG_WAITALL);
 				break;
 
 			case obtenerTamanioPaginas:
 				log_info(memoLogger, "atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: %d", config.marco_size);
-				send(parametros->socketClie, &config.marco_size, sizeof(int32_t), 0);
+				send(parametros->socketClie, &config.marco_size, sizeof(int32_t), MSG_WAITALL);
 				break;
 
 			case accionEnviarStackSize:
@@ -1050,13 +1050,13 @@ void atenderHilo(paramHiloDedicado* parametros) {
 				resultAccion = liberarPaginaPid(pidAFinalizar, pagALiberar, parametros->tablaPaginasInvertida);
 				log_info(memoLogger, "atenderHilo[liberarPaginaProcesoAccion] - Solicitud de liberar pagina de proceso terminó con resultado de acción: %d",
 						resultAccion);
-				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
+				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), MSG_WAITALL);
 				break;
 
 			default:
 				log_warning(memoLogger, "atenderHilo[default] - No se reconoce el código de acción %d. Error code -13", codAccion);
 				resultAccion = -13;
-				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), 0);
+				send(parametros->socketClie, &resultAccion, sizeof(resultAccion), MSG_WAITALL);
 			}
 			log_info(memoLogger, "atenderHilo- Fin atención acción");
 		}

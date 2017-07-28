@@ -71,7 +71,7 @@ int solicitarPagina(int pid)
 	memcpy(buffer, &codAccion, sizeof(codAccion));
 	memcpy(buffer + sizeof(codAccion), &solicitud, sizeof(pedidoSolicitudPaginas_t));
 
-	send(memoria, buffer, sizeof(codAccion) + sizeof(pedidoSolicitudPaginas_t), 0);
+	send(memoria, buffer, sizeof(codAccion) + sizeof(pedidoSolicitudPaginas_t), MSG_WAITALL);
 
 	char* result = malloc(sizeof(int));
 	int bytesRecibidos = recv(memoria, result, sizeof(int), MSG_WAITALL);

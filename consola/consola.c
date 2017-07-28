@@ -136,7 +136,7 @@ int conectarConKernel() {
 	direccionServ.sin_addr.s_addr = inet_addr(config.IP_KERNEL);
 	memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
 	connect(socketKernel, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
-	send(socketKernel,&identidad, sizeof(int),0);
+	send(socketKernel,&identidad, sizeof(int),MSG_WAITALL);
 
 	return socketKernel;
 
@@ -257,7 +257,7 @@ void atenderAcciones(char* programaSolicitado)
 	memcpy(bufferCrearPrograma + sizeof(int32_t), &longitudPrograma,sizeof(int32_t));
 	memcpy(bufferCrearPrograma + sizeof(int32_t)*2, programaSolicitado,strlen(programaSolicitado));
 
-	send(socketKernel,bufferCrearPrograma,tamanioBufferCrearPrograma,0);
+	send(socketKernel,bufferCrearPrograma,tamanioBufferCrearPrograma, MSG_WAITALL);
 	int pidRecibido;
 	free(bufferCrearPrograma);
 	free(programaSolicitado);
@@ -360,7 +360,7 @@ void escucharUsuario()
 						void *buffer = malloc(sizeof(int32_t)*2);
 						memcpy(buffer,&codigo,sizeof(int32_t));
 						memcpy(buffer+sizeof(int32_t),&pid,sizeof(int32_t));
-						send(infoThread->socket,buffer,sizeof(int32_t)*2,0);
+						send(infoThread->socket,buffer,sizeof(int32_t)*2,MSG_WAITALL);
 						free(buffer);
 					}
 				}

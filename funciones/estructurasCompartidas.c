@@ -125,7 +125,7 @@ void enviarTamanioYSerial(int codigoAccion, int sock, int tamanio, char* mensaje
 	memcpy(bufferVarComp + offset, mensaje, tamanio);
 	offset += tamanio;
 
-	send(sock, bufferVarComp, offset, 0);
+	send(sock, bufferVarComp, offset, MSG_WAITALL);
 }
 
 /*********************************************EXCEPCIONES*****************************************************/

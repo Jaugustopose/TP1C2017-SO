@@ -127,7 +127,7 @@ void crearArchivo(int Pid, char* path, char* permisos, int socketCpu, int socket
 	memcpy(buffer,&codOperacion,sizeof(int));
 	memcpy(buffer + sizeof(int),&pathSize,sizeof(int));
 	memcpy(buffer + sizeof(int)*2,path,pathSize);
-	send(socketFS, buffer, packetSize,0);
+	send(socketFS, buffer, packetSize,MSG_WAITALL);
 	free(buffer);
 	//Recibo respuesta
 	int res;
@@ -135,10 +135,10 @@ void crearArchivo(int Pid, char* path, char* permisos, int socketCpu, int socket
 	if(res==1){
 		int indiceTablaGlobal = agregarTablaGlobal(path);
 		int fd = agregarTablaProceso(Pid, indiceTablaGlobal, permisos);
-		send(socketCpu, &fd, sizeof(fd),0);
+		send(socketCpu, &fd, sizeof(fd),MSG_WAITALL);
 	}else{
 		int fd = -1;
-		send(socketCpu, &fd, sizeof(fd),0);
+		send(socketCpu, &fd, sizeof(fd),MSG_WAITALL);
 	}
 }
 
@@ -167,16 +167,16 @@ void abrirArchivo(int socketCpu, int socketFS){
 	memcpy(buffer,&codOperacion,sizeof(int));
 	memcpy(buffer + sizeof(int),&tamanioPath,sizeof(int));
 	memcpy(buffer + sizeof(int)*2,path,tamanioPath);
-	send(socketFS, buffer, packetSize,0);
+	send(socketFS, buffer, packetSize,MSG_WAITALL);
 	free(buffer);
 	//Recibo respuesta
 	int res=-1;
-	recv(socketFS, &res, sizeof(res), 0);
+	recv(socketFS, &res, sizeof(res), MSG_WAITALL);
 	//Analizar respuesta y enviar a CPU
 	if(res==1){
 		int indiceTablaGlobal = agregarTablaGlobal(path);
 		int fd = agregarTablaProceso(pid, indiceTablaGlobal, permisos);
-		send(socketCpu, &fd, sizeof(fd),0);
+		send(socketCpu, &fd, sizeof(fd),MSG_WAITALL);
 	}else{
 		// Si no existe el archivo pero tenemos permisos de creacion se lo manda a crear
 		if(res==-1 && string_contains(permisos, "c")){
@@ -184,7 +184,7 @@ void abrirArchivo(int socketCpu, int socketFS){
 			return;
 		}
 		int fd = -1;
-		send(socketCpu, &fd, sizeof(fd),0);
+		send(socketCpu, &fd, sizeof(fd),MSG_WAITALL);
 	}
 }
 
@@ -203,7 +203,7 @@ void leerArchivo(int socketCpu, int socketFS){
 
 	if(string_contains(fileDescriptor->permisos,"r")==NULL){
 		int res=-1;
-		send(socketCpu, &res, sizeof(res),0);
+		send(socketCpu, &res, sizeof(res),MSG_WAITALL);
 		return;
 	}
 	globalFD_t* globalFD = list_get(tablaGlobalArchivos, fileDescriptor->indiceTablaGlobal);
@@ -218,7 +218,7 @@ void leerArchivo(int socketCpu, int socketFS){
 	memcpy(buffer + sizeof(int)*2, globalFD->path, pathSize);
 	memcpy(buffer + sizeof(int)*2 + pathSize, &fileDescriptor->offset, sizeof(int));
 	memcpy(buffer + sizeof(int)*3 + pathSize, &tamanio, sizeof(int));
-	send(socketFS, buffer, packetSize,0);
+	send(socketFS, buffer, packetSize,MSG_WAITALL);
 	free(buffer);
 	//Recibo respuesta
 	int res;
@@ -226,10 +226,10 @@ void leerArchivo(int socketCpu, int socketFS){
 	if(res==1){
 		void* datos = malloc(tamanio);
 		recv(socketFS, datos, tamanio, MSG_WAITALL);
-		send(socketCpu, &res, sizeof(res),0);
-		send(socketCpu, datos, tamanio,0);
+		send(socketCpu, &res, sizeof(res),MSG_WAITALL);
+		send(socketCpu, datos, tamanio,MSG_WAITALL);
 	}else{
-		send(socketCpu, &res, sizeof(res),0);
+		send(socketCpu, &res, sizeof(res),MSG_WAITALL);
 	}
 }
 
@@ -254,10 +254,10 @@ void escribirArchivo(int socketCpu, int socketFS){
 		memcpy(buffer,&codAccion,sizeof(int));
 		memcpy(buffer+sizeof(int),&tamanioBuffer,sizeof(int));
 		memcpy(buffer+sizeof(int)*2,buffer,tamanio);
-		send(proceso->ConsolaDuenio,buffer,tamanioBuffer,0);
+		send(proceso->ConsolaDuenio,buffer,tamanioBuffer,MSG_WAITALL);
 
 		int res=1;
-		send(socketCpu, &res, sizeof(res),0);
+		send(socketCpu, &res, sizeof(res),MSG_WAITALL);
 		return;
 	}
 
@@ -266,7 +266,7 @@ void escribirArchivo(int socketCpu, int socketFS){
 
 	if(string_contains(fileDescriptor->permisos,"w")==NULL){
 		int res=-1;
-		send(socketCpu, &res, sizeof(res),0);
+		send(socketCpu, &res, sizeof(res),MSG_WAITALL);
 		return;
 	}
 	globalFD_t* globalFD = list_get(tablaGlobalArchivos, fileDescriptor->indiceTablaGlobal);
@@ -282,7 +282,7 @@ void escribirArchivo(int socketCpu, int socketFS){
 	memcpy(buffer + sizeof(int)*2 + pathSize, &fileDescriptor->offset, sizeof(int));
 	memcpy(buffer + sizeof(int)*3 + pathSize, &tamanio, sizeof(int));
 	memcpy(buffer + sizeof(int)*4 + pathSize, datos, tamanio);
-	send(socketFS, buffer, packetSize,0);
+	send(socketFS, buffer, packetSize,MSG_WAITALL);
 	free(buffer);
 	//Recibo respuesta
 	int res;
@@ -331,7 +331,7 @@ void borrarArchivo(int socketCPU, int socketFS){
 		memcpy(buffer,&codOperacion,sizeof(int));
 		memcpy(buffer + sizeof(int),&pathSize,sizeof(int));
 		memcpy(buffer + sizeof(int)*2,globalFD->path,pathSize);
-		send(socketFS, buffer, packetSize,0);
+		send(socketFS, buffer, packetSize,MSG_WAITALL);
 		free(buffer);
 		//Recibo respuesta
 		int res;
