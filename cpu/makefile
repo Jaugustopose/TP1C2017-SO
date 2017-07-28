@@ -3,7 +3,7 @@
 CC=gcc
 DEPS=cpu.h
 RM=rm -f
-CFLAGS= -lFunciones -lcommons -pthread -lparser-ansisop -g3
+CFLAGS= -lfunciones -lcommons -pthread -lparser-ansisop -g3
 
 #Compilar CPU
 
