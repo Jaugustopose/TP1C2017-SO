@@ -503,7 +503,6 @@ void recibirOrdenes(int32_t accionRecibida)
 
 		case accionObtenerPCB:
 			overflow = false;
-			lanzarOverflowExep = false;
 			ejecutando = true;
 			obtenerPCB();
 			break;
