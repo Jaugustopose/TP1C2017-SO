@@ -131,7 +131,7 @@ void crearArchivo(int Pid, char* path, char* permisos, int socketCpu, int socket
 	free(buffer);
 	//Recibo respuesta
 	int res;
-	recv(socketFS, &res, sizeof(res), 0);
+	recv(socketFS, &res, sizeof(res), MSG_WAITALL);
 	if(res==1){
 		int indiceTablaGlobal = agregarTablaGlobal(path);
 		int fd = agregarTablaProceso(Pid, indiceTablaGlobal, permisos);
@@ -147,13 +147,13 @@ void abrirArchivo(int socketCpu, int socketFS){
 	int tamanioPath;
 	int tamanioPermisos;
 	//Recibo datos del CPU
-	recv(socketCpu, &pid, sizeof(pid), 0);
-	recv(socketCpu, &tamanioPath, sizeof(tamanioPath), 0);
-	recv(socketCpu, &tamanioPermisos, sizeof(tamanioPermisos), 0);
+	recv(socketCpu, &pid, sizeof(pid), MSG_WAITALL);
+	recv(socketCpu, &tamanioPath, sizeof(tamanioPath), MSG_WAITALL);
+	recv(socketCpu, &tamanioPermisos, sizeof(tamanioPermisos), MSG_WAITALL);
 	char* path = malloc(tamanioPath);
 	char* permisos = malloc(tamanioPermisos);
-	recv(socketCpu, path, tamanioPath, 0);
-	recv(socketCpu, permisos, tamanioPermisos, 0);
+	recv(socketCpu, path, tamanioPath, MSG_WAITALL);
+	recv(socketCpu, permisos, tamanioPermisos, MSG_WAITALL);
 
 
 	t_proceso* proceso = buscarProcesoPorPID(pid);
@@ -193,9 +193,9 @@ void leerArchivo(int socketCpu, int socketFS){
 	int pid;
 	int tamanio;
 	//Recibo datos del CPU
-	recv(socketCpu, &fd, sizeof(fd), 0);
-	recv(socketCpu, &pid, sizeof(fd), 0);
-	recv(socketCpu, &tamanio, sizeof(tamanio), 0);
+	recv(socketCpu, &fd, sizeof(fd), MSG_WAITALL);
+	recv(socketCpu, &pid, sizeof(fd), MSG_WAITALL);
+	recv(socketCpu, &tamanio, sizeof(tamanio), MSG_WAITALL);
 	FD_t* fileDescriptor = obtenerFD(pid, fd);
 
 	t_proceso* proceso = buscarProcesoPorPID(pid);
@@ -222,10 +222,10 @@ void leerArchivo(int socketCpu, int socketFS){
 	free(buffer);
 	//Recibo respuesta
 	int res;
-	recv(socketFS, &res, sizeof(res), 0);
+	recv(socketFS, &res, sizeof(res), MSG_WAITALL);
 	if(res==1){
 		void* datos = malloc(tamanio);
-		recv(socketFS, datos, tamanio, 0);
+		recv(socketFS, datos, tamanio, MSG_WAITALL);
 		send(socketCpu, &res, sizeof(res),0);
 		send(socketCpu, datos, tamanio,0);
 	}else{
@@ -238,15 +238,15 @@ void escribirArchivo(int socketCpu, int socketFS){
 	int pid;
 	int tamanio;
 	//Recibo datos del CPU
-	recv(socketCpu, &fd, sizeof(fd), 0);
-	recv(socketCpu, &pid, sizeof(fd), 0);
-	recv(socketCpu, &tamanio, sizeof(tamanio), 0);
+	recv(socketCpu, &fd, sizeof(fd), MSG_WAITALL);
+	recv(socketCpu, &pid, sizeof(fd), MSG_WAITALL);
+	recv(socketCpu, &tamanio, sizeof(tamanio), MSG_WAITALL);
 
 	t_proceso* proceso = buscarProcesoPorPID(pid);
 	proceso->privilegiadas++;
 
 	void* datos = malloc(tamanio);
-	recv(socketCpu, datos, tamanio, 0);
+	recv(socketCpu, datos, tamanio, MSG_WAITALL);
 	if(fd==1){
 		int codAccion = accionImprimirTextoConsola;
 		int tamanioBuffer = sizeof(int)*2+tamanio;
@@ -286,15 +286,15 @@ void escribirArchivo(int socketCpu, int socketFS){
 	free(buffer);
 	//Recibo respuesta
 	int res;
-	recv(socketFS, &res, sizeof(res), 0);
-	send(socketCpu, &res, sizeof(res),0);
+	recv(socketFS, &res, sizeof(res), MSG_WAITALL);
+	send(socketCpu, &res, sizeof(res),MSG_WAITALL);
 }
 
 void cerrarArchivo(int socketCpu, int socketFS){
 	int fd;
 	int pid;
-	recv(socketCpu, &fd, sizeof(fd), 0);
-	recv(socketCpu, &pid, sizeof(pid), 0);
+	recv(socketCpu, &fd, sizeof(fd), MSG_WAITALL);
+	recv(socketCpu, &pid, sizeof(pid), MSG_WAITALL);
 	FD_t* fileDescriptor = obtenerFD(pid, fd);
 
 	t_proceso* proceso = buscarProcesoPorPID(pid);
@@ -308,8 +308,8 @@ void borrarArchivo(int socketCPU, int socketFS){
 	//Recibo datos del CPU
 	int pid;
 	int fd;
-	recv(socketCPU, &fd, sizeof(fd), 0);
-	recv(socketCPU, &pid, sizeof(pid), 0);
+	recv(socketCPU, &fd, sizeof(fd), MSG_WAITALL);
+	recv(socketCPU, &pid, sizeof(pid), MSG_WAITALL);
 	FD_t* fileDescriptor = obtenerFD(pid, fd);
 
 	t_proceso* proceso = buscarProcesoPorPID(pid);
@@ -335,7 +335,7 @@ void borrarArchivo(int socketCPU, int socketFS){
 		free(buffer);
 		//Recibo respuesta
 		int res;
-		recv(socketFS, &res, sizeof(res), 0);
+		recv(socketFS, &res, sizeof(res), MSG_WAITALL);
 		if(res==1){
 			//OK
 		}else{
@@ -349,9 +349,9 @@ void moverCursor(int socketCPU, int socketFS){
 	int pid;
 	int fd;
 	int offset;
-	recv(socketCPU, &fd, sizeof(fd), 0);
-	recv(socketCPU, &pid, sizeof(pid), 0);
-	recv(socketCPU, &offset, sizeof(offset), 0);
+	recv(socketCPU, &fd, sizeof(fd), MSG_WAITALL);
+	recv(socketCPU, &pid, sizeof(pid), MSG_WAITALL);
+	recv(socketCPU, &offset, sizeof(offset), MSG_WAITALL);
 	FD_t* fileDescriptor = obtenerFD(pid, fd);
 
 	t_proceso* proceso = buscarProcesoPorPID(pid);

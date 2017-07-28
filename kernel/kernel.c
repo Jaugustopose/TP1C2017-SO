@@ -138,7 +138,7 @@ int obtener_tamanio_pagina(int memoria) {
 	int valorRecibido;
 	int idMensaje = 6;
 	send(memoria, &idMensaje, sizeof(int32_t), 0);
-	recv(memoria, &valorRecibido, sizeof(int32_t), 0);
+	recv(memoria, &valorRecibido, sizeof(int32_t), MSG_WAITALL);
 
 	return valorRecibido;
 }
@@ -172,7 +172,7 @@ int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
 	free(buffer);
 	//Reservo para recibir un int con el resultAccion
 	int resultAccion;
-	recv(cliente, &resultAccion, sizeof(int), 0);
+	recv(cliente, &resultAccion, sizeof(int), MSG_WAITALL);
 	printf("inicializarPrograma resultó con código de acción: %d\n",resultAccion);
 
 	return resultAccion;
@@ -242,7 +242,7 @@ int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffe
 	int bytesEnviados = send(memoria, bufferParaAlmacenarEnMemoria, tamanioBufferParaMemoria,0);
 	int k;
 	for (k=0; k < m; k++){
-		recv(memoria, &resultAccion, sizeof(resultAccion), 0);
+		recv(memoria, &resultAccion, sizeof(resultAccion), MSG_WAITALL);
 		printf("almacenarBytes resultó con código de acción: %d\n", resultAccion);
 	}
 
@@ -297,7 +297,7 @@ void enviar_algoritmo_a_cpu()
 }
 void Colocar_en_respectivo_fdset() {
 	//Recibo identidad y coloco en la bolsa correspondiente
-	recv(sockClie, &identidadCliente, sizeof(int32_t), 0);
+	recv(sockClie, &identidadCliente, sizeof(int32_t), MSG_WAITALL);
 	switch (identidadCliente) {
 
 	case soyConsola:
@@ -378,10 +378,10 @@ void Accion_envio_script(int memoria, int consola, int idMensaje)
 {
 	int tamanioScript;
 	printf("Procediendo a recibir tamaño script\n");
-	recv(consola, &tamanioScript, sizeof(int32_t), 0);
+	recv(consola, &tamanioScript, sizeof(int32_t), MSG_WAITALL);
 	printf("Tamaño del script: %d\n", tamanioScript);
 	char* buff = malloc(tamanioScript + 1);
-	recv(fdCliente, buff, tamanioScript, 0);
+	recv(fdCliente, buff, tamanioScript, MSG_WAITALL);
 	printf("el valor de cadena es: %.*s\n", tamanioScript, buff);
 
     identificadorProceso++;
@@ -481,7 +481,7 @@ void atender_accion_cpu(int idMensaje, int memoria, int socketFS) {
 void finalizar_programa_por_consola(int consola)
 {
 	int pid;
-	recv(consola, &pid, sizeof(int32_t),0);
+	recv(consola, &pid, sizeof(int32_t),MSG_WAITALL);
 
 	t_proceso* proceso = buscarProcesoPorPID(pid);
 	proceso->abortado = true;
@@ -717,7 +717,7 @@ int main(int argc, char *argv[]) {
 
 						int idMensaje;
 
-						if ((cantBytes = recv(fdCliente, &idMensaje, sizeof(int32_t), 0))
+						if ((cantBytes = recv(fdCliente, &idMensaje, sizeof(int32_t), MSG_WAITALL))
 								<= 0) {
 
 							if (FD_ISSET(fdCliente, &configuracionCambio)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO INOTIFY

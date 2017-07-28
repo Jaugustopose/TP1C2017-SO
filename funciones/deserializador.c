@@ -23,7 +23,7 @@
 void* deserializar(int sock) {
 	int id;
 
-	recv(sock, &id, 4, 0); //Aca recibo la identidad del mensaje (archivo, texto, programa, etc)
+	recv(sock, &id, 4, MSG_WAITALL); //Aca recibo la identidad del mensaje (archivo, texto, programa, etc)
 	switch(id) {
 
 	case 1: deserializar_archivo(sock);
@@ -36,9 +36,9 @@ void* deserializar(int sock) {
 void* deserializar_archivo(int sock) {
 	int tamanio;
 
-	recv(sock, &tamanio, 4, 0); //Recibo el tamaño de lo que me estan enviando.
+	recv(sock, &tamanio, 4, MSG_WAITALL); //Recibo el tamaño de lo que me estan enviando.
 	void* buffer = malloc(tamanio);
-	recv(sock, buffer, tamanio,0); //Recibo lo que viene atras. Por ahora es o un archivo o un texto asi que al ser tod0 del mismo tipo, no pasa nada. Caso contrario habrá que ir separandolo con varios recv.
+	recv(sock, buffer, tamanio,MSG_WAITALL); //Recibo lo que viene atras. Por ahora es o un archivo o un texto asi que al ser tod0 del mismo tipo, no pasa nada. Caso contrario habrá que ir separandolo con varios recv.
 
 	return buffer;
 }

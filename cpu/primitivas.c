@@ -158,7 +158,7 @@ t_valor_variable dereferenciar_variable(t_puntero direccion_variable)
 
 			//recibe valor de memoria
 			char* bufferValor = malloc(sizeof(int32_t));
-			int32_t valorRecibido = recv(memoria, bufferValor, sizeof(int32_t), 0);
+			int32_t valorRecibido = recv(memoria, bufferValor, sizeof(int32_t), MSG_WAITALL);
 			if (valorRecibido <= 0)
 			{
 				perror("recv devolvio un numero menor que cero");
@@ -292,7 +292,7 @@ t_valor_variable asignar_valor_compartida(t_nombre_compartida nombreVariableComp
 
 	send(kernel, buffer, sizeof(int32_t)*3 + tamanioNombreCom, 0);
 
-	recv(kernel, &valorAsignado,sizeof(int32_t), 0);
+	recv(kernel, &valorAsignado,sizeof(int32_t), MSG_WAITALL);
 
 	loggearFinDePrimitiva("asignar_valor_compartida");
 
@@ -474,7 +474,7 @@ t_puntero reservar(t_valor_variable espacio)
 	send(kernel, buffer, sizeof(int32_t)*3, 0);
 
 	int32_t puntero;
-	recv(kernel, &puntero, sizeof(int32_t), 0);
+	recv(kernel, &puntero, sizeof(int32_t), MSG_WAITALL);
 
 	if(puntero < 0)
 	{
@@ -515,7 +515,7 @@ void liberar(t_puntero puntero)
 	send(kernel, buffer, sizeof(int32_t)*4, 0);
 
 	int32_t respuesta = 0;
-	recv(kernel, &respuesta, sizeof(int32_t), 0);
+	recv(kernel, &respuesta, sizeof(int32_t), MSG_WAITALL);
 	if(respuesta == 1)
 	{
 		loggearFinDePrimitiva("liberar");
@@ -558,7 +558,7 @@ t_descriptor_archivo abrir(t_direccion_archivo direccion, t_banderas flags)
 	send(kernel, buffer, tamanioBuffer, 0);
 
 	int32_t fd;
-	recv(kernel, &fd, sizeof(int32_t), 0);
+	recv(kernel, &fd, sizeof(int32_t), MSG_WAITALL);
 
 	if(fd<0)
 	{
@@ -678,7 +678,7 @@ void escribir(t_descriptor_archivo descriptor_archivo, void* informacion, t_valo
 
 
 	int res;
-	recv(kernel, &res, sizeof(int32_t),0);
+	recv(kernel, &res, sizeof(int32_t),MSG_WAITALL);
 	if(res < 0)
 	{
 		lanzar_excepcion(pcbNuevo, ERROR_ESCRITURA);
@@ -713,11 +713,11 @@ void leer(t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valo
 	send(kernel, buffer, tamanioBuffer, 0);
 
 	int res;
-	recv(kernel, &res, sizeof(int32_t),0);
+	recv(kernel, &res, sizeof(int32_t),MSG_WAITALL);
 	if(res == 1)
 	{
 		char *recibido = malloc(tamanio);
-		recv(kernel, recibido, tamanio, 0);
+		recv(kernel, recibido, tamanio, MSG_WAITALL);
 		//Envio datos a memoria
 		int32_t i=0;
 		while(i<tamanio){

@@ -103,10 +103,10 @@ void destruir_PCB(t_PCB* pcb){
 
 char* leerTamanioYMensaje(int sock){
 	char* serialTamanio = malloc(sizeof(int32_t));
-	recv(sock, serialTamanio, sizeof(int32_t), 0);
+	recv(sock, serialTamanio, sizeof(int32_t), MSG_WAITALL);
 	int32_t tamanio = char4ToInt(serialTamanio);
 	char* mensaje = malloc(tamanio);
-	recv(sock, mensaje, tamanio, 0);
+	recv(sock, mensaje, tamanio, MSG_WAITALL);
 	free(serialTamanio);
 	return mensaje;
 }

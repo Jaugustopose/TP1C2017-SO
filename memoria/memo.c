@@ -891,7 +891,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 	while (!salir) {
 		// Gestionar datos de un cliente. Recibimos el código de acción que quiere realizar.
 		int codAccion;
-		if ((cantBytesRecibidos = recv(parametros->socketClie, &codAccion, sizeof(codAccion), 0)) <= 0) {
+		if ((cantBytesRecibidos = recv(parametros->socketClie, &codAccion, sizeof(codAccion), MSG_WAITALL)) <= 0) {
 			// error o conexión cerrada por el cliente
 			if (cantBytesRecibidos == 0) {
 				// conexión cerrada
@@ -929,7 +929,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 			switch (codAccion) {
 
 			case inicializarProgramaAccion:
-				recv(parametros->socketClie, &pedidoPaginas, sizeof(pedidoPaginas), 0);
+				recv(parametros->socketClie, &pedidoPaginas, sizeof(pedidoPaginas), MSG_WAITALL);
 				log_info(memoLogger, "atenderHilo[inicializarProgramaAccion] - Recibida solicitud de %d páginas para el pid %d", pedidoPaginas.cantidadPaginas, pedidoPaginas.pid);
 				log_info(memoLogger, "atenderHilo[inicializarProgramaAccion] - Se procede a inicializar programa");
 				resultAccion = inicializarPrograma(pedidoPaginas.pid, pedidoPaginas.cantidadPaginas, parametros->tablaPaginasInvertida);
@@ -938,7 +938,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 				break;
 
 			case solicitarPaginasAccion:
-				recv(parametros->socketClie, &pedidoPaginas, sizeof(pedidoPaginas), 0);
+				recv(parametros->socketClie, &pedidoPaginas, sizeof(pedidoPaginas), MSG_WAITALL);
 				log_info(memoLogger, "atenderHilo[solicitarPaginasAccion] - Recibida solicitud de %d páginas para el pid %d", pedidoPaginas.cantidadPaginas, pedidoPaginas.pid);
 				log_info(memoLogger, "atenderHilo[solicitarPaginasAccion] - Se procede a solicitar páginas del programa");
 				resultAccion = solicitarAsignacionPaginas(pedidoPaginas.pid,
@@ -949,14 +949,14 @@ void atenderHilo(paramHiloDedicado* parametros) {
 				break;
 
 			case almacenarBytesAccion:
-				recv(parametros->socketClie, &pedidoAlmacenarBytes.pedidoBytes.pid, sizeof(pedidoAlmacenarBytes.pedidoBytes.pid), 0);
-				recv(parametros->socketClie, &pedidoAlmacenarBytes.pedidoBytes.nroPagina, sizeof(pedidoAlmacenarBytes.pedidoBytes.nroPagina), 0);
-				recv(parametros->socketClie, &pedidoAlmacenarBytes.pedidoBytes.offset, sizeof(pedidoAlmacenarBytes.pedidoBytes.offset), 0);
-				recv(parametros->socketClie, &pedidoAlmacenarBytes.pedidoBytes.tamanio, sizeof(pedidoAlmacenarBytes.pedidoBytes.tamanio), 0);
+				recv(parametros->socketClie, &pedidoAlmacenarBytes.pedidoBytes.pid, sizeof(pedidoAlmacenarBytes.pedidoBytes.pid), MSG_WAITALL);
+				recv(parametros->socketClie, &pedidoAlmacenarBytes.pedidoBytes.nroPagina, sizeof(pedidoAlmacenarBytes.pedidoBytes.nroPagina), MSG_WAITALL);
+				recv(parametros->socketClie, &pedidoAlmacenarBytes.pedidoBytes.offset, sizeof(pedidoAlmacenarBytes.pedidoBytes.offset), MSG_WAITALL);
+				recv(parametros->socketClie, &pedidoAlmacenarBytes.pedidoBytes.tamanio, sizeof(pedidoAlmacenarBytes.pedidoBytes.tamanio), MSG_WAITALL);
 
 				pedidoAlmacenarBytes.buffer = malloc( pedidoAlmacenarBytes.pedidoBytes.tamanio);
 
-				recv(parametros->socketClie, pedidoAlmacenarBytes.buffer, pedidoAlmacenarBytes.pedidoBytes.tamanio, 0);
+				recv(parametros->socketClie, pedidoAlmacenarBytes.buffer, pedidoAlmacenarBytes.pedidoBytes.tamanio, MSG_WAITALL);
 				log_info(memoLogger, "atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar %d bytes para el pid %d en su página %d con un offset de %d",
 						pedidoAlmacenarBytes.pedidoBytes.tamanio,
 						pedidoAlmacenarBytes.pedidoBytes.pid,
@@ -983,7 +983,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 
 			case solicitarBytesAccion:
 
-				recv(parametros->socketClie, &pedidoBytes, sizeof(pedidoBytes), 0);
+				recv(parametros->socketClie, &pedidoBytes, sizeof(pedidoBytes), MSG_WAITALL);
 				log_info(memoLogger, "atenderHilo[solicitarBytesAccion] - Recibida solicitud de %d bytes para el pid %d en su página %d con un offset de %d",
 									pedidoBytes.tamanio, pedidoBytes.pid,
 									pedidoBytes.nroPagina, pedidoBytes.offset);
@@ -1023,7 +1023,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 				break;*/
 
 			case finalizarProgramaAccion:
-				recv(parametros->socketClie, &pidAFinalizar, sizeof(pidAFinalizar), 0);
+				recv(parametros->socketClie, &pidAFinalizar, sizeof(pidAFinalizar), MSG_WAITALL);
 				log_info(memoLogger, "atenderHilo[finalizarProgramaAccion] - Recibida solicitud para finalizar programa con pid = %d",
 						pidAFinalizar);
 				log_info(memoLogger, "atenderHilo[finalizarProgramaAccion] - Se procede a finalizar el programa");
@@ -1039,13 +1039,13 @@ void atenderHilo(paramHiloDedicado* parametros) {
 				break;
 
 			case accionEnviarStackSize:
-				recv(parametros->socketClie, &stack_size, sizeof(int32_t), 0);
+				recv(parametros->socketClie, &stack_size, sizeof(int32_t), MSG_WAITALL);
 				log_info(memoLogger, "atenderHilo[accionEnviarStackSize] - Recibido tamanio del stack: %d", stack_size);
 				break;
 
 			case liberarPaginaProcesoAccion:
-				recv(parametros->socketClie, &pidAFinalizar, sizeof(pidAFinalizar),0);
-				recv(parametros->socketClie, &pagALiberar, sizeof(pagALiberar),0);
+				recv(parametros->socketClie, &pidAFinalizar, sizeof(pidAFinalizar),MSG_WAITALL);
+				recv(parametros->socketClie, &pagALiberar, sizeof(pagALiberar),MSG_WAITALL);
 				log_info(memoLogger, "atenderHilo[liberarPaginaProcesoAccion] - Recibida solicitud para liberar página %d del pid %d", pagALiberar, pidAFinalizar);
 				resultAccion = liberarPaginaPid(pidAFinalizar, pagALiberar, parametros->tablaPaginasInvertida);
 				log_info(memoLogger, "atenderHilo[liberarPaginaProcesoAccion] - Solicitud de liberar pagina de proceso terminó con resultado de acción: %d",

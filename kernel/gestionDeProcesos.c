@@ -249,10 +249,10 @@ void actualizarPCB(t_proceso* proceso, t_PCB* PCB) { //
 t_PCB* recibirPCBDeCPU(int cpu)
 {
 	 int tamanio;
-	 recv(cpu, &tamanio, sizeof(int), 0);
+	 recv(cpu, &tamanio, sizeof(int), MSG_WAITALL);
 	 void* pcbSerializado = malloc(tamanio);
 
-	 recv(cpu, pcbSerializado, tamanio, 0);
+	 recv(cpu, pcbSerializado, tamanio, MSG_WAITALL);
 	 t_PCB* pcb = malloc(sizeof(t_PCB));
 	 deserializar_PCB(pcb, pcbSerializado);
 
@@ -268,10 +268,10 @@ void expulsarProceso(t_proceso* proceso) {
 	send(proceso->CpuDuenio, buffer, sizeof(codAccion), 0);
 
 	int tamanio;
-	recv(proceso->CpuDuenio, &codAccion, sizeof(codAccion), 0);
-    recv(proceso->CpuDuenio, &tamanio, sizeof(tamanio), 0);
+	recv(proceso->CpuDuenio, &codAccion, sizeof(codAccion), MSG_WAITALL);
+    recv(proceso->CpuDuenio, &tamanio, sizeof(tamanio), MSG_WAITALL);
     void* pcbSerializado = malloc(tamanio);
-    recv(proceso->CpuDuenio, pcbSerializado, tamanio, 0);
+    recv(proceso->CpuDuenio, pcbSerializado, tamanio, MSG_WAITALL);
 
 	t_PCB* pcb = malloc(sizeof(t_PCB));
 
@@ -303,7 +303,7 @@ void liberarRecursos(t_proceso* proceso)
 	memcpy(buffer + sizeof(codAccion), &pidParaLiberar, sizeof(pidParaLiberar));
 
 	send(memoria, buffer, sizeof(int32_t)*2, 0);
-	recv(memoria, &result, sizeof(int32_t), 0);
+	recv(memoria, &result, sizeof(int32_t), MSG_WAITALL);
 
 }
 

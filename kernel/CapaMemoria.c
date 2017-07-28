@@ -74,7 +74,7 @@ int solicitarPagina(int pid)
 	send(memoria, buffer, sizeof(codAccion) + sizeof(pedidoSolicitudPaginas_t), 0);
 
 	char* result = malloc(sizeof(int));
-	int bytesRecibidos = recv(memoria, result, sizeof(int), 0);
+	int bytesRecibidos = recv(memoria, result, sizeof(int), MSG_WAITALL);
 	int resultado = char4ToInt(result);
 
 	if(resultado == ERROR_ASIGNAR_PAGINAS)
@@ -352,7 +352,7 @@ void liberarPagina(t_paginaHeap* pagina, int puntero, int cantPaginasCodigo)
 	send(memoria, buffer, sizeof(int)*3, 0);
 
 	char* stackOverflow = malloc(sizeof(int));
-	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), 0);
+	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), MSG_WAITALL);
 	int overflow = char4ToInt(stackOverflow);
 	free(stackOverflow);
 

@@ -43,10 +43,10 @@ void lanzar_excepcion(t_PCB* pcb, int32_t codigoError)
 char* lecturaLargoMensajeASerializar(int32_t sock){
 
 	char* serialLargo = malloc(sizeof(int32_t));
-	recv(sock, serialLargo, sizeof(int32_t), 0);
+	recv(sock, serialLargo, sizeof(int32_t), MSG_WAITALL);
 	int32_t largo = char4ToInt(serialLargo);
 	char* mensaje = malloc(largo);
-	recv(sock, mensaje, largo, 0);
+	recv(sock, mensaje, largo, MSG_WAITALL);
 	free(serialLargo);
 
 	return mensaje;
@@ -162,7 +162,7 @@ void conectarConKernel() {
 	log_debug(debugLog,"Conectado a Kernel");
 
 	send(kernel,&identidadCpu, sizeof(int32_t),0);
-	recv(kernel, &algoritmo, sizeof(int32_t), 0);
+	recv(kernel, &algoritmo, sizeof(int32_t), MSG_WAITALL);
 	log_debug(debugLog,"Algoritmo: %d", algoritmo);
 
 }
@@ -181,7 +181,7 @@ int32_t obtener_tamanio_pagina(int32_t memoria) {
 	int32_t valorRecibido;
 	int32_t idMensaje = 6;
 	send(memoria, &idMensaje, sizeof(int32_t), 0);
-	recv(memoria, &valorRecibido, sizeof(int32_t), 0);
+	recv(memoria, &valorRecibido, sizeof(int32_t), MSG_WAITALL);
 
 	return valorRecibido;
 }
@@ -246,7 +246,7 @@ void enviarSolicitudBytes(int32_t pid, int32_t pagina, int32_t offset, int32_t s
 	send(memoria, solicitud, tamanio, 0);
 
 	char* stackOverflow = malloc(sizeof(int32_t));
-	int32_t bytesRecibidos = recv(memoria, stackOverflow, sizeof(int32_t), 0);
+	int32_t bytesRecibidos = recv(memoria, stackOverflow, sizeof(int32_t), MSG_WAITALL);
 	overflow = char4ToInt(stackOverflow);
     free(stackOverflow);
 
@@ -285,7 +285,7 @@ void enviarAlmacenarBytes(int32_t pid, int32_t pagina, int32_t offset, int32_t s
 	send(memoria, solicitud, tamanio, 0);
 
 	char* stackOverflow = malloc(sizeof(int32_t));
-	recv(memoria, stackOverflow, sizeof(int32_t), 0);
+	recv(memoria, stackOverflow, sizeof(int32_t), MSG_WAITALL);
 	overflow = char4ToInt(stackOverflow);
     free(stackOverflow);
 
@@ -328,7 +328,7 @@ int32_t esPaginaCompleta(int32_t longitudRestante) {
 void recibirPedazoDeSentencia(int32_t size){
 
 	char* sentenciaRecibida = malloc(size);
-	recv(memoria, sentenciaRecibida, size, 0);
+	recv(memoria, sentenciaRecibida, size, MSG_WAITALL);
 	sacarSaltoDeLinea(sentenciaRecibida, size);
 	char* sentencia = malloc(size+1);
 	sentencia[size]='\0';

@@ -9,10 +9,10 @@ int asignarCompartida(char* compartida, int valor, int cliente);
 void recibirWait(int cliente)
 {
 	void* serialTamanio = malloc(sizeof(int32_t));
-	recv(cliente, serialTamanio, sizeof(int32_t), 0);
+	recv(cliente, serialTamanio, sizeof(int32_t), MSG_WAITALL);
 	int32_t tamanio = char4ToInt(serialTamanio);
 	char* semid = malloc(tamanio);
-	recv(cliente, semid, tamanio, 0);
+	recv(cliente, semid, tamanio, MSG_WAITALL);
 
 	primitivaWait(cliente, semid);
 	free(semid);
@@ -21,10 +21,10 @@ void recibirWait(int cliente)
 void recibirSignal(int cliente)
 {
 	void* serialTamanio = malloc(sizeof(int32_t));
-	recv(cliente, serialTamanio, sizeof(int32_t), 0);
+	recv(cliente, serialTamanio, sizeof(int32_t), MSG_WAITALL);
 	int32_t tamanio = char4ToInt(serialTamanio);
 	char* semid = malloc(tamanio);
-	recv(cliente, semid, tamanio, 0);
+	recv(cliente, semid, tamanio, MSG_WAITALL);
 
 	primitivaSignal(cliente, semid);
 	free(semid);
@@ -66,10 +66,10 @@ void obtenerValorCompartida(int cliente)
 {
 
 	char* serialTamanio = malloc(sizeof(int32_t));
-	recv(cliente, serialTamanio, sizeof(int32_t), 0);
+	recv(cliente, serialTamanio, sizeof(int32_t), MSG_WAITALL);
 	int32_t tamanio = char4ToInt(serialTamanio);
 	void* compartidaSerial = malloc(tamanio);
-	recv(cliente, compartidaSerial, tamanio, 0);
+	recv(cliente, compartidaSerial, tamanio, MSG_WAITALL);
 	char* compartida = string_from_format("!%s",compartidaSerial);
 	int valor = devolverCompartida(compartida);
 
@@ -92,13 +92,13 @@ void obtenerValorCompartida(int cliente)
 void obtenerAsignarCompartida(int cliente){
 
 	char* serialTamanio = malloc(sizeof(int32_t));
-	recv(cliente, serialTamanio, sizeof(int32_t), 0);
+	recv(cliente, serialTamanio, sizeof(int32_t), MSG_WAITALL);
 	int32_t tamanio = char4ToInt(serialTamanio);
 	void* compartidaSerial = malloc(tamanio);
-	recv(cliente, compartidaSerial, tamanio, 0);
+	recv(cliente, compartidaSerial, tamanio, MSG_WAITALL);
 	char* compartida = string_from_format("!%s",compartidaSerial);
 	int32_t valorNuevo;
-	recv(cliente, &valorNuevo, sizeof(int32_t), 0);
+	recv(cliente, &valorNuevo, sizeof(int32_t), MSG_WAITALL);
 	int32_t resultado = asignarCompartida(compartida, valorNuevo, cliente);
 
 	t_proceso* proceso = obtenerProceso(cliente);
@@ -159,8 +159,8 @@ void atenderSolicitudMemoriaDinamica()
 	int espacioSolicitado;
 	int pid;
 
-	recv(fdCliente, &pid, sizeof(int),0);
-	recv(fdCliente, &espacioSolicitado, sizeof(int),0);
+	recv(fdCliente, &pid, sizeof(int),MSG_WAITALL);
+	recv(fdCliente, &espacioSolicitado, sizeof(int),MSG_WAITALL);
 
 	t_proceso* proceso = buscarProcesoPorPID(pid);
 	proceso->privilegiadas++;
@@ -176,9 +176,9 @@ void atenderLiberacionMemoriaDinamica()
 	int punteroRecibido;
 	int pid;
 	int cantPaginasCodigo;
-	recv(fdCliente, &pid, sizeof(int),0);
-	recv(fdCliente, &punteroRecibido, sizeof(int),0);
-	recv(fdCliente, &cantPaginasCodigo, sizeof(int),0);
+	recv(fdCliente, &pid, sizeof(int),MSG_WAITALL);
+	recv(fdCliente, &punteroRecibido, sizeof(int),MSG_WAITALL);
+	recv(fdCliente, &cantPaginasCodigo, sizeof(int),MSG_WAITALL);
 
 	t_proceso* proceso = buscarProcesoPorPID(pid);
 	proceso->privilegiadas++;

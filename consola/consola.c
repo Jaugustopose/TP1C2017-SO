@@ -184,9 +184,9 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 	switch (accion) {
 
 		case accionImprimirTextoConsola:
-			recv(socketKernel, &tamanioTexto, sizeof(int32_t), 0);
+			recv(socketKernel, &tamanioTexto, sizeof(int32_t), MSG_WAITALL);
 			buffer = malloc(tamanioTexto);
-			recv(socketKernel, buffer, tamanioTexto, 0);
+			recv(socketKernel, buffer, tamanioTexto, MSG_WAITALL);
 			printf("Impresion por pantalla PID: %d | Mensaje : ", pid);
 			char *texto = buffer;
 			int i;
@@ -217,7 +217,7 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 			break;
 
 		case accionConsolaFinalizarErrorInstruccion:
-			recv(socketKernel, &exitCode, sizeof(int32_t), 0);
+			recv(socketKernel, &exitCode, sizeof(int32_t), MSG_WAITALL);
 			ftime(&fin);
 			horaInicio = transformarTime(inicio);
 			horaFin = transformarTime(fin);
@@ -261,7 +261,7 @@ void atenderAcciones(char* programaSolicitado)
 	int pidRecibido;
 	free(bufferCrearPrograma);
 	free(programaSolicitado);
-	recv(socketKernel, &pidRecibido, sizeof(int32_t), 0);
+	recv(socketKernel, &pidRecibido, sizeof(int32_t), MSG_WAITALL);
 
 	infoThread_t* infoThread = malloc(sizeof(infoThread));
 	infoThread->threadId = pthread_self();
