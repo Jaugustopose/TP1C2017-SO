@@ -298,11 +298,11 @@ void liberarRecursos(t_proceso* proceso)
 	int pidParaLiberar = proceso->pidProceso;
 	int result;
 
-	void* buffer = malloc(sizeof(int32_t)*3);
+	void* buffer = malloc(sizeof(int32_t)*2);
 	memcpy(buffer, &codAccion, sizeof(codAccion));
 	memcpy(buffer + sizeof(codAccion), &pidParaLiberar, sizeof(pidParaLiberar));
 
-	send(memoria, buffer, sizeof(codAccion) + sizeof(pidParaLiberar), 0);
+	send(memoria, buffer, sizeof(int32_t)*2, 0);
 	recv(memoria, &result, sizeof(int32_t), 0);
 
 }
@@ -632,7 +632,7 @@ void escucharConsolaKernel() {
 				printf("Codificar finalizarProcesoPorUsuario!\n");
 				break;
 			case detenerPlanificacion:
-				//Previo a inicializar preguntar por esta variable de control
+
 				planificacionDetenida = 1;
 				break;
 			default:
