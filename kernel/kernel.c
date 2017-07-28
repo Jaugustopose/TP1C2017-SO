@@ -154,10 +154,8 @@ void inicializarContexto() {
 
 	colaCPU = queue_create();
 	colaNew = queue_create();
-	colaBlock = queue_create();
 	colaReady = queue_create();
 	colaExit = queue_create();
-	listaEjecucion = list_create();
 	planificacionDetenida = 0;
 
 }
@@ -276,12 +274,6 @@ void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProces
 		}
 
 	}
-	//Función privada dentro de este scope (para la condicion del remove)
-//			bool exit_code_de_proceso(t_proceso* p) {
-//
-//				return (-6 == p->PCB->exitCode);
-//			}
-//	list_remove_by_condition(listaConProcesos, (void*)exit_code_de_proceso);
 }
 
 void liberar_procesos_de_cpu(int fileDescriptor, t_list* listaConProcesos) {
@@ -664,8 +656,6 @@ int main(void) {
 	direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red
 	direccionServ.sin_addr.s_addr = inet_addr("127.0.0.1");
 	memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
-//		crearDireccionServidor(9030);
-//		conectar_con_server(memoria, &direccionServidor);
 	connect(memoria, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
 	tamanioPag = obtener_tamanio_pagina(memoria);
 	enviar_stack_size(memoria);
@@ -704,7 +694,7 @@ int main(void) {
 		};
 
 		for (fdCliente = 0; fdCliente <= maxFd; fdCliente++) {
-		//pthread_mutex_lock(&mutexClientes);
+
 			if (FD_ISSET(fdCliente, &read_fds)) { // Me fijo si tengo datos listos para leer
 				if (fdCliente == sockServ) { //si entro en este "if", significa que tengo datos.
 
@@ -749,23 +739,11 @@ int main(void) {
 					}
 				}
 			}
-	//	pthread_mutex_unlock(&mutexClientes);
 		}
-
-		//pthread_mutex_lock(&mutexPlanificacion);
+	//	if(planificacionDetenida == 0){
 			planificar();
-	//	pthread_mutex_unlock(&mutexPlanificacion);
+	//	}
+
 	}
 	return 0;
 }
-
-
-// RECORDATORIO PARA ENVIAR ALGO A TODOS LOS CLIENTES SEA QUIEN SEA (POR LAS DUDAS)
-
-//						// Con los datos que me envió la consola, hago algo:
-//
-//						for (j = 0; j <= maxFd; j++) { // Para todos los que estan conectados
-//							if (FD_ISSET(j, &master)) { // Me fijo si esta en el master
-//
-//							}
-//						}
