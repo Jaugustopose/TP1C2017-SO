@@ -2,7 +2,7 @@
 CC=gcc
 DEPS=memo.h
 RM=rm -f
-CFLAGS= -lFunciones -lcommons -pthread -g3
+CFLAGS= -lfunciones -lcommons -pthread -g3
 
 #Compilar MEMORIA
 
@@ -12,7 +12,7 @@ Debug/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 Debug/memoria: DebugDir  Debug/memo.o 
-	$(CC)  -g -fPIC -Wall -pthread  -fmessage-length=0 -o  Debug/"memoria" Debug/memo.o -lFunciones -lcommons
+	$(CC)  -g -fPIC -Wall -pthread  -fmessage-length=0 -o  Debug/"memoria" Debug/memo.o -lfunciones -lcommons
 
 DebugDir:
 	mkdir -p Debug
