@@ -19,7 +19,17 @@
 /**
  * Prototipos
  */
+void stack_PCB_main(t_PCB* pcb);
+void liberarRecursos(t_proceso* proceso);
+void planificarExpulsion(t_proceso* proceso);
 void escucharConsolaKernel();
+void realizarOperacionSobreProceso(t_proceso* proceso);
+void rafagasPorProceso(t_proceso* unProceso);
+void privilegiadasPorProceso(t_proceso* unProceso);
+void obtenerInfoHeapParaProceso(t_proceso* proceso);
+void alocacionHEAPPorProceso(t_proceso* unProceso);
+void liberacionHEAPPorProceso(t_proceso* unProceso);
+void modificarGradoDeMultiprogramacion();
 
 
 #endif /* GESTIONDEPROCESOS_H_ */

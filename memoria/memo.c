@@ -568,7 +568,7 @@ void obtenerSizeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 }
 
 int configurarRetardoMemoria() {
-	puts("Ingrese el retardo deseado en milisegundos (Se toman 8 dígitos máximo)");
+	puts("Ingrese el retardo deseado en milisegundos");
 	char input[10];
 	if (fgets(input, sizeof(input), stdin) == NULL) {
 		log_error(memoConsoleLogger, "ERROR AL LEER CONSOLA! - input: %s", input);

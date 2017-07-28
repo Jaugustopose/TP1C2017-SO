@@ -419,8 +419,8 @@ void escucharConsolaKernel() {
 				}
 				char* eptr;
 				int inputInt = strtol(input, &eptr, 10);
-				if (inputInt == 0) {
-					log_error("Error con el valor ingresado - input: %s", input);
+				if (inputInt == 0 && input == eptr) {
+					log_error(errorLog, "Error con el valor ingresado - input: %s", input);
 					break;
 				}
 				imprimir(inputInt);
@@ -433,9 +433,9 @@ void escucharConsolaKernel() {
 					break;
 				}
 				char* ptrInput;
-				int pidBuscado = strtol(input, &ptrInput, 10);
-				if (pidBuscado == 0) {
-					log_error("Error con el valor ingresado - input: %s", inputProceso);
+				int pidBuscado = strtol(inputProceso, &ptrInput, 10);
+				if (pidBuscado == 0 && inputProceso == ptrInput) {
+					log_error(errorLog, "Error con el valor ingresado - input: %s", inputProceso);
 					break;
 				}
 				int _esProcesoBuscado(t_proceso* proceso)
@@ -453,13 +453,14 @@ void escucharConsolaKernel() {
 				printf("Codificar obtenerTGArchivos!\n");
 				break;
 			case modificarMultiprogramacion:
-				printf("Codificar modificarMultiprogramacion!\n");
+				modificarGradoDeMultiprogramacion();
 				break;
 			case finalizarProcesoPorUsuario:
 				printf("Codificar finalizarProcesoPorUsuario!\n");
 				break;
 			case detenerPlanificacion:
-				printf("Codificar detenerPlanificacion!\n");
+				//Previo a inicializar preguntar por esta variable de control
+				planificacionDetenida = 1;
 				break;
 			default:
 				printf("No se reconece la acción %d!\n", codAccion);
@@ -467,8 +468,21 @@ void escucharConsolaKernel() {
 		}
 }
 
-void modificarGradoDeMultiprogramacion(int nuevoGradoMulti)
+void modificarGradoDeMultiprogramacion()
 {
+	puts("Ingrese el nuevo grado de multiprogramación deseado");
+	char input[10];
+	if (fgets(input, sizeof(input), stdin) == NULL) {
+		log_error(errorLog, "Error al leer consola del Kernel! - input: %s", input);
+		return;
+	}
+	char* eptr;
+	int nuevoGradoMulti = strtol(input, &eptr, 10);
+	if (nuevoGradoMulti == 0 && input == eptr) {
+		log_error(errorLog, "Error con el valor ingresado - input: %s", input);
+		return;
+	}
+
 	//Lei en un ISSUE que se empieza a laburar gradualmente con el nuevo grado.
 	//No hay que hacer nada raro como salir a matar procesos si el numero nuevo es menor.
 	config.GRADO_MULTIPROG = nuevoGradoMulti;
@@ -514,8 +528,12 @@ void imprimirColaNew()
 void imprimirColaExec()
 {
 	strLista = string_new();
-	list_iterate(listaEjecucion, (void*)imprimirPIDenCola);
-	log_info(infoLog,"En estado Exec = [%s]",strLista);
+	bool _estaEnExec(t_proceso *p) {
+		return p->estado == EXEC;
+	}
+	t_list* listaBlock = list_filter(listaDeProcesos, (void*)_estaEnExec);
+	list_iterate(listaBlock, (void*)imprimirPIDenCola);
+	log_info(infoLog,"En estado Exec =[%s]",strLista);
 	free(strLista);
 }
 
@@ -523,9 +541,9 @@ void imprimirColaBlock()
 {
 	strLista = string_new();
 	bool _estaEnExec(t_proceso *p) {
-		return p->estado == EXEC;
+		return p->estado == BLOCK;
 	}
-	t_list* listaBlock = list_filter(listaDeProcesos, _estaEnExec);
+	t_list* listaBlock = list_filter(listaDeProcesos, (void*)_estaEnExec);
 	list_iterate(listaBlock, (void*)imprimirPIDenCola);
 	log_info(infoLog,"En estado Block =[%s]",strLista);
 	free(strLista);
@@ -586,8 +604,8 @@ void realizarOperacionSobreProceso(t_proceso* proceso)
 	puts("1: Obtener cantidad de ráfagas ejecutadas");
 	puts("2: Obtener cantidad de operaciones privilegiadas ejecutadas");
 	puts("3: Obtener la tabla de archivos abiertos por el proceso");
-	puts("4: Procesos en EXIT");
-	puts("5: Todos los procesos\n");
+	puts("4: Obtener cantidad de páginas de Heap utilizadas");
+	puts("5: Obtener cantidad de syscalls ejecutadas\n");
 	char input[10];
 	if (fgets(input, sizeof(input), stdin) == NULL) {
 		log_error(errorLog, "Error al leer consola del Kernel! - input: %s", input);
@@ -596,7 +614,7 @@ void realizarOperacionSobreProceso(t_proceso* proceso)
 	char* ptrInput;
 	int operacion = strtol(input, &ptrInput, 10);
 	if (operacion == 0) {
-		log_error("Error con el valor ingresado - input: %s", input);
+		log_error(errorLog, "Error con el valor ingresado - input: %s", input);
 		return;
 	}
 	switch(operacion)
@@ -606,12 +624,15 @@ void realizarOperacionSobreProceso(t_proceso* proceso)
 			break;
 
 		case 2:
+			privilegiadasPorProceso(proceso);
 			break;
 
 		case 3:
+			printf("Tabla de archivos abiertos por el proceso!\n");
 			break;
 
 		case 4:
+			obtenerInfoHeapParaProceso(proceso);
 			break;
 
 		case 5:
@@ -619,6 +640,37 @@ void realizarOperacionSobreProceso(t_proceso* proceso)
 
 		default:
 			log_error(errorLog, "Operación no reconocida!");
+	}
+}
+
+void obtenerInfoHeapParaProceso(t_proceso* proceso)
+{
+	puts("\nOpciones:");
+	puts("1: Obtener cantidad de acciones alocar realizadas");
+	puts("2: Obtener cantidad de acciones liberar realizadas");
+	char input[10];
+	if (fgets(input, sizeof(input), stdin) == NULL) {
+		log_error(errorLog, "Error al leer consola del Kernel! - input: %s", input);
+		return;
+	}
+	char* ptrInput;
+	int opcion = strtol(input, &ptrInput, 10);
+	if (opcion == 0) {
+		log_error(errorLog, "Error con el valor ingresado - input: %s", input);
+		return;
+	}
+	switch(opcion)
+	{
+		case 1:
+			alocacionHEAPPorProceso(proceso);
+			break;
+
+		case 2:
+			liberacionHEAPPorProceso(proceso);
+			break;
+
+		default:
+			log_error(errorLog, "Opción no reconocida!");
 	}
 }
 
@@ -632,29 +684,13 @@ void rafagasPorProceso(t_proceso* unProceso)
 	free(rafagas);
 }
 
-//void imprimirRafagas()
-//{
-//	strRafagas = string_new();
-//	list_iterate(listaDeProcesos, (void*)rafagasPorProceso);
-//	log_info(infoLog,"Rafagas =[%s]", strRafagas);
-//	free(strRafagas);
-//}
-
 void privilegiadasPorProceso(t_proceso* unProceso)
 {
 	char* privilegiadas = string_from_format("PID: |%d|, Privilegiadas: |%d| ",
 							unProceso->pidProceso,
 							unProceso->privilegiadas);
-	string_append(&strRafagas, privilegiadas);
+	log_info(infoLog,"[%s]", privilegiadas);
 	free(privilegiadas);
-}
-
-void imprimirPrivilegiadas()
-{
-	strPrivilegiadas = string_new();
-	list_iterate(listaDeProcesos, (void*)privilegiadasPorProceso);
-	log_info(infoLog,"Privilegiadas =[%s]", strPrivilegiadas);
-	free(strPrivilegiadas);
 }
 
 void alocacionHEAPPorProceso(t_proceso* unProceso)
@@ -664,16 +700,8 @@ void alocacionHEAPPorProceso(t_proceso* unProceso)
 			                    unProceso->cantidadPaginasHeap,
 								unProceso->cantidadAlocaciones,
 								unProceso->bytesAlocados);
-	string_append(&strPaginasHeapAlocar, cantidadPaginasHeapAlocar);
+	log_info(infoLog,"[%s]", cantidadPaginasHeapAlocar);
 	free(cantidadPaginasHeapAlocar);
-}
-
-void imprimirAlocacionPaginasHeap()
-{
-	strPaginasHeapAlocar = string_new();
-	list_iterate(listaDeProcesos, (void*)alocacionHEAPPorProceso);
-	log_info(infoLog,"Paginas Heap =[%s]", strPaginasHeapAlocar);
-	free(strPaginasHeapAlocar);
 }
 
 void liberacionHEAPPorProceso(t_proceso* unProceso)
@@ -683,16 +711,8 @@ void liberacionHEAPPorProceso(t_proceso* unProceso)
 			                    unProceso->cantidadPaginasHeap,
 								unProceso->cantidadLiberaciones,
 								unProceso->bytesLiberados);
-	string_append(&strPaginasHeapLiberar, cantidadPaginasHeapLiberar);
+	log_info(infoLog,"[%s]", cantidadPaginasHeapLiberar);
 	free(cantidadPaginasHeapLiberar);
-}
-
-void imprimirLiberacionPaginasHeap()
-{
-	strPaginasHeapLiberar = string_new();
-	list_iterate(listaDeProcesos, (void*)liberacionHEAPPorProceso);
-	log_info(infoLog,"Paginas Heap =[%s]", strPaginasHeapLiberar);
-	free(strPaginasHeapLiberar);
 }
 
 void imprimirTablaGlobalDeArchivos(int pid)

@@ -123,6 +123,7 @@ void inicializarContexto() {
 	colaReady = queue_create();
 	colaExit = queue_create();
 	listaEjecucion = list_create();
+	planificacionDetenida = 0;
 
 }
 
