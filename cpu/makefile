@@ -13,7 +13,7 @@ Debug/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 Debug/cpu: DebugDir  Debug/cpu.o Debug/primitivas.o 
-	$(CC)  -g -fPIC -Wall -pthread  -fmessage-length=0 -o  Debug/"cpu" Debug/cpu.o Debug/primitivas.o -lFunciones -lcommons -lparser-ansisop
+	$(CC)  -g -fPIC -Wall -pthread  -fmessage-length=0 -o  Debug/"cpu" Debug/cpu.o Debug/primitivas.o -lfunciones -lcommons -lparser-ansisop
 
 DebugDir:
 	mkdir -p Debug
