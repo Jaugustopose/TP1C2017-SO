@@ -75,18 +75,18 @@ char* calcularDuracion(struct timeb inicio, struct timeb fin) {
 	return string;
 }
 
-void cargarConfiguracion(){
+void cargarConfiguracion(char *path){
 
-	char* pat = string_new();
+	/*char* pat = string_new();
 		char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 		string_append(&pat, getcwd(cwd, sizeof(cwd)));
 		if (string_contains(pat, "/Debug")) {
 			string_append(&pat, "/consola.cfg");
 		} else {
 			string_append(&pat, "/Debug/consola.cfg");
-		}
-		t_config* configConsola = config_create(pat);
-		free(pat);
+		}*/
+		t_config* configConsola = config_create(path);
+		//free(pat);
 		if (config_has_property(configConsola, "IP_KERNEL")){
 				config.IP_KERNEL = config_get_string_value(configConsola,"IP_KERNEL");
 		printf("config.IP_KERNEL: %s\n", config.IP_KERNEL);
@@ -390,13 +390,13 @@ void inicializarContexto()
 	//sem_init(&mutexB, 1, 0);
 }
 
-int main(void){
+int main(int argc, char *argv[]){
 
 	inicializarContexto();
 
 	limpiaMensajes();
 
-    cargarConfiguracion();
+    cargarConfiguracion(argv[0]);
 
     imprimeMenuUsuario();
 
