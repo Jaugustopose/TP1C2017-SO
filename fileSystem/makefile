@@ -2,7 +2,7 @@
 CC=gcc
 DEPS=fileSystem.h
 RM=rm -f
-CFLAGS= -lFunciones -lcommons -pthread -g3
+CFLAGS= -lfunciones -lcommons -pthread -g3
 
 #Compilar FILESYSTEM
 
