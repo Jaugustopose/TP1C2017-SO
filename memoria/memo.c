@@ -86,6 +86,7 @@ int32_t buscarEnOverflow(int32_t indice, int32_t pid, int32_t pagina, tablaPagin
 	int32_t frame = -10;
 	//pthread_mutex_lock(&lockColisiones);
 	//pthread_mutex_lock(&lockTablaPaginas);
+	//TODO: REVISAR PORQUE LLEGA INDICE -10
 	for (i = 0; i < list_size(overflow[indice]); i++) {
 		if (esMarcoCorrecto((int32_t)list_get(overflow[indice], i), pid, pagina, tablaPaginasInvertida)) {
 			frame = (int32_t)list_get(overflow[indice], i);

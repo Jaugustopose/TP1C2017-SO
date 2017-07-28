@@ -1,6 +1,11 @@
 #ifndef CapaFS_h
 #define CapaFS_h
 
+#include <commons/config.h>
+#include <commons/string.h>
+#include <commons/collections/list.h>
+#include <commons/collections/dictionary.h>
+
 typedef struct{
 	char* permisos;
 	int offset;
@@ -19,5 +24,6 @@ void cerrarArchivo(int socketCpu, int socketFS);
 void borrarArchivo(int socketCPU, int socketFS);
 void moverCursor(int socketCPU, int socketFS);
 void liberarRecursosFS(int pid);
+void obtenerTablaProceso(int pid);
 
 #endif

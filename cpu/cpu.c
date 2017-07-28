@@ -293,7 +293,7 @@ void enviarAlmacenarBytes(int32_t pid, int32_t pagina, int32_t offset, int32_t s
 			log_debug(debugLog, ANSI_COLOR_RED "OVERFLOW!");
 			ejecutando = false;
 			error = true;
-			lanzar_excepcion(pcbNuevo, overflow);
+			lanzar_excepcion(pcbNuevo, ERROR_MEMORIA);
 
 		}
 
@@ -584,31 +584,6 @@ void handler(int32_t sign) {
 		}else{
 			log_debug(debugLog, "SIGUSR1 recibido finalizando");
 		}
-
-		/*
-		if(!ejecutando){
-
-			//TODO: deberia avisarle a memoria?
-//			int32_t codAccion = accionQuantumInterrumpido;
-//			void* buffer = malloc(sizeof(int32_t));
-//			memcpy(buffer, &codAccion, sizeof(codAccion));
-//			send(kernel, buffer, sizeof(codAccion), 0);
-
-			serializar_PCB(pcbNuevo, kernel, accionQuantumInterrumpido);
-			finalizar_proceso(true);
-			finalizar_todo();
-
-		}else{
-			terminar = true;
-			log_info(infoLog, "Esperando a que termine la ejecucion del programa actual...");
-
-//			int32_t codAccion = accionQuantumInterrumpido;
-//			void* buffer = malloc(sizeof(int32_t));
-//			memcpy(buffer, &codAccion, sizeof(codAccion));
-//			send(kernel, buffer, sizeof(codAccion), 0);
-
-			serializar_PCB(pcbNuevo, kernel, accionQuantumInterrumpido);
-		}*/
 	}
 }
 

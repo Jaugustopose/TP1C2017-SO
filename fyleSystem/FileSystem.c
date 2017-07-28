@@ -591,7 +591,7 @@ void sockets(){
 
 int main(void) {
 
-	crearLog(string_from_format("FS_%d", getpid()), "CPU", 1);
+	crearLog(string_from_format("FS_%d", getpid()), "FS", 1);
 	log_debug(debugLog, "Iniciando proceso FS, PID: %d.", getpid());
 
 	if(cargarConfiguracion()<0){

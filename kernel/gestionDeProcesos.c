@@ -138,8 +138,8 @@ void finalizarProceso(t_proceso* proceso)
 {
 	cambiarEstado(proceso,EXIT);
 
-	//liberarRecursosFS(proceso->pidProceso);
-	//liberarRecursos(proceso);
+	liberarRecursosFS(proceso->pidProceso);
+	liberarRecursos(proceso);
 
 	if (proceso->semaforo != NULL){
 			t_semaforo* semaforo = dictionary_get(tablaSemaforos,proceso);
@@ -298,7 +298,7 @@ void liberarRecursos(t_proceso* proceso)
 	int pidParaLiberar = proceso->pidProceso;
 	int result;
 
-	void* buffer = malloc(sizeof(int32_t)*3);
+	void* buffer = malloc(sizeof(int32_t)*2);
 	memcpy(buffer, &codAccion, sizeof(codAccion));
 	memcpy(buffer + sizeof(codAccion), &pidParaLiberar, sizeof(pidParaLiberar));
 
@@ -757,7 +757,7 @@ void liberacionHEAPPorProceso(t_proceso* unProceso)
 
 void imprimirTablaGlobalDeArchivos(int pid)
 {
-	t_proceso* proceso = buscarProcesoPorPID(pid);
-	//TODO:LUCAS, hay que traer la tabla de archivos abiertos del proceso
+	//t_proceso* proceso = buscarProcesoPorPID(pid);
+	imprimirArchivosPid(pid);
 }
 

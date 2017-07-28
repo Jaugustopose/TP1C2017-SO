@@ -463,10 +463,6 @@ void atender_accion_cpu(int idMensaje, int memoria, int socketFS) {
 		cerrarArchivo(fdCliente, socketFS);
 		break;
 
-	case accionCrearArchivo:
-		//TODO: Esto no existe, para crear un archivo se debe abrir el archivo con permisos de creacion
-		break;
-
 	case accionBorrarArchivo:
 		borrarArchivo(fdCliente, socketFS);
 		break;

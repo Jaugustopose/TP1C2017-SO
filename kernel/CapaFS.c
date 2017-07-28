@@ -6,11 +6,6 @@
 #include <string.h>
 #include <sys/socket.h>
 
-#include <commons/config.h>
-#include <commons/string.h>
-#include <commons/collections/list.h>
-#include <commons/collections/dictionary.h>
-
 #include "kernel.h"
 #include "estructurasCompartidas.h"
 #include "gestionDeProcesos.h"
@@ -70,6 +65,23 @@ FD_t* obtenerFD(int pid, int fd){
 	return list_get(tablaProceso, fd-2);
 }
 
+void imprimirArchivosPid(int pid){
+	t_list* tablaProceso = dictionary_get(tablasProcesos, string_itoa(pid));
+	if(tablaProceso==NULL)
+		return;
+	int i;
+	printf("Cantidad de archivos abiertos por proceso [%d] : %d\n", pid, list_size(tablaProceso));
+	for (i = 0; i < list_size(tablaProceso); ++i) {
+		FD_t* fd = list_get(tablaProceso, i);
+		if(fd!=NULL){
+			globalFD_t* globalFD = list_get(tablaGlobalArchivos, fd->indiceTablaGlobal);
+			if(globalFD!=NULL){
+				printf("Path: %s\n",globalFD->path);
+			}
+		}
+	}
+}
+
 void quitarTablaProceso(int pid, int fd){
 	t_list* tablaProceso = dictionary_get(tablasProcesos, string_itoa(pid));
 	FD_t* fileDescriptor = list_get(tablaProceso, fd-2);
@@ -79,6 +91,9 @@ void quitarTablaProceso(int pid, int fd){
 }
 
 void liberarRecursosFS(int pid){
+	if(tablasProcesos==NULL){
+			return;
+	}
 	t_list* tablaProceso = dictionary_get(tablasProcesos, string_itoa(pid));
 	if(tablaProceso==NULL){
 		return;
