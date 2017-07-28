@@ -1,13 +1,7 @@
-
 all: compilar
 
 compilar:
-	 gcc -shared -fPIC -o "funciones.so" 
-	 ../funciones/cliente-servidor.c  ../funciones/cliente-servidor.h 
-	 ../funciones/deserializador.c ../funciones/deserializador.h 
-	 ../funciones/estructurasCompartidas.c  ../funciones/estructurasCompartidas.h
-	 ../funciones/logger.c ../funciones/logger.h
-	 ../funciones/serializador.c ../funciones/serializador.h
+	gcc -shared -fPIC -o "funciones.so" ../funciones/cliente-servidor.c ../funciones/cliente-servidor.h ../funciones/deserializador.c ../funciones/deserializador.h ../funciones/estructurasCompartidas.c ../funciones/estructurasCompartidas.h ../funciones/logger.c ../funciones/logger.h ../funciones/serializador.c ../funciones/serializador.h
 
 install: compilar
 	cp -u funciones.so /usr/lib
