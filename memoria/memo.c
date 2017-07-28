@@ -1,17 +1,9 @@
 #include "memo.h"
 #include <time.h>
 
-void cargarConfigFile() {
-	char* pat = string_new();
-	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
-	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	if (string_contains(pat, "/Debug")) {
-		string_append(&pat, "/memo.cfg");
-	} else {
-		string_append(&pat, "/Debug/memo.cfg");
-	}
+void cargarConfigFile(char *path) {
 
-	t_config* configMemo = config_create(pat);
+	t_config* configMemo = config_create(path);
 	if (config_has_property(configMemo, "PUERTO_KERNEL")) {
 		config.puerto_kernel = config_get_int_value(configMemo, "PUERTO_KERNEL");
 		log_info(memoConsoleLogger, "config.PUERTO_KERNEL: %d", config.puerto_kernel);
@@ -1125,92 +1117,96 @@ void sig_handler(int signo) {
   }
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
+//	printf(argc);
+	if(argc > 1) {
+		if (signal(SIGINT, sig_handler) == SIG_ERR)
+		  printf("Error al interceptar SIGINT\n");
 
-	if (signal(SIGINT, sig_handler) == SIG_ERR)
-	  printf("Error al interceptar SIGINT\n");
-
-	/***********************************************************
-	***Si no existe el directorio de output lo crea*************/
-	struct stat st = {0};
-	if (stat(directorioOutputMemoria, &st) == -1) {
-	    mkdir(directorioOutputMemoria, 0700);
-	}
-	/***********************************************************/
-
-	inicializarLog();
-
-	/***********************************************************/
-	//Setea config_t config
-	cargarConfigFile();
-
-	/***********************************************************/
-
-	//Inicializacion tabla de páginas invertida
-	tablaPagina_t tablaPaginasInvertida[config.marcos];
-	tamanioTablaPagina = config.marcos * sizeof(tablaPagina_t);
-
-
-	inicializarTablaPaginas(tablaPaginasInvertida);
-	//Fin inicialización tabla de páginas invertida
-
-	/***********************************************************/
-	//Inicialización Overflow Tabla Páginas
-	inicializarOverflow(config.marcos);
-
-	/***********************************************************/
-	//Inicialización memoria
-	tamanioMemoria = config.marco_size * config.marcos;
-	log_info(memoLogger, "Inicializando la memoria de %d bytes", tamanioMemoria);
-	memoria = malloc(tamanioMemoria);
-	memset(memoria, '\0', tamanioMemoria);
-	memcpy(memoria, tablaPaginasInvertida, tamanioTablaPagina);
-	//Fin inicialización memoria
-	log_info(memoLogger, "Memoria inicializada");
-
-	/***********************************************************/
-	//Inicialización memoria caché
-
-	inicializarCache();
-
-	/***********************************************************/
-	inicializarMutex();
-
-	/***********************************************************/
-
-	struct sockaddr_in direccionServidor; // Información sobre mi dirección
-	struct sockaddr_in direccionCliente; // Información sobre la dirección del cliente
-	socklen_t addrlen; // El tamaño de la direccion del cliente
-	int sockServ; // Socket de nueva conexion aceptada
-	int sockClie; // Socket a la escucha
-
-	//Crear socket. Dejar reutilizable. Crear direccion del servidor. Bind. Listen.
-	sockServ = crearSocket();
-	reusarSocket(sockServ, 1);
-	direccionServidor = crearDireccionServidor(config.puerto);
-	bind_w(sockServ, &direccionServidor);
-	listen_w(sockServ);
-	log_info(memoLogger, "Escuchando nuevas solicitudes tcp en el puerto %d...", config.puerto);
-	pthread_t unHilo;
-	pthread_create(&unHilo, NULL, (void*) escucharConsolaMemoria, (void*) tablaPaginasInvertida);
-
-	// gestionar nuevas conexiones
-	addrlen = sizeof(direccionCliente);
-	for (;;) {
-		if ((sockClie = accept(sockServ, (struct sockaddr*) &direccionCliente, &addrlen)) == -1) {
-			log_error(memoLogger, "Error en el accept");
-			perror("Error en el accept");
-		} else {
-			pthread_t hiloDedicado;
-			paramHiloDedicado* parametros = malloc(sizeof(paramHiloDedicado));
-			parametros->socketClie = sockClie;
-			parametros->tablaPaginasInvertida = tablaPaginasInvertida;
-			pthread_create(&hiloDedicado, NULL, (void*) atenderHilo, (void*) parametros);
-
-			log_info(memoLogger, "Server: nueva conexion de %s en socket %d", inet_ntoa(direccionCliente.sin_addr), sockClie);
-
+		/***********************************************************
+		***Si no existe el directorio de output lo crea*************/
+		struct stat st = {0};
+		if (stat(directorioOutputMemoria, &st) == -1) {
+			mkdir(directorioOutputMemoria, 0700);
 		}
-	}
+		/***********************************************************/
 
-	finalizar();
+		inicializarLog();
+
+		/***********************************************************/
+		//Setea config_t config
+		cargarConfigFile(argv[1]);
+
+		/***********************************************************/
+
+		//Inicializacion tabla de páginas invertida
+		tablaPagina_t tablaPaginasInvertida[config.marcos];
+		tamanioTablaPagina = config.marcos * sizeof(tablaPagina_t);
+
+
+		inicializarTablaPaginas(tablaPaginasInvertida);
+		//Fin inicialización tabla de páginas invertida
+
+		/***********************************************************/
+		//Inicialización Overflow Tabla Páginas
+		inicializarOverflow(config.marcos);
+
+		/***********************************************************/
+		//Inicialización memoria
+		tamanioMemoria = config.marco_size * config.marcos;
+		log_info(memoLogger, "Inicializando la memoria de %d bytes", tamanioMemoria);
+		memoria = malloc(tamanioMemoria);
+		memset(memoria, '\0', tamanioMemoria);
+		memcpy(memoria, tablaPaginasInvertida, tamanioTablaPagina);
+		//Fin inicialización memoria
+		log_info(memoLogger, "Memoria inicializada");
+
+		/***********************************************************/
+		//Inicialización memoria caché
+
+		inicializarCache();
+
+		/***********************************************************/
+		inicializarMutex();
+
+		/***********************************************************/
+
+		struct sockaddr_in direccionServidor; // Información sobre mi dirección
+		struct sockaddr_in direccionCliente; // Información sobre la dirección del cliente
+		socklen_t addrlen; // El tamaño de la direccion del cliente
+		int sockServ; // Socket de nueva conexion aceptada
+		int sockClie; // Socket a la escucha
+
+		//Crear socket. Dejar reutilizable. Crear direccion del servidor. Bind. Listen.
+		sockServ = crearSocket();
+		reusarSocket(sockServ, 1);
+		direccionServidor = crearDireccionServidor(config.puerto);
+		bind_w(sockServ, &direccionServidor);
+		listen_w(sockServ);
+		log_info(memoLogger, "Escuchando nuevas solicitudes tcp en el puerto %d...", config.puerto);
+		pthread_t unHilo;
+		pthread_create(&unHilo, NULL, (void*) escucharConsolaMemoria, (void*) tablaPaginasInvertida);
+
+		// gestionar nuevas conexiones
+		addrlen = sizeof(direccionCliente);
+		for (;;) {
+			if ((sockClie = accept(sockServ, (struct sockaddr*) &direccionCliente, &addrlen)) == -1) {
+				log_error(memoLogger, "Error en el accept");
+				perror("Error en el accept");
+			} else {
+				pthread_t hiloDedicado;
+				paramHiloDedicado* parametros = malloc(sizeof(paramHiloDedicado));
+				parametros->socketClie = sockClie;
+				parametros->tablaPaginasInvertida = tablaPaginasInvertida;
+				pthread_create(&hiloDedicado, NULL, (void*) atenderHilo, (void*) parametros);
+
+				log_info(memoLogger, "Server: nueva conexion de %s en socket %d", inet_ntoa(direccionCliente.sin_addr), sockClie);
+
+			}
+		}
+
+		finalizar();
+	} else {
+		printf("Es necesario que se pase el path por parámetro\n");
+	}
 }
