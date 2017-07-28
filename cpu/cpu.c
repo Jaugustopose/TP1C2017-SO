@@ -217,7 +217,7 @@ void desalojarProceso()
 
 void inicializarContexto()
 {
-	ejecutando = true;
+	ejecutando = false;
 	terminar = false;
 	sigusR1 = false;
 	error = false;
@@ -542,7 +542,6 @@ void recibirOrdenes(int32_t accionRecibida)
 void esperarProgramas()
 {
 	int32_t accionRecibida;
-	ejecutando = true;
 
 		while (!puedo_terminar()) {
 
@@ -579,12 +578,11 @@ void finalizar_todo() {
 
 void handler(int32_t sign) {
 	if (sign == SIGUSR1) {
+		sigusR1 = true;
 		if(ejecutando){
 			log_debug(debugLog, "SIGUSR1 recibido, preparando para finalizar");
-			sigusR1 = true;
 		}else{
 			log_debug(debugLog, "SIGUSR1 recibido finalizando");
-			exit(EXIT_SUCCESS);
 		}
 
 		/*
@@ -631,7 +629,12 @@ int32_t main(void){
     conectarConMemoria();
     tamanioPaginas = obtenerTamanioPagina(memoria);
 
-    esperarProgramas();
+    pthread_t hiloEscucha;
+    pthread_create(&hiloEscucha, NULL, (void*)esperarProgramas, NULL);
+
+    while(ejecutando || !sigusR1);
+
+    //esperarProgramas();
     finalizar_todo();
 
 	return EXIT_SUCCESS;
