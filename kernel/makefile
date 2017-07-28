@@ -13,7 +13,7 @@ Debug/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 Debug/kernel: DebugDir  Debug/kernel.o  Debug/CapaFS.o Debug/CapaMemoria.o Debug/gestionDeProcesos.o Debug/primitivasKernel.o Debug/funcionesKernel.o
-	$(CC)  -g -fPIC -Wall -pthread  -fmessage-length=0 -o  Debug/"kernel" Debug/kernel.o Debug/CapaFS.o Debug/CapaMemoria.o Debug/gestionDeProcesos.o Debug/primitivasKernel.o Debug/Kernel.o -lfunciones -lcommons -lparser-ansisop
+	$(CC)  -g -fPIC -Wall -pthread  -fmessage-length=0 -o  Debug/"kernel" Debug/kernel.o Debug/CapaFS.o Debug/CapaMemoria.o Debug/gestionDeProcesos.o Debug/primitivasKernel.o Debug/kernel.o -lfunciones -lcommons -lparser-ansisop
 
 DebugDir:
 	mkdir -p Debug
