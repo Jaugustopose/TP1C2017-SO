@@ -173,14 +173,13 @@ void* pidePathAlUsuario(char* path)
     }
 }
 
-void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct timeb fin, int pid){
+void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct timeb fin, int pid, int* seguir, int* cantPrintf){
 	int32_t tamanioTexto;
 	void* buffer;
 	int32_t exitCode;
 	char* horaInicio;
 	char* horaFin;
 	char* tiempoTranscurrido;
-	int cantPrintf=0;
 
 	switch (accion) {
 
@@ -188,9 +187,17 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 			recv(socketKernel, &tamanioTexto, sizeof(int32_t), 0);
 			buffer = malloc(tamanioTexto);
 			recv(socketKernel, buffer, tamanioTexto, 0);
-			printf("Impresion por pantalla PID: %d | Mensaje : %s", pid, (char*)buffer);
+			printf("Impresion por pantalla PID: %d | Mensaje : ", pid);
+			char *texto = buffer;
+			int i;
+			for (i = 0; i < tamanioTexto; ++i) {
+				if(i==0)
+					printf("|");
+				printf("%d|",(int)texto[i]);
+			}
+			printf("\n");
 			free(buffer);
-			cantPrintf++;
+			(*cantPrintf)++;
 			break;
 
 		case accionConsolaFinalizarNormalmente:
@@ -201,11 +208,12 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 			printf("Inicio: %s\n",horaInicio);
 			printf("Fin: %s\n", horaFin);
 			tiempoTranscurrido = calcularDuracion(inicio, fin);
-			printf("Duracion: %s", tiempoTranscurrido);
-			printf("Cantidad de impresiones en pantalla: %d", cantPrintf);
+			printf("Duracion: %s\n", tiempoTranscurrido);
+			printf("Cantidad de impresiones en pantalla: %d\n", *cantPrintf);
 			free(horaInicio);
 			free(horaFin);
 			free(tiempoTranscurrido);
+			*seguir = 0;
 			break;
 
 		case accionConsolaFinalizarErrorInstruccion:
@@ -217,10 +225,12 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 			printf("Inicio: %s\n",horaInicio);
 			printf("Fin: %s\n", horaFin);
 			tiempoTranscurrido = calcularDuracion(inicio, fin);
-			printf("Duracion: %s", tiempoTranscurrido);
+			printf("Duracion: %s\n", tiempoTranscurrido);
+			printf("Cantidad de impresiones en pantalla: %d\n", *cantPrintf);
 			free(horaInicio);
 			free(horaFin);
 			free(tiempoTranscurrido);
+			*seguir = 0;
 			break;
 
 		default:
@@ -260,19 +270,26 @@ void atenderAcciones(char* programaSolicitado)
 
 	printf("Proceso iniciado con PID: %d\n", pidRecibido);
 
-	list_add(listaPIDs, pidRecibido);
+	//list_add(listaPIDs, pidRecibido);
+	int* seguir = malloc(sizeof(int));
+	*seguir = 1;
 
-	while(1)
+	int* cantPrintf= malloc(sizeof(int));
+	*cantPrintf = 0;
+
+	while(*seguir)
 	{
 			int codAccion;
 			if(recv(socketKernel, &codAccion, sizeof(int32_t), 0)>0){
-				recibeOrden(codAccion, socketKernel, inicio ,fin, pidRecibido);
+				recibeOrden(codAccion, socketKernel, inicio ,fin, pidRecibido, seguir, cantPrintf);
 			}else{
 				printf("Proceso con PID %d finalizado por desconexion con Kernel/n", pidRecibido);
 				break;
 			}
 
 	}
+	free(cantPrintf);
+	free(seguir);
 }
 
 void crearPrograma(char* programaSolicitado)
@@ -338,13 +355,12 @@ void escucharUsuario()
 					if(infoThread==NULL){
 						printf("No hay proceso en ejecucion con ese PID\n");
 					}else{
-						pthread_cancel(infoThread->threadId);
+						//pthread_cancel(infoThread->threadId);
 						int32_t codigo = finalizarProgramaAccion;
 						void *buffer = malloc(sizeof(int32_t)*2);
 						memcpy(buffer,&codigo,sizeof(int32_t));
 						memcpy(buffer+sizeof(int32_t),&pid,sizeof(int32_t));
 						send(infoThread->socket,buffer,sizeof(int32_t)*2,0);
-						close(infoThread->socket);
 						free(buffer);
 					}
 				}

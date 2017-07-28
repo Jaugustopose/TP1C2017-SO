@@ -858,7 +858,7 @@ char* solicitarBytesCache(int32_t unPid, int32_t unNroPag, int32_t unOffset, int
 	nuevaEntrada = list_get(entradasOcupadasCache,unIndiceCache);
 	list_remove(entradasOcupadasCache, unIndiceCache);
 	list_add(entradasOcupadasCache, nuevaEntrada);
-	usleep(config.retardo_memoria * 1000);
+	//usleep(config.retardo_memoria * 1000);
 	memcpy(bufferAux,nuevaEntrada->contenido + unOffset, unTamanio);
 	memcpy(respuesta, &codResult,sizeof(codResult));
 	memcpy(respuesta + sizeof(codResult), bufferAux,unTamanio);

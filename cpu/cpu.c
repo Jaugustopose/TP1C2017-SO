@@ -186,11 +186,6 @@ int32_t obtener_tamanio_pagina(int32_t memoria) {
 	return valorRecibido;
 }
 
-void deserializarPCB(t_PCB* pcbNuevo, t_PCB* pcbSerializado)
-{
-
-}
-
 void obtenerPCB()
 {
 	if(pcbNuevo != NULL){
@@ -497,34 +492,42 @@ void pedirSentencia()
 
 }
 
+void desalojarProcesoPorConsola()
+{
+	pcbNuevo->exitCode = ERROR_FIN_CONSOLA;
+}
+
 void recibirOrdenes(int32_t accionRecibida)
 {
 
 	switch((int32_t)accionRecibida){
 
-		case accionObtenerPCB: //Recibir nuevo PCB del Kernel
+		case accionObtenerPCB:
 			overflow = false;
 			lanzarOverflowExep = false;
 			ejecutando = true;
 			obtenerPCB();
 			break;
 
-		case accionContinuarProceso: //Obtener y parsear sentencias
-
+		case accionContinuarProceso:
 			if(!puedo_terminar()){
 				pedirSentencia();
 			}
-			//ejecucionInterrumpida = false;
 			break;
-		case accionDesalojarProceso: //Envio PCB al Kernel
+		case accionDesalojarProceso:
 
 			desalojarProceso();
 
 			break;
-		case accionException: //Overflow - Le paso un cero que indica overflow
+
+//		case accionConsolaFinalizada:
+//			desalojarProcesoPorConsola();
+//			break;
+
+		case accionException:
 
 			break;
-		case accionError: //Overflow - Le paso un cero que indica overflow
+		case accionError:
 
 			break;
 
@@ -606,6 +609,7 @@ void handler(int32_t sign) {
 }
 
 int32_t main(void){
+
 
 	signal(SIGUSR1, handler); //el progama sabe que cuando se recibe SIGUSR1,se ejecuta handler
 

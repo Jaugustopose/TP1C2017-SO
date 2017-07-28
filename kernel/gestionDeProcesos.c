@@ -147,13 +147,6 @@ void finalizarProceso(t_proceso* proceso)
 
 	desasignarCPU(proceso);
 
-	//TODO:CONVIENE DEJARLO PARA EL HISTORICO DE PROCESOS.
-	//	bool esElProcesoBuscado(t_proceso* unProceso)
-	//	{
-	//		return unProceso->PCB->PID == proceso->PCB->PID;
-	//	}
-	//Lo saco de la lista de procesos. Queda su PCB en la cola de exit para historico
-	//list_remove_and_destroy_by_condition(listaDeProcesos,(void*)esElProcesoBuscado, (void*)destructorProcesos);
 }
 
 void bloquearProcesoSem(int cliente, char* semid) {
@@ -212,6 +205,7 @@ void rafagaProceso(int cliente){
 	t_proceso* proceso = obtenerProceso(cliente);
 	proceso->rafagasTotales++;
 	planificarExpulsion(proceso);
+
 }
 
 void continuarProceso(t_proceso* proceso) {
@@ -289,6 +283,7 @@ void expulsarProceso(t_proceso* proceso) {
 	}else if(proceso->estado == EXEC){
 		cambiarEstado(proceso, READY);
 	}
+
 	desasignarCPU(proceso);
 
 	proceso->rafagas = 0;
@@ -316,9 +311,9 @@ void planificarExpulsion(t_proceso* proceso) {
 	bool seLeAcaboElQuantum = terminoQuantum(proceso);
 
 
-    if(proceso->estado == EXEC)
+    if(proceso->estado == EXEC && !proceso->abortado)
 	{
-		if(seLeAcaboElQuantum || proceso->abortado)
+		if(seLeAcaboElQuantum)
 		{
 			expulsarProceso(proceso);
 		}else
@@ -336,19 +331,23 @@ void planificarExpulsion(t_proceso* proceso) {
 		expulsarProceso(proceso);
 	}
 
-	if(proceso->abortado)
+	if(proceso->abortado && proceso->estado == READY)
 	{
 		finalizarProceso(proceso);
 	}
+	if(proceso->abortado && proceso->estado == EXEC)
+	{
+		int exitCode= proceso->PCB->exitCode;
+		expulsarProceso(proceso);
+		proceso->PCB->exitCode = exitCode;
+	}
+
 
 }
 
 void asignarCPU(t_proceso* proceso, int cpu) {
 
 	cambiarEstado(proceso, EXEC);
-
-	//TODO: ESTO QUE ONDA?
-	list_add(listaEjecucion, proceso);
 
 	proceso->CpuDuenio = cpu;
 	proceso->rafagas = 0;
@@ -412,10 +411,16 @@ void recibirFinalizacion(int cliente) {
 		finalizarProceso(proceso);
 		if (!proceso->abortado)
 		{
-			//TODO: Avisar a consola finalizacion OK
+			int32_t codigo = accionConsolaFinalizarNormalmente;
+			send(proceso->ConsolaDuenio,&codigo,sizeof(codigo),0);
 
 		}else{
-			//TODO: Avisar a consola finalizacion NOK proceso->PCB->exitCode
+			void* buffer = malloc(sizeof(int32_t)*2);
+			int32_t codigo = accionConsolaFinalizarErrorInstruccion;
+			memcpy(buffer,&codigo,sizeof(int32_t));
+			memcpy(buffer + sizeof(int32_t),&proceso->PCB->exitCode,sizeof(int32_t));
+			send(proceso->ConsolaDuenio,buffer,sizeof(int32_t)*2,0);
+			free(buffer);
 		}
 	}
 }
@@ -634,7 +639,3 @@ void imprimirTablaGlobalDeArchivos(int pid)
 	//TODO:LUCAS, hay que traer la tabla de archivos abiertos del proceso
 }
 
-void exit_code_proceso(t_proceso* proceso, int32_t exitCode)
-{
-
-}

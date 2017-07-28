@@ -277,17 +277,17 @@ void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProces
 	for (fdClienteCont = 0; fdClienteCont < list_size(listaConProcesos); fdClienteCont++) {
 		t_proceso* proceso = list_get(listaConProcesos, fdClienteCont);
 		if (proceso -> ConsolaDuenio == fileDescriptor) {
-			proceso -> PCB->exitCode = -6; //TODO hace enum
-			queue_push(colaExit, proceso);
+			//queue_push(colaExit, proceso);
+			proceso->abortado = true;
 		}
 
 	}
 	//Función privada dentro de este scope (para la condicion del remove)
-			bool exit_code_de_proceso(t_proceso* p) {
-
-				return (-6 == p->PCB->exitCode);
-			}
-	list_remove_by_condition(listaConProcesos, (void*)exit_code_de_proceso);
+//			bool exit_code_de_proceso(t_proceso* p) {
+//
+//				return (-6 == p->PCB->exitCode);
+//			}
+//	list_remove_by_condition(listaConProcesos, (void*)exit_code_de_proceso);
 }
 
 void liberar_procesos_de_cpu(int fileDescriptor, t_list* listaConProcesos) {
@@ -496,6 +496,28 @@ void atender_accion_cpu(int idMensaje, int memoria, int socketFS) {
 	}
 }
 
+void finalizar_programa_por_consola(int consola)
+{
+	int pid;
+	recv(consola, &pid, sizeof(int32_t),0);
+
+	t_proceso* proceso = buscarProcesoPorPID(pid);
+	proceso->abortado = true;
+	proceso->PCB->exitCode= ERROR_FIN_CONSOLA;
+
+	void* buffer = malloc(sizeof(int32_t)*2);
+	int32_t codigo = accionConsolaFinalizarErrorInstruccion;
+	memcpy(buffer,&codigo,sizeof(int32_t));
+	memcpy(buffer + sizeof(int32_t),&proceso->PCB->exitCode,sizeof(int32_t));
+	send(proceso->ConsolaDuenio,buffer,sizeof(int32_t)*2,0);
+	free(buffer);
+
+//	int codAccion = accionDesalojarProceso;
+//	send(proceso->CpuDuenio, &codAccion, sizeof(int32_t), 0);
+
+}
+
+
 void atender_accion_consola(int idMensaje, int memoria, int consola) {
 
 	switch (idMensaje) {
@@ -505,7 +527,7 @@ void atender_accion_consola(int idMensaje, int memoria, int consola) {
 		break;
 
 	case finalizarProgramaAccion:
-		// TODO: hacer funcion accion_finalizar_proceso();
+		finalizar_programa_por_consola(consola);
 		break;
 	}
 }

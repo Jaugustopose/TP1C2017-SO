@@ -43,7 +43,9 @@ enum tipoMensaje {
 	accionReservarHeap = 31,
 	accionLiberarHeap = 32,
 	accionEnviarStackSize = 33,
-	liberarPaginaProcesoAccion = 34
+	liberarPaginaProcesoAccion = 34,
+	accionConsolaFinalizada = 35,
+	accionConsolaDesconectada = 36
 
 };
 
@@ -147,6 +149,8 @@ typedef struct {
 	int32_t bytesLiberados;
 	bool sigusr1;
 	bool abortado;
+	bool desconectado;
+	bool excepcion;
 	char* semaforo;
 	int32_t tamanioScript;
 	char* codigoPrograma;

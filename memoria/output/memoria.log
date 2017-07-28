@@ -1,690 +1,133 @@
-[INFO] 01:12:40:953 Memoria/(27235:27235): config.PUERTO_KERNEL: 9050
-[INFO] 01:12:40:953 Memoria/(27235:27235): config.IP_KERNEL: 127.0.0.1
-[INFO] 01:12:40:953 Memoria/(27235:27235): config.PUERTO: 9030
-[INFO] 01:12:40:953 Memoria/(27235:27235): config.MARCOS: 128
-[INFO] 01:12:40:953 Memoria/(27235:27235): config.MARCO_SIZE: 256
-[INFO] 01:12:40:954 Memoria/(27235:27235): config.ENTRADAS_CACHE: 10
-[INFO] 01:12:40:954 Memoria/(27235:27235): config.CACHE_X_PROC: 5
-[INFO] 01:12:40:954 Memoria/(27235:27235): config.RETARDO_MEMORIA: 100
-[INFO] 01:12:40:954 Memoria/(27235:27235): Cantidad de marcos que ocupa la tabla de páginas invertida: 4
-[INFO] 01:12:40:954 Memoria/(27235:27235): Tabla de páginas invertida inicializada
-[INFO] 01:12:40:954 Memoria/(27235:27235): Inicializando la memoria de 32768 bytes
-[INFO] 01:12:40:954 Memoria/(27235:27235): Memoria inicializada
-[INFO] 01:12:40:954 Memoria/(27235:27235): Escuchando nuevas solicitudes tcp en el puerto 9030...
-[INFO] 01:12:40:974 Memoria/(27235:27286): Escuchando nuevas solicitudes de consola en nuevo hilo
-[INFO] 01:12:46:246 Memoria/(27235:27235): Server: nueva conexion de 127.0.0.1 en socket 6
-[INFO] 01:12:46:246 Memoria/(27235:27289): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:12:46:246 Memoria/(27235:27289): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:12:46:246 Memoria/(27235:27289): atenderHilo- Fin atención acción
-[INFO] 01:12:46:246 Memoria/(27235:27289): atenderHilo - He recibido 4 bytes con la acción: 33
-[INFO] 01:12:46:246 Memoria/(27235:27289): atenderHilo[accionEnviarStackSize] - Recibido tamanio del stack: 1
-[INFO] 01:12:46:246 Memoria/(27235:27289): atenderHilo- Fin atención acción
-[INFO] 01:12:58:136 Memoria/(27235:27235): Server: nueva conexion de 127.0.0.1 en socket 7
-[INFO] 01:12:58:136 Memoria/(27235:27335): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:12:58:136 Memoria/(27235:27335): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:12:58:136 Memoria/(27235:27335): atenderHilo- Fin atención acción
-[INFO] 01:13:13:574 Memoria/(27235:27289): atenderHilo - He recibido 4 bytes con la acción: 1
-[INFO] 01:13:13:574 Memoria/(27235:27289): atenderHilo[inicializarProgramaAccion] - Recibida solicitud de 1 páginas para el pid 1
-[INFO] 01:13:13:574 Memoria/(27235:27289): atenderHilo[inicializarProgramaAccion] - Se procede a inicializar programa
-[INFO] 01:13:13:574 Memoria/(27235:27289): inicializarPrograma - Comienza inicialización para pid 1: 1 páginas + 1 páginas para stack
-[INFO] 01:13:13:574 Memoria/(27235:27289): inicializarPrograma - Para pid 1 y página 0 se obtuvo el marco candidato: 14
-[INFO] 01:13:13:574 Memoria/(27235:27289): inicializarPrograma - Para pid 1 y página 1 se obtuvo el marco candidato: 15
-[INFO] 01:13:13:574 Memoria/(27235:27289): inicializarPrograma - Paginas asignadas con éxito
-[INFO] 01:13:13:574 Memoria/(27235:27289): atenderHilo[inicializarProgramaAccion] - Inicializar programa en Memoria terminó con resultado de acción: 0
-[INFO] 01:13:13:574 Memoria/(27235:27289): atenderHilo- Fin atención acción
-[INFO] 01:13:13:575 Memoria/(27235:27289): atenderHilo - He recibido 4 bytes con la acción: 3
-[INFO] 01:13:13:575 Memoria/(27235:27289): atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar 73 bytes para el pid 1 en su página 0 con un offset de 0
-[INFO] 01:13:13:575 Memoria/(27235:27289): atenderHilo[almacenarBytesAccion] - Se procede a almacenar bytes: #!/usr/bin/ansisop
+[INFO] 23:09:50:511 Memoria/(24089:24089): config.PUERTO_KERNEL: 9050
+[INFO] 23:09:50:511 Memoria/(24089:24089): config.IP_KERNEL: 127.0.0.1
+[INFO] 23:09:50:511 Memoria/(24089:24089): config.PUERTO: 9030
+[INFO] 23:09:50:511 Memoria/(24089:24089): config.MARCOS: 500
+[INFO] 23:09:50:511 Memoria/(24089:24089): config.MARCO_SIZE: 128
+[INFO] 23:09:50:511 Memoria/(24089:24089): config.ENTRADAS_CACHE: 10
+[INFO] 23:09:50:511 Memoria/(24089:24089): config.CACHE_X_PROC: 5
+[INFO] 23:09:50:511 Memoria/(24089:24089): config.RETARDO_MEMORIA: 1000
+[INFO] 23:09:50:511 Memoria/(24089:24089): Cantidad de marcos que ocupa la tabla de páginas invertida: 32
+[INFO] 23:09:50:511 Memoria/(24089:24089): Tabla de páginas invertida inicializada
+[INFO] 23:09:50:511 Memoria/(24089:24089): Inicializando la memoria de 64000 bytes
+[INFO] 23:09:50:511 Memoria/(24089:24089): Memoria inicializada
+[INFO] 23:09:50:511 Memoria/(24089:24089): Escuchando nuevas solicitudes tcp en el puerto 9030...
+[INFO] 23:09:50:519 Memoria/(24089:24098): Escuchando nuevas solicitudes de consola en nuevo hilo
+[INFO] 23:09:54:843 Memoria/(24089:24089): Server: nueva conexion de 127.0.0.1 en socket 6
+[INFO] 23:09:54:843 Memoria/(24089:24103): atenderHilo - He recibido 4 bytes con la acción: 6
+[INFO] 23:09:54:843 Memoria/(24089:24103): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 128
+[INFO] 23:09:54:843 Memoria/(24089:24103): atenderHilo- Fin atención acción
+[INFO] 23:09:54:843 Memoria/(24089:24103): atenderHilo - He recibido 4 bytes con la acción: 33
+[INFO] 23:09:54:843 Memoria/(24089:24103): atenderHilo[accionEnviarStackSize] - Recibido tamanio del stack: 1
+[INFO] 23:09:54:843 Memoria/(24089:24103): atenderHilo- Fin atención acción
+[INFO] 23:09:56:640 Memoria/(24089:24089): Server: nueva conexion de 127.0.0.1 en socket 7
+[INFO] 23:09:56:640 Memoria/(24089:24108): atenderHilo - He recibido 4 bytes con la acción: 6
+[INFO] 23:09:56:640 Memoria/(24089:24108): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 128
+[INFO] 23:09:56:640 Memoria/(24089:24108): atenderHilo- Fin atención acción
+[INFO] 23:10:11:455 Memoria/(24089:24103): atenderHilo - He recibido 4 bytes con la acción: 1
+[INFO] 23:10:11:455 Memoria/(24089:24103): atenderHilo[inicializarProgramaAccion] - Recibida solicitud de 2 páginas para el pid 1
+[INFO] 23:10:11:455 Memoria/(24089:24103): atenderHilo[inicializarProgramaAccion] - Se procede a inicializar programa
+[INFO] 23:10:11:455 Memoria/(24089:24103): inicializarPrograma - Comienza inicialización para pid 1: 2 páginas + 1 páginas para stack
+[INFO] 23:10:11:846 Memoria/(24089:24103): inicializarPrograma - Para pid 1 y página 0 se obtuvo el marco candidato: 42
+[INFO] 23:10:57:547 Memoria/(24176:24176): config.PUERTO_KERNEL: 9050
+[INFO] 23:10:57:547 Memoria/(24176:24176): config.IP_KERNEL: 127.0.0.1
+[INFO] 23:10:57:547 Memoria/(24176:24176): config.PUERTO: 9030
+[INFO] 23:10:57:547 Memoria/(24176:24176): config.MARCOS: 500
+[INFO] 23:10:57:547 Memoria/(24176:24176): config.MARCO_SIZE: 128
+[INFO] 23:10:57:547 Memoria/(24176:24176): config.ENTRADAS_CACHE: 10
+[INFO] 23:10:57:547 Memoria/(24176:24176): config.CACHE_X_PROC: 5
+[INFO] 23:10:57:547 Memoria/(24176:24176): config.RETARDO_MEMORIA: 1000
+[INFO] 23:10:57:547 Memoria/(24176:24176): Cantidad de marcos que ocupa la tabla de páginas invertida: 32
+[INFO] 23:10:57:547 Memoria/(24176:24176): Tabla de páginas invertida inicializada
+[INFO] 23:10:57:547 Memoria/(24176:24176): Inicializando la memoria de 64000 bytes
+[INFO] 23:10:57:547 Memoria/(24176:24176): Memoria inicializada
+[INFO] 23:10:57:547 Memoria/(24176:24176): Escuchando nuevas solicitudes tcp en el puerto 9030...
+[INFO] 23:10:57:563 Memoria/(24176:24184): Escuchando nuevas solicitudes de consola en nuevo hilo
+[INFO] 23:11:02:171 Memoria/(24176:24176): Server: nueva conexion de 127.0.0.1 en socket 6
+[INFO] 23:11:02:171 Memoria/(24176:24189): atenderHilo - He recibido 4 bytes con la acción: 6
+[INFO] 23:11:02:171 Memoria/(24176:24189): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 128
+[INFO] 23:11:02:171 Memoria/(24176:24189): atenderHilo- Fin atención acción
+[INFO] 23:11:02:171 Memoria/(24176:24189): atenderHilo - He recibido 4 bytes con la acción: 33
+[INFO] 23:11:02:171 Memoria/(24176:24189): atenderHilo[accionEnviarStackSize] - Recibido tamanio del stack: 1
+[INFO] 23:11:02:171 Memoria/(24176:24189): atenderHilo- Fin atención acción
+[INFO] 23:11:03:294 Memoria/(24176:24176): Server: nueva conexion de 127.0.0.1 en socket 7
+[INFO] 23:11:03:294 Memoria/(24176:24194): atenderHilo - He recibido 4 bytes con la acción: 6
+[INFO] 23:11:03:294 Memoria/(24176:24194): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 128
+[INFO] 23:11:03:294 Memoria/(24176:24194): atenderHilo- Fin atención acción
+[INFO] 23:11:06:978 Memoria/(24176:24189): atenderHilo - He recibido 4 bytes con la acción: 1
+[INFO] 23:11:06:978 Memoria/(24176:24189): atenderHilo[inicializarProgramaAccion] - Recibida solicitud de 2 páginas para el pid 1
+[INFO] 23:11:06:978 Memoria/(24176:24189): atenderHilo[inicializarProgramaAccion] - Se procede a inicializar programa
+[INFO] 23:11:06:978 Memoria/(24176:24189): inicializarPrograma - Comienza inicialización para pid 1: 2 páginas + 1 páginas para stack
+[INFO] 23:11:06:978 Memoria/(24176:24189): inicializarPrograma - Para pid 1 y página 0 se obtuvo el marco candidato: 42
+[INFO] 23:11:13:393 Memoria/(24176:24189): inicializarPrograma - Para pid 1 y página 1 se obtuvo el marco candidato: 43
+[INFO] 23:11:13:393 Memoria/(24176:24189): inicializarPrograma - Para pid 1 y página 2 se obtuvo el marco candidato: 44
+[INFO] 23:11:22:518 Memoria/(24176:24189): inicializarPrograma - Paginas asignadas con éxito
+[INFO] 23:11:22:518 Memoria/(24176:24189): atenderHilo[inicializarProgramaAccion] - Inicializar programa en Memoria terminó con resultado de acción: 0
+[INFO] 23:11:22:518 Memoria/(24176:24189): atenderHilo- Fin atención acción
+[INFO] 23:11:22:518 Memoria/(24176:24189): atenderHilo - He recibido 4 bytes con la acción: 3
+[INFO] 23:11:22:518 Memoria/(24176:24189): atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar 128 bytes para el pid 1 en su página 0 con un offset de 0
+[INFO] 23:11:22:518 Memoria/(24176:24189): atenderHilo[almacenarBytesAccion] - Se procede a almacenar bytes: #!/usr/bin/ansisop
+
 begin
-	variables a, b
-	a = 3
-	b = 5
-	a = b + 12
+	variables a
+	a <- f
+	prints n a
+end
+
+function f
+	variables a
+	a=1
+	prints n a
+	a <- g
+	return a
 end
 
 
-��
-[INFO] 01:13:13:575 Memoria/(27235:27289): almacenarBytes - Inicia almacenarBytes
-[INFO] 01:13:13:575 Memoria/(27235:27289): almacenarBytes - Marco candidato para pid 1 y nroPagina 0: 14
-[INFO] 01:13:13:675 Memoria/(27235:27289): almacenarBytes - El pedido quedó almacenado
-[INFO] 01:13:13:675 Memoria/(27235:27289): atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: 0
-[INFO] 01:13:13:675 Memoria/(27235:27289): atenderHilo- Fin atención acción
-[INFO] 01:13:13:685 Memoria/(27235:27335): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:13:13:686 Memoria/(27235:27335): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 16 bytes para el pid 1 en su página 0 con un offset de 25
-[INFO] 01:13:13:686 Memoria/(27235:27335): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:13:13:686 Memoria/(27235:27335): solicitarBytes - Marco encontrado: 14
-[INFO] 01:13:13:686 Memoria/(27235:27335): solicitarBytes - Tamaño solicitado: 16
-[INFO] 01:13:13:786 Memoria/(27235:27335): solicitarBytes - Marco encontrado: 14
-[INFO] 01:13:13:786 Memoria/(27235:27335): solicitarBytes - Tamaño solicitado: 256
-[INFO] 01:13:13:887 Memoria/(27235:27335): atenderHilo- Fin atención acción
-[INFO] 01:13:50:428 Memoria/(27235:27335): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:13:50:428 Memoria/(27235:27335): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 7 bytes para el pid 1 en su página 0 con un offset de 41
-[INFO] 01:13:50:428 Memoria/(27235:27335): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:15:29:796 Memoria/(27235:27335): atenderHilo- Fin atención acción
-[INFO] 01:16:59:424 Memoria/(27235:27335): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:16:59:424 Memoria/(27235:27335): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 4 bytes para el pid 1 en su página 1 con un offset de 4
-[INFO] 01:16:59:424 Memoria/(27235:27335): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:16:59:424 Memoria/(27235:27335): solicitarBytes - Marco encontrado: 15
-[INFO] 01:16:59:424 Memoria/(27235:27335): solicitarBytes - Tamaño solicitado: 4
-[INFO] 01:16:59:525 Memoria/(27235:27335): solicitarBytes - Marco encontrado: 15
-[INFO] 01:16:59:525 Memoria/(27235:27335): solicitarBytes - Tamaño solicitado: 256
-[INFO] 01:16:59:626 Memoria/(27235:27335): atenderHilo- Fin atención acción
-[INFO] 01:16:59:626 Memoria/(27235:27335): atenderHilo - He recibido 4 bytes con la acción: 3
-[INFO] 01:16:59:626 Memoria/(27235:27335): atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar 4 bytes para el pid 1 en su página 1 con un offset de 8
-[INFO] 01:16:59:626 Memoria/(27235:27335): atenderHilo[almacenarBytesAccion] - Se procede a almacenar bytes: 
-[INFO] 01:16:59:626 Memoria/(27235:27335): almacenarBytes - Inicia almacenarBytes
-[INFO] 01:16:59:626 Memoria/(27235:27335): almacenarBytes - Marco candidato para pid 1 y nroPagina 1: 15
-[INFO] 01:16:59:726 Memoria/(27235:27335): almacenarBytes - El pedido quedó almacenado
-[INFO] 01:16:59:726 Memoria/(27235:27335): atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: 0
-[INFO] 01:16:59:726 Memoria/(27235:27335): solicitarBytes - Marco encontrado: 15
-[INFO] 01:16:59:726 Memoria/(27235:27335): solicitarBytes - Tamaño solicitado: 256
-[INFO] 01:16:59:827 Memoria/(27235:27335): atenderHilo- Fin atención acción
-[ERROR] 01:17:04:135 Memoria/(27235:27335): atenderHilo - Server: socket 7 termino la conexion
-[ERROR] 01:17:25:569 Memoria/(27235:27289): atenderHilo - Server: socket 6 termino la conexion
-[INFO] 01:17:26:328 Memoria/(27235:27235): Server: nueva conexion de 127.0.0.1 en socket 6
-[INFO] 01:17:26:328 Memoria/(27235:27493): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:17:26:328 Memoria/(27235:27493): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:17:26:328 Memoria/(27235:27493): atenderHilo- Fin atención acción
-[INFO] 01:17:26:328 Memoria/(27235:27493): atenderHilo - He recibido 4 bytes con la acción: 33
-[INFO] 01:17:26:328 Memoria/(27235:27493): atenderHilo[accionEnviarStackSize] - Recibido tamanio del stack: 1
-[INFO] 01:17:26:328 Memoria/(27235:27493): atenderHilo- Fin atención acción
-[INFO] 01:17:43:834 Memoria/(27235:27235): Server: nueva conexion de 127.0.0.1 en socket 7
-[INFO] 01:17:43:834 Memoria/(27235:27564): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:17:43:834 Memoria/(27235:27564): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:17:43:834 Memoria/(27235:27564): atenderHilo- Fin atención acción
-[INFO] 01:17:55:581 Memoria/(27235:27493): atenderHilo - He recibido 4 bytes con la acción: 1
-[INFO] 01:17:55:581 Memoria/(27235:27493): atenderHilo[inicializarProgramaAccion] - Recibida solicitud de 1 páginas para el pid 1
-[INFO] 01:17:55:581 Memoria/(27235:27493): atenderHilo[inicializarProgramaAccion] - Se procede a inicializar programa
-[INFO] 01:17:55:581 Memoria/(27235:27493): inicializarPrograma - Comienza inicialización para pid 1: 1 páginas + 1 páginas para stack
-[INFO] 01:17:55:581 Memoria/(27235:27493): inicializarPrograma - Para pid 1 y página 0 se obtuvo el marco candidato: 14
-[INFO] 01:17:55:581 Memoria/(27235:27493): inicializarPrograma - El marco candidato 14 estaba ocupado. Pid 1 y Página 0 finalmente asignados al marco 16
-[INFO] 01:17:55:581 Memoria/(27235:27493): inicializarPrograma - Para pid 1 y página 1 se obtuvo el marco candidato: 15
-[INFO] 01:17:55:581 Memoria/(27235:27493): inicializarPrograma - El marco candidato 15 estaba ocupado. Pid 1 y Página 1 finalmente asignados al marco 17
-[INFO] 01:17:55:581 Memoria/(27235:27493): inicializarPrograma - Paginas asignadas con éxito
-[INFO] 01:17:55:581 Memoria/(27235:27493): atenderHilo[inicializarProgramaAccion] - Inicializar programa en Memoria terminó con resultado de acción: 0
-[INFO] 01:17:55:581 Memoria/(27235:27493): atenderHilo- Fin atención acción
-[INFO] 01:17:55:582 Memoria/(27235:27493): atenderHilo - He recibido 4 bytes con la acción: 3
-[INFO] 01:17:55:582 Memoria/(27235:27493): atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar 73 bytes para el pid 1 en su página 0 con un offset de 0
-[INFO] 01:17:55:582 Memoria/(27235:27493): atenderHilo[almacenarBytesAccion] - Se procede a almacenar bytes: #!/usr/bin/ansisop
-begin
-	variables a, b
-	a = 3
-	b = 5
-	a = b + 12
+[INFO] 23:11:27:738 Memoria/(24176:24189): almacenarBytes - Inicia almacenarBytes
+[INFO] 23:11:33:543 Memoria/(24176:24189): almacenarBytes - Marco candidato para pid 1 y nroPagina 0: 42
+[INFO] 23:11:34:544 Memoria/(24176:24189): almacenarBytes - El pedido quedó almacenado
+[INFO] 23:11:34:544 Memoria/(24176:24189): atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: 0
+[INFO] 23:11:34:544 Memoria/(24176:24189): atenderHilo- Fin atención acción
+[INFO] 23:11:34:544 Memoria/(24176:24189): atenderHilo - He recibido 4 bytes con la acción: 3
+[INFO] 23:11:34:544 Memoria/(24176:24189): atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar 63 bytes para el pid 1 en su página 1 con un offset de 0
+[INFO] 23:11:34:544 Memoria/(24176:24189): atenderHilo[almacenarBytesAccion] - Se procede a almacenar bytes: function g
+	variables a
+	a=0
+	prints n a
+	a <- f
+	return a
 end
-
-
-
-[INFO] 01:17:55:582 Memoria/(27235:27493): almacenarBytes - Inicia almacenarBytes
-[INFO] 01:17:55:582 Memoria/(27235:27493): almacenarBytes - Marco candidato para pid 1 y nroPagina 0: 14
-[INFO] 01:17:55:683 Memoria/(27235:27493): almacenarBytes - El pedido quedó almacenado
-[INFO] 01:17:55:683 Memoria/(27235:27493): atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: 0
-[INFO] 01:17:55:683 Memoria/(27235:27493): atenderHilo- Fin atención acción
-[INFO] 01:17:59:610 Memoria/(27235:27564): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:17:59:610 Memoria/(27235:27564): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 16 bytes para el pid 1 en su página 0 con un offset de 25
-[INFO] 01:17:59:610 Memoria/(27235:27564): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:21:50:646 Memoria/(27235:27564): atenderHilo- Fin atención acción
-[ERROR] 01:22:10:940 Memoria/(27235:27564): atenderHilo - Server: socket 7 termino la conexion
-[INFO] 01:26:33:246 Memoria/(27747:27747): config.PUERTO_KERNEL: 9050
-[INFO] 01:26:33:246 Memoria/(27747:27747): config.IP_KERNEL: 127.0.0.1
-[INFO] 01:26:33:246 Memoria/(27747:27747): config.PUERTO: 9030
-[INFO] 01:26:33:246 Memoria/(27747:27747): config.MARCOS: 128
-[INFO] 01:26:33:246 Memoria/(27747:27747): config.MARCO_SIZE: 256
-[INFO] 01:26:33:246 Memoria/(27747:27747): config.ENTRADAS_CACHE: 10
-[INFO] 01:26:33:246 Memoria/(27747:27747): config.CACHE_X_PROC: 5
-[INFO] 01:26:33:246 Memoria/(27747:27747): config.RETARDO_MEMORIA: 100
-[INFO] 01:26:33:246 Memoria/(27747:27747): Cantidad de marcos que ocupa la tabla de páginas invertida: 4
-[INFO] 01:26:33:246 Memoria/(27747:27747): Tabla de páginas invertida inicializada
-[INFO] 01:26:33:246 Memoria/(27747:27747): Inicializando la memoria de 32768 bytes
-[INFO] 01:26:33:246 Memoria/(27747:27747): Memoria inicializada
-[INFO] 01:26:33:247 Memoria/(27747:27747): Escuchando nuevas solicitudes tcp en el puerto 9030...
-[INFO] 01:26:33:265 Memoria/(27747:27755): Escuchando nuevas solicitudes de consola en nuevo hilo
-[INFO] 01:26:35:351 Memoria/(27747:27747): Server: nueva conexion de 127.0.0.1 en socket 6
-[INFO] 01:26:35:351 Memoria/(27747:27758): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:26:35:351 Memoria/(27747:27758): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:26:35:351 Memoria/(27747:27758): atenderHilo- Fin atención acción
-[INFO] 01:26:35:351 Memoria/(27747:27758): atenderHilo - He recibido 4 bytes con la acción: 33
-[INFO] 01:26:35:351 Memoria/(27747:27758): atenderHilo[accionEnviarStackSize] - Recibido tamanio del stack: 1
-[INFO] 01:26:35:351 Memoria/(27747:27758): atenderHilo- Fin atención acción
-[INFO] 01:26:54:104 Memoria/(27747:27747): Server: nueva conexion de 127.0.0.1 en socket 7
-[INFO] 01:26:54:104 Memoria/(27747:27799): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:26:54:104 Memoria/(27747:27799): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:26:54:104 Memoria/(27747:27799): atenderHilo- Fin atención acción
-[INFO] 01:27:28:402 Memoria/(27747:27758): atenderHilo - He recibido 4 bytes con la acción: 1
-[INFO] 01:27:28:402 Memoria/(27747:27758): atenderHilo[inicializarProgramaAccion] - Recibida solicitud de 1 páginas para el pid 1
-[INFO] 01:27:28:402 Memoria/(27747:27758): atenderHilo[inicializarProgramaAccion] - Se procede a inicializar programa
-[INFO] 01:27:28:402 Memoria/(27747:27758): inicializarPrograma - Comienza inicialización para pid 1: 1 páginas + 1 páginas para stack
-[INFO] 01:27:28:402 Memoria/(27747:27758): inicializarPrograma - Para pid 1 y página 0 se obtuvo el marco candidato: 14
-[INFO] 01:27:28:402 Memoria/(27747:27758): inicializarPrograma - Para pid 1 y página 1 se obtuvo el marco candidato: 15
-[INFO] 01:27:28:402 Memoria/(27747:27758): inicializarPrograma - Paginas asignadas con éxito
-[INFO] 01:27:28:402 Memoria/(27747:27758): atenderHilo[inicializarProgramaAccion] - Inicializar programa en Memoria terminó con resultado de acción: 0
-[INFO] 01:27:28:402 Memoria/(27747:27758): atenderHilo- Fin atención acción
-[INFO] 01:27:28:404 Memoria/(27747:27758): atenderHilo - He recibido 4 bytes con la acción: 3
-[INFO] 01:27:28:404 Memoria/(27747:27758): atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar 80 bytes para el pid 1 en su página 0 con un offset de 0
-[INFO] 01:27:28:404 Memoria/(27747:27758): atenderHilo[almacenarBytesAccion] - Se procede a almacenar bytes: #!/usr/bin/ansisop
-begin
-	variables a, b
-	a = 3
-	a = 3
-	b = 5
-	a = b + 12
-end
-
-
-ilo 
-[INFO] 01:27:28:404 Memoria/(27747:27758): almacenarBytes - Inicia almacenarBytes
-[INFO] 01:27:28:404 Memoria/(27747:27758): almacenarBytes - Marco candidato para pid 1 y nroPagina 0: 14
-[INFO] 01:27:28:504 Memoria/(27747:27758): almacenarBytes - El pedido quedó almacenado
-[INFO] 01:27:28:504 Memoria/(27747:27758): atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: 0
-[INFO] 01:27:28:504 Memoria/(27747:27758): atenderHilo- Fin atención acción
-[INFO] 01:27:28:515 Memoria/(27747:27799): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:27:28:515 Memoria/(27747:27799): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 16 bytes para el pid 1 en su página 0 con un offset de 25
-[INFO] 01:27:28:515 Memoria/(27747:27799): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:27:28:515 Memoria/(27747:27799): solicitarBytes - Marco encontrado: 14
-[INFO] 01:27:28:515 Memoria/(27747:27799): solicitarBytes - Tamaño solicitado: 16
-[INFO] 01:27:28:616 Memoria/(27747:27799): solicitarBytes - Marco encontrado: 14
-[INFO] 01:27:28:616 Memoria/(27747:27799): solicitarBytes - Tamaño solicitado: 256
-[INFO] 01:27:28:716 Memoria/(27747:27799): atenderHilo- Fin atención acción
-[INFO] 01:27:28:717 Memoria/(27747:27799): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:27:28:717 Memoria/(27747:27799): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 7 bytes para el pid 1 en su página 0 con un offset de 41
-[INFO] 01:27:28:717 Memoria/(27747:27799): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:27:52:811 Memoria/(27747:27799): atenderHilo- Fin atención acción
-[INFO] 01:27:52:812 Memoria/(27747:27799): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:27:52:812 Memoria/(27747:27799): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 4 bytes para el pid 1 en su página 1 con un offset de 4
-[INFO] 01:27:52:812 Memoria/(27747:27799): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:27:52:812 Memoria/(27747:27799): solicitarBytes - Marco encontrado: 15
-[INFO] 01:27:52:812 Memoria/(27747:27799): solicitarBytes - Tamaño solicitado: 4
-[INFO] 01:27:52:912 Memoria/(27747:27799): solicitarBytes - Marco encontrado: 15
-[INFO] 01:27:52:912 Memoria/(27747:27799): solicitarBytes - Tamaño solicitado: 256
-[INFO] 01:27:53:13 Memoria/(27747:27799): atenderHilo- Fin atención acción
-[INFO] 01:27:53:13 Memoria/(27747:27799): atenderHilo - He recibido 4 bytes con la acción: 3
-[INFO] 01:27:53:13 Memoria/(27747:27799): atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar 4 bytes para el pid 1 en su página 1 con un offset de 8
-[INFO] 01:27:53:13 Memoria/(27747:27799): atenderHilo[almacenarBytesAccion] - Se procede a almacenar bytes: 
-[INFO] 01:27:53:13 Memoria/(27747:27799): almacenarBytes - Inicia almacenarBytes
-[INFO] 01:27:53:13 Memoria/(27747:27799): almacenarBytes - Marco candidato para pid 1 y nroPagina 1: 15
-[INFO] 01:27:53:114 Memoria/(27747:27799): almacenarBytes - El pedido quedó almacenado
-[INFO] 01:27:53:114 Memoria/(27747:27799): atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: 0
-[INFO] 01:27:53:114 Memoria/(27747:27799): solicitarBytes - Marco encontrado: 15
-[INFO] 01:27:53:114 Memoria/(27747:27799): solicitarBytes - Tamaño solicitado: 256
-[INFO] 01:27:53:214 Memoria/(27747:27799): atenderHilo- Fin atención acción
-[ERROR] 01:27:53:275 Memoria/(27747:27799): atenderHilo - Server: socket 7 termino la conexion
-[ERROR] 01:29:33:874 Memoria/(27747:27758): atenderHilo - Server: socket 6 termino la conexion
-[INFO] 01:29:41:68 Memoria/(27860:27860): config.PUERTO_KERNEL: 9050
-[INFO] 01:29:41:68 Memoria/(27860:27860): config.IP_KERNEL: 127.0.0.1
-[INFO] 01:29:41:68 Memoria/(27860:27860): config.PUERTO: 9030
-[INFO] 01:29:41:68 Memoria/(27860:27860): config.MARCOS: 128
-[INFO] 01:29:41:68 Memoria/(27860:27860): config.MARCO_SIZE: 256
-[INFO] 01:29:41:68 Memoria/(27860:27860): config.ENTRADAS_CACHE: 10
-[INFO] 01:29:41:68 Memoria/(27860:27860): config.CACHE_X_PROC: 5
-[INFO] 01:29:41:68 Memoria/(27860:27860): config.RETARDO_MEMORIA: 100
-[INFO] 01:29:41:68 Memoria/(27860:27860): Cantidad de marcos que ocupa la tabla de páginas invertida: 4
-[INFO] 01:29:41:68 Memoria/(27860:27860): Tabla de páginas invertida inicializada
-[INFO] 01:29:41:68 Memoria/(27860:27860): Inicializando la memoria de 32768 bytes
-[INFO] 01:29:41:68 Memoria/(27860:27860): Memoria inicializada
-[INFO] 01:29:42:654 Memoria/(27747:27747): Server: nueva conexion de 127.0.0.1 en socket 6
-[INFO] 01:29:42:654 Memoria/(27747:27868): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:29:42:654 Memoria/(27747:27868): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:29:42:654 Memoria/(27747:27868): atenderHilo- Fin atención acción
-[INFO] 01:29:42:654 Memoria/(27747:27868): atenderHilo - He recibido 4 bytes con la acción: 33
-[INFO] 01:29:42:654 Memoria/(27747:27868): atenderHilo[accionEnviarStackSize] - Recibido tamanio del stack: 1
-[INFO] 01:29:42:654 Memoria/(27747:27868): atenderHilo- Fin atención acción
-[INFO] 01:29:44:874 Memoria/(27747:27747): Server: nueva conexion de 127.0.0.1 en socket 7
-[INFO] 01:29:44:874 Memoria/(27747:27870): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:29:44:874 Memoria/(27747:27870): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:29:44:874 Memoria/(27747:27870): atenderHilo- Fin atención acción
-[ERROR] 01:29:46:413 Memoria/(27747:27870): atenderHilo - Server: socket 7 termino la conexion
-[INFO] 01:29:51:324 Memoria/(27747:27747): Server: nueva conexion de 127.0.0.1 en socket 7
-[INFO] 01:29:51:324 Memoria/(27747:27914): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:29:51:324 Memoria/(27747:27914): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:29:51:324 Memoria/(27747:27914): atenderHilo- Fin atención acción
-[INFO] 01:30:02:488 Memoria/(27747:27868): atenderHilo - He recibido 4 bytes con la acción: 1
-[INFO] 01:30:02:488 Memoria/(27747:27868): atenderHilo[inicializarProgramaAccion] - Recibida solicitud de 1 páginas para el pid 1
-[INFO] 01:30:02:488 Memoria/(27747:27868): atenderHilo[inicializarProgramaAccion] - Se procede a inicializar programa
-[INFO] 01:30:02:488 Memoria/(27747:27868): inicializarPrograma - Comienza inicialización para pid 1: 1 páginas + 1 páginas para stack
-[INFO] 01:30:02:488 Memoria/(27747:27868): inicializarPrograma - Para pid 1 y página 0 se obtuvo el marco candidato: 14
-[INFO] 01:30:02:488 Memoria/(27747:27868): inicializarPrograma - El marco candidato 14 estaba ocupado. Pid 1 y Página 0 finalmente asignados al marco 16
-[INFO] 01:30:02:488 Memoria/(27747:27868): inicializarPrograma - Para pid 1 y página 1 se obtuvo el marco candidato: 15
-[INFO] 01:30:02:488 Memoria/(27747:27868): inicializarPrograma - El marco candidato 15 estaba ocupado. Pid 1 y Página 1 finalmente asignados al marco 17
-[INFO] 01:30:02:488 Memoria/(27747:27868): inicializarPrograma - Paginas asignadas con éxito
-[INFO] 01:30:02:488 Memoria/(27747:27868): atenderHilo[inicializarProgramaAccion] - Inicializar programa en Memoria terminó con resultado de acción: 0
-[INFO] 01:30:02:488 Memoria/(27747:27868): atenderHilo- Fin atención acción
-[INFO] 01:30:02:489 Memoria/(27747:27868): atenderHilo - He recibido 4 bytes con la acción: 3
-[INFO] 01:30:02:489 Memoria/(27747:27868): atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar 80 bytes para el pid 1 en su página 0 con un offset de 0
-[INFO] 01:30:02:489 Memoria/(27747:27868): atenderHilo[almacenarBytesAccion] - Se procede a almacenar bytes: #!/usr/bin/ansisop
-begin
-	variables a, b
-	a = 3
-	a = 3
-	b = 5
-	a = b + 12
-end
-
-
-ilo 
-[INFO] 01:30:02:489 Memoria/(27747:27868): almacenarBytes - Inicia almacenarBytes
-[INFO] 01:30:02:489 Memoria/(27747:27868): almacenarBytes - Marco candidato para pid 1 y nroPagina 0: 14
-[INFO] 01:30:02:590 Memoria/(27747:27868): almacenarBytes - El pedido quedó almacenado
-[INFO] 01:30:02:590 Memoria/(27747:27868): atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: 0
-[INFO] 01:30:02:590 Memoria/(27747:27868): atenderHilo- Fin atención acción
-[INFO] 01:30:05:524 Memoria/(27747:27914): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:30:05:524 Memoria/(27747:27914): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 16 bytes para el pid 1 en su página 0 con un offset de 25
-[INFO] 01:30:05:524 Memoria/(27747:27914): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:30:07:780 Memoria/(27747:27914): atenderHilo- Fin atención acción
-[ERROR] 01:30:13:409 Memoria/(27747:27914): atenderHilo - Server: socket 7 termino la conexion
-[ERROR] 01:30:34:87 Memoria/(27747:27868): atenderHilo - Server: socket 6 termino la conexion
-[INFO] 01:31:24:862 Memoria/(28084:28084): config.PUERTO_KERNEL: 9050
-[INFO] 01:31:24:862 Memoria/(28084:28084): config.IP_KERNEL: 127.0.0.1
-[INFO] 01:31:24:862 Memoria/(28084:28084): config.PUERTO: 9030
-[INFO] 01:31:24:862 Memoria/(28084:28084): config.MARCOS: 128
-[INFO] 01:31:24:862 Memoria/(28084:28084): config.MARCO_SIZE: 256
-[INFO] 01:31:24:862 Memoria/(28084:28084): config.ENTRADAS_CACHE: 10
-[INFO] 01:31:24:862 Memoria/(28084:28084): config.CACHE_X_PROC: 5
-[INFO] 01:31:24:862 Memoria/(28084:28084): config.RETARDO_MEMORIA: 100
-[INFO] 01:31:24:862 Memoria/(28084:28084): Cantidad de marcos que ocupa la tabla de páginas invertida: 4
-[INFO] 01:31:24:862 Memoria/(28084:28084): Tabla de páginas invertida inicializada
-[INFO] 01:31:24:863 Memoria/(28084:28084): Inicializando la memoria de 32768 bytes
-[INFO] 01:31:24:863 Memoria/(28084:28084): Memoria inicializada
-[INFO] 01:31:24:863 Memoria/(28084:28084): Escuchando nuevas solicitudes tcp en el puerto 9030...
-[INFO] 01:31:24:888 Memoria/(28084:28090): Escuchando nuevas solicitudes de consola en nuevo hilo
-[INFO] 01:31:27:314 Memoria/(28084:28084): Server: nueva conexion de 127.0.0.1 en socket 6
-[INFO] 01:31:27:314 Memoria/(28084:28093): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:31:27:314 Memoria/(28084:28093): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:31:27:314 Memoria/(28084:28093): atenderHilo- Fin atención acción
-[INFO] 01:31:27:314 Memoria/(28084:28093): atenderHilo - He recibido 4 bytes con la acción: 33
-[INFO] 01:31:27:314 Memoria/(28084:28093): atenderHilo[accionEnviarStackSize] - Recibido tamanio del stack: 1
-[INFO] 01:31:27:314 Memoria/(28084:28093): atenderHilo- Fin atención acción
-[INFO] 01:31:32:876 Memoria/(28084:28084): Server: nueva conexion de 127.0.0.1 en socket 7
-[INFO] 01:31:32:876 Memoria/(28084:28137): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:31:32:876 Memoria/(28084:28137): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:31:32:876 Memoria/(28084:28137): atenderHilo- Fin atención acción
-[INFO] 01:31:46:926 Memoria/(28084:28093): atenderHilo - He recibido 4 bytes con la acción: 1
-[INFO] 01:31:46:926 Memoria/(28084:28093): atenderHilo[inicializarProgramaAccion] - Recibida solicitud de 1 páginas para el pid 1
-[INFO] 01:31:46:926 Memoria/(28084:28093): atenderHilo[inicializarProgramaAccion] - Se procede a inicializar programa
-[INFO] 01:31:46:926 Memoria/(28084:28093): inicializarPrograma - Comienza inicialización para pid 1: 1 páginas + 1 páginas para stack
-[INFO] 01:31:46:926 Memoria/(28084:28093): inicializarPrograma - Para pid 1 y página 0 se obtuvo el marco candidato: 14
-[INFO] 01:31:46:926 Memoria/(28084:28093): inicializarPrograma - Para pid 1 y página 1 se obtuvo el marco candidato: 15
-[INFO] 01:31:46:926 Memoria/(28084:28093): inicializarPrograma - Paginas asignadas con éxito
-[INFO] 01:31:46:926 Memoria/(28084:28093): atenderHilo[inicializarProgramaAccion] - Inicializar programa en Memoria terminó con resultado de acción: 0
-[INFO] 01:31:46:926 Memoria/(28084:28093): atenderHilo- Fin atención acción
-[INFO] 01:31:46:927 Memoria/(28084:28093): atenderHilo - He recibido 4 bytes con la acción: 3
-[INFO] 01:31:46:927 Memoria/(28084:28093): atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar 80 bytes para el pid 1 en su página 0 con un offset de 0
-[INFO] 01:31:46:927 Memoria/(28084:28093): atenderHilo[almacenarBytesAccion] - Se procede a almacenar bytes: #!/usr/bin/ansisop
-begin
-	variables a, b
-	a = 3
-	a = 3
-	b = 5
-	a = b + 12
-end
-
-
-ilo 
-[INFO] 01:31:46:927 Memoria/(28084:28093): almacenarBytes - Inicia almacenarBytes
-[INFO] 01:31:46:927 Memoria/(28084:28093): almacenarBytes - Marco candidato para pid 1 y nroPagina 0: 14
-[INFO] 01:31:47:28 Memoria/(28084:28093): almacenarBytes - El pedido quedó almacenado
-[INFO] 01:31:47:28 Memoria/(28084:28093): atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: 0
-[INFO] 01:31:47:28 Memoria/(28084:28093): atenderHilo- Fin atención acción
-[INFO] 01:31:55:826 Memoria/(28084:28137): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:31:55:826 Memoria/(28084:28137): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 16 bytes para el pid 1 en su página 0 con un offset de 25
-[INFO] 01:31:55:826 Memoria/(28084:28137): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:31:55:826 Memoria/(28084:28137): solicitarBytes - Marco encontrado: 14
-[INFO] 01:31:55:826 Memoria/(28084:28137): solicitarBytes - Tamaño solicitado: 16
-[INFO] 01:31:55:927 Memoria/(28084:28137): solicitarBytes - Marco encontrado: 14
-[INFO] 01:31:55:927 Memoria/(28084:28137): solicitarBytes - Tamaño solicitado: 256
-[INFO] 01:31:56:27 Memoria/(28084:28137): atenderHilo- Fin atención acción
-[INFO] 01:32:24:754 Memoria/(28084:28137): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:32:24:754 Memoria/(28084:28137): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 7 bytes para el pid 1 en su página 0 con un offset de 41
-[INFO] 01:32:24:754 Memoria/(28084:28137): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:32:39:566 Memoria/(28084:28137): atenderHilo- Fin atención acción
-[ERROR] 01:36:06:141 Memoria/(28084:28137): atenderHilo - Server: socket 7 termino la conexion
-[ERROR] 01:36:14:875 Memoria/(28084:28093): atenderHilo - Server: socket 6 termino la conexion
-[INFO] 01:36:25:464 Memoria/(28314:28314): config.PUERTO_KERNEL: 9050
-[INFO] 01:36:25:464 Memoria/(28314:28314): config.IP_KERNEL: 127.0.0.1
-[INFO] 01:36:25:464 Memoria/(28314:28314): config.PUERTO: 9030
-[INFO] 01:36:25:464 Memoria/(28314:28314): config.MARCOS: 128
-[INFO] 01:36:25:464 Memoria/(28314:28314): config.MARCO_SIZE: 256
-[INFO] 01:36:25:464 Memoria/(28314:28314): config.ENTRADAS_CACHE: 10
-[INFO] 01:36:25:464 Memoria/(28314:28314): config.CACHE_X_PROC: 5
-[INFO] 01:36:25:464 Memoria/(28314:28314): config.RETARDO_MEMORIA: 100
-[INFO] 01:36:25:464 Memoria/(28314:28314): Cantidad de marcos que ocupa la tabla de páginas invertida: 4
-[INFO] 01:36:25:464 Memoria/(28314:28314): Tabla de páginas invertida inicializada
-[INFO] 01:36:25:464 Memoria/(28314:28314): Inicializando la memoria de 32768 bytes
-[INFO] 01:36:25:465 Memoria/(28314:28314): Memoria inicializada
-[INFO] 01:36:27:523 Memoria/(28084:28084): Server: nueva conexion de 127.0.0.1 en socket 6
-[INFO] 01:36:27:524 Memoria/(28084:28322): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:36:27:524 Memoria/(28084:28322): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:36:27:524 Memoria/(28084:28322): atenderHilo- Fin atención acción
-[INFO] 01:36:27:524 Memoria/(28084:28322): atenderHilo - He recibido 4 bytes con la acción: 33
-[INFO] 01:36:27:524 Memoria/(28084:28322): atenderHilo[accionEnviarStackSize] - Recibido tamanio del stack: 1
-[INFO] 01:36:27:524 Memoria/(28084:28322): atenderHilo- Fin atención acción
-[INFO] 01:36:29:0 Memoria/(28084:28084): Server: nueva conexion de 127.0.0.1 en socket 7
-[INFO] 01:36:29:0 Memoria/(28084:28324): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:36:29:0 Memoria/(28084:28324): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:36:29:0 Memoria/(28084:28324): atenderHilo- Fin atención acción
-[INFO] 01:36:41:536 Memoria/(28084:28322): atenderHilo - He recibido 4 bytes con la acción: 1
-[INFO] 01:36:41:536 Memoria/(28084:28322): atenderHilo[inicializarProgramaAccion] - Recibida solicitud de 1 páginas para el pid 1
-[INFO] 01:36:41:536 Memoria/(28084:28322): atenderHilo[inicializarProgramaAccion] - Se procede a inicializar programa
-[INFO] 01:36:41:536 Memoria/(28084:28322): inicializarPrograma - Comienza inicialización para pid 1: 1 páginas + 1 páginas para stack
-[INFO] 01:36:41:536 Memoria/(28084:28322): inicializarPrograma - Para pid 1 y página 0 se obtuvo el marco candidato: 14
-[INFO] 01:36:41:536 Memoria/(28084:28322): inicializarPrograma - El marco candidato 14 estaba ocupado. Pid 1 y Página 0 finalmente asignados al marco 16
-[INFO] 01:36:41:536 Memoria/(28084:28322): inicializarPrograma - Para pid 1 y página 1 se obtuvo el marco candidato: 15
-[INFO] 01:36:41:536 Memoria/(28084:28322): inicializarPrograma - El marco candidato 15 estaba ocupado. Pid 1 y Página 1 finalmente asignados al marco 17
-[INFO] 01:36:41:536 Memoria/(28084:28322): inicializarPrograma - Paginas asignadas con éxito
-[INFO] 01:36:41:536 Memoria/(28084:28322): atenderHilo[inicializarProgramaAccion] - Inicializar programa en Memoria terminó con resultado de acción: 0
-[INFO] 01:36:41:536 Memoria/(28084:28322): atenderHilo- Fin atención acción
-[INFO] 01:36:41:538 Memoria/(28084:28322): atenderHilo - He recibido 4 bytes con la acción: 3
-[INFO] 01:36:41:538 Memoria/(28084:28322): atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar 80 bytes para el pid 1 en su página 0 con un offset de 0
-[INFO] 01:36:41:538 Memoria/(28084:28322): atenderHilo[almacenarBytesAccion] - Se procede a almacenar bytes: #!/usr/bin/ansisop
-begin
-	variables a, b
-	a = 3
-	a = 3
-	b = 5
-	a = b + 12
-end
-
-
-ilo 
-[INFO] 01:36:41:538 Memoria/(28084:28322): almacenarBytes - Inicia almacenarBytes
-[INFO] 01:36:41:538 Memoria/(28084:28322): almacenarBytes - Marco candidato para pid 1 y nroPagina 0: 14
-[INFO] 01:36:41:638 Memoria/(28084:28322): almacenarBytes - El pedido quedó almacenado
-[INFO] 01:36:41:638 Memoria/(28084:28322): atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: 0
-[INFO] 01:36:41:638 Memoria/(28084:28322): atenderHilo- Fin atención acción
-[INFO] 01:36:41:649 Memoria/(28084:28324): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:36:41:649 Memoria/(28084:28324): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 16 bytes para el pid 1 en su página 0 con un offset de 25
-[INFO] 01:36:41:649 Memoria/(28084:28324): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:36:54:704 Memoria/(28084:28324): atenderHilo- Fin atención acción
-[ERROR] 01:36:54:857 Memoria/(28084:28324): atenderHilo - Server: socket 7 termino la conexion
-[INFO] 01:40:15:863 Memoria/(28489:28489): config.PUERTO_KERNEL: 9050
-[INFO] 01:40:15:863 Memoria/(28489:28489): config.IP_KERNEL: 127.0.0.1
-[INFO] 01:40:15:863 Memoria/(28489:28489): config.PUERTO: 9030
-[INFO] 01:40:15:863 Memoria/(28489:28489): config.MARCOS: 128
-[INFO] 01:40:15:863 Memoria/(28489:28489): config.MARCO_SIZE: 256
-[INFO] 01:40:15:863 Memoria/(28489:28489): config.ENTRADAS_CACHE: 10
-[INFO] 01:40:15:863 Memoria/(28489:28489): config.CACHE_X_PROC: 5
-[INFO] 01:40:15:863 Memoria/(28489:28489): config.RETARDO_MEMORIA: 100
-[INFO] 01:40:15:863 Memoria/(28489:28489): Cantidad de marcos que ocupa la tabla de páginas invertida: 4
-[INFO] 01:40:15:863 Memoria/(28489:28489): Tabla de páginas invertida inicializada
-[INFO] 01:40:15:863 Memoria/(28489:28489): Inicializando la memoria de 32768 bytes
-[INFO] 01:40:15:863 Memoria/(28489:28489): Memoria inicializada
-[INFO] 01:40:50:27 Memoria/(28538:28538): config.PUERTO_KERNEL: 9050
-[INFO] 01:40:50:27 Memoria/(28538:28538): config.IP_KERNEL: 127.0.0.1
-[INFO] 01:40:50:27 Memoria/(28538:28538): config.PUERTO: 9030
-[INFO] 01:40:50:27 Memoria/(28538:28538): config.MARCOS: 128
-[INFO] 01:40:50:27 Memoria/(28538:28538): config.MARCO_SIZE: 256
-[INFO] 01:40:50:27 Memoria/(28538:28538): config.ENTRADAS_CACHE: 10
-[INFO] 01:40:50:27 Memoria/(28538:28538): config.CACHE_X_PROC: 5
-[INFO] 01:40:50:27 Memoria/(28538:28538): config.RETARDO_MEMORIA: 100
-[INFO] 01:40:50:27 Memoria/(28538:28538): Cantidad de marcos que ocupa la tabla de páginas invertida: 4
-[INFO] 01:40:50:27 Memoria/(28538:28538): Tabla de páginas invertida inicializada
-[INFO] 01:40:50:27 Memoria/(28538:28538): Inicializando la memoria de 32768 bytes
-[INFO] 01:40:50:27 Memoria/(28538:28538): Memoria inicializada
-[INFO] 01:40:58:79 Memoria/(28579:28579): config.PUERTO_KERNEL: 9050
-[INFO] 01:40:58:79 Memoria/(28579:28579): config.IP_KERNEL: 127.0.0.1
-[INFO] 01:40:58:79 Memoria/(28579:28579): config.PUERTO: 9030
-[INFO] 01:40:58:79 Memoria/(28579:28579): config.MARCOS: 128
-[INFO] 01:40:58:79 Memoria/(28579:28579): config.MARCO_SIZE: 256
-[INFO] 01:40:58:79 Memoria/(28579:28579): config.ENTRADAS_CACHE: 10
-[INFO] 01:40:58:79 Memoria/(28579:28579): config.CACHE_X_PROC: 5
-[INFO] 01:40:58:79 Memoria/(28579:28579): config.RETARDO_MEMORIA: 100
-[INFO] 01:40:58:79 Memoria/(28579:28579): Cantidad de marcos que ocupa la tabla de páginas invertida: 4
-[INFO] 01:40:58:79 Memoria/(28579:28579): Tabla de páginas invertida inicializada
-[INFO] 01:40:58:79 Memoria/(28579:28579): Inicializando la memoria de 32768 bytes
-[INFO] 01:40:58:79 Memoria/(28579:28579): Memoria inicializada
-[INFO] 01:40:58:79 Memoria/(28579:28579): Escuchando nuevas solicitudes tcp en el puerto 9030...
-[INFO] 01:40:58:82 Memoria/(28579:28584): Escuchando nuevas solicitudes de consola en nuevo hilo
-[INFO] 01:41:01:345 Memoria/(28579:28579): Server: nueva conexion de 127.0.0.1 en socket 6
-[INFO] 01:41:01:345 Memoria/(28579:28587): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:41:01:345 Memoria/(28579:28587): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:41:01:345 Memoria/(28579:28587): atenderHilo- Fin atención acción
-[INFO] 01:41:01:345 Memoria/(28579:28587): atenderHilo - He recibido 4 bytes con la acción: 33
-[INFO] 01:41:01:345 Memoria/(28579:28587): atenderHilo[accionEnviarStackSize] - Recibido tamanio del stack: 1
-[INFO] 01:41:01:345 Memoria/(28579:28587): atenderHilo- Fin atención acción
-[INFO] 01:41:03:30 Memoria/(28579:28579): Server: nueva conexion de 127.0.0.1 en socket 7
-[INFO] 01:41:03:30 Memoria/(28579:28589): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:41:03:30 Memoria/(28579:28589): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:41:03:30 Memoria/(28579:28589): atenderHilo- Fin atención acción
-[INFO] 01:41:17:980 Memoria/(28579:28587): atenderHilo - He recibido 4 bytes con la acción: 1
-[INFO] 01:41:17:980 Memoria/(28579:28587): atenderHilo[inicializarProgramaAccion] - Recibida solicitud de 1 páginas para el pid 1
-[INFO] 01:41:17:980 Memoria/(28579:28587): atenderHilo[inicializarProgramaAccion] - Se procede a inicializar programa
-[INFO] 01:41:17:981 Memoria/(28579:28587): inicializarPrograma - Comienza inicialización para pid 1: 1 páginas + 1 páginas para stack
-[INFO] 01:41:17:981 Memoria/(28579:28587): inicializarPrograma - Para pid 1 y página 0 se obtuvo el marco candidato: 14
-[INFO] 01:41:17:981 Memoria/(28579:28587): inicializarPrograma - Para pid 1 y página 1 se obtuvo el marco candidato: 15
-[INFO] 01:41:17:981 Memoria/(28579:28587): inicializarPrograma - Paginas asignadas con éxito
-[INFO] 01:41:17:981 Memoria/(28579:28587): atenderHilo[inicializarProgramaAccion] - Inicializar programa en Memoria terminó con resultado de acción: 0
-[INFO] 01:41:17:981 Memoria/(28579:28587): atenderHilo- Fin atención acción
-[INFO] 01:41:17:982 Memoria/(28579:28587): atenderHilo - He recibido 4 bytes con la acción: 3
-[INFO] 01:41:17:982 Memoria/(28579:28587): atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar 80 bytes para el pid 1 en su página 0 con un offset de 0
-[INFO] 01:41:17:982 Memoria/(28579:28587): atenderHilo[almacenarBytesAccion] - Se procede a almacenar bytes: #!/usr/bin/ansisop
-begin
-	variables a, b
-	a = 3
-	a = 3
-	b = 5
-	a = b + 12
-end
-
-
-ilo 
-[INFO] 01:41:17:982 Memoria/(28579:28587): almacenarBytes - Inicia almacenarBytes
-[INFO] 01:41:17:982 Memoria/(28579:28587): almacenarBytes - Marco candidato para pid 1 y nroPagina 0: 14
-[INFO] 01:41:18:83 Memoria/(28579:28587): almacenarBytes - El pedido quedó almacenado
-[INFO] 01:41:18:83 Memoria/(28579:28587): atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: 0
-[INFO] 01:41:18:83 Memoria/(28579:28587): atenderHilo- Fin atención acción
-[INFO] 01:41:18:94 Memoria/(28579:28589): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:41:18:94 Memoria/(28579:28589): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 16 bytes para el pid 1 en su página 0 con un offset de 25
-[INFO] 01:41:18:94 Memoria/(28579:28589): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:42:47:667 Memoria/(28579:28589): solicitarBytes - Marco encontrado: 14
-[INFO] 01:42:48:710 Memoria/(28579:28589): solicitarBytes - Tamaño solicitado: 16
-[INFO] 01:43:25:399 Memoria/(28579:28589): solicitarBytes - Marco encontrado: 14
-[INFO] 01:43:25:399 Memoria/(28579:28589): solicitarBytes - Tamaño solicitado: 256
-[INFO] 01:43:28:585 Memoria/(28579:28589): atenderHilo- Fin atención acción
-[INFO] 01:43:29:707 Memoria/(28579:28589): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:43:29:707 Memoria/(28579:28589): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 7 bytes para el pid 1 en su página 0 con un offset de 41
-[INFO] 01:43:29:707 Memoria/(28579:28589): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:43:35:369 Memoria/(28579:28589): atenderHilo- Fin atención acción
-[INFO] 01:43:35:370 Memoria/(28579:28589): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:43:35:370 Memoria/(28579:28589): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 4 bytes para el pid 1 en su página 1 con un offset de 4
-[INFO] 01:43:35:370 Memoria/(28579:28589): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:43:54:898 Memoria/(28579:28589): solicitarBytes - Marco encontrado: 15
-[INFO] 01:43:54:898 Memoria/(28579:28589): solicitarBytes - Tamaño solicitado: 4
-[INFO] 01:44:30:842 Memoria/(28579:28589): solicitarBytes - Marco encontrado: 15
-[INFO] 01:44:30:842 Memoria/(28579:28589): solicitarBytes - Tamaño solicitado: 256
-[INFO] 01:44:46:347 Memoria/(28579:28589): atenderHilo- Fin atención acción
-[INFO] 01:44:46:347 Memoria/(28579:28589): atenderHilo - He recibido 4 bytes con la acción: 3
-[INFO] 01:44:46:347 Memoria/(28579:28589): atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar 4 bytes para el pid 1 en su página 1 con un offset de 8
-[INFO] 01:44:46:347 Memoria/(28579:28589): atenderHilo[almacenarBytesAccion] - Se procede a almacenar bytes: 
-[INFO] 01:44:46:347 Memoria/(28579:28589): almacenarBytes - Inicia almacenarBytes
-[INFO] 01:44:46:347 Memoria/(28579:28589): almacenarBytes - Marco candidato para pid 1 y nroPagina 1: 15
-[INFO] 01:44:46:448 Memoria/(28579:28589): almacenarBytes - El pedido quedó almacenado
-[INFO] 01:44:46:448 Memoria/(28579:28589): atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: 0
-[INFO] 01:44:46:448 Memoria/(28579:28589): solicitarBytes - Marco encontrado: 15
-[INFO] 01:44:46:448 Memoria/(28579:28589): solicitarBytes - Tamaño solicitado: 256
-[INFO] 01:44:46:548 Memoria/(28579:28589): atenderHilo- Fin atención acción
-[ERROR] 01:44:46:606 Memoria/(28579:28589): atenderHilo - Server: socket 7 termino la conexion
-[INFO] 01:44:52:429 Memoria/(28579:28579): Server: nueva conexion de 127.0.0.1 en socket 7
-[INFO] 01:44:52:429 Memoria/(28579:28715): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:44:52:429 Memoria/(28579:28715): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:44:52:429 Memoria/(28579:28715): atenderHilo- Fin atención acción
-[INFO] 01:45:14:305 Memoria/(28579:28587): atenderHilo - He recibido 4 bytes con la acción: 1
-[INFO] 01:45:14:305 Memoria/(28579:28587): atenderHilo[inicializarProgramaAccion] - Recibida solicitud de 1 páginas para el pid 2
-[INFO] 01:45:14:305 Memoria/(28579:28587): atenderHilo[inicializarProgramaAccion] - Se procede a inicializar programa
-[INFO] 01:45:14:305 Memoria/(28579:28587): inicializarPrograma - Comienza inicialización para pid 2: 1 páginas + 1 páginas para stack
-[INFO] 01:45:14:305 Memoria/(28579:28587): inicializarPrograma - Para pid 2 y página 0 se obtuvo el marco candidato: 24
-[INFO] 01:45:14:305 Memoria/(28579:28587): inicializarPrograma - Para pid 2 y página 1 se obtuvo el marco candidato: 25
-[INFO] 01:45:14:305 Memoria/(28579:28587): inicializarPrograma - Paginas asignadas con éxito
-[INFO] 01:45:14:305 Memoria/(28579:28587): atenderHilo[inicializarProgramaAccion] - Inicializar programa en Memoria terminó con resultado de acción: 0
-[INFO] 01:45:14:305 Memoria/(28579:28587): atenderHilo- Fin atención acción
-[INFO] 01:45:14:307 Memoria/(28579:28587): atenderHilo - He recibido 4 bytes con la acción: 3
-[INFO] 01:45:14:307 Memoria/(28579:28587): atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar 80 bytes para el pid 2 en su página 0 con un offset de 0
-[INFO] 01:45:14:307 Memoria/(28579:28587): atenderHilo[almacenarBytesAccion] - Se procede a almacenar bytes: #!/usr/bin/ansisop
-begin
-	variables a, b
-	a = 3
-	a = 3
-	b = 5
-	a = b + 12
-end
-
-
-ilo 
-[INFO] 01:45:14:307 Memoria/(28579:28587): almacenarBytes - Inicia almacenarBytes
-[INFO] 01:45:14:307 Memoria/(28579:28587): almacenarBytes - Marco candidato para pid 2 y nroPagina 0: 24
-[INFO] 01:45:14:411 Memoria/(28579:28587): almacenarBytes - El pedido quedó almacenado
-[INFO] 01:45:14:411 Memoria/(28579:28587): atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: 0
-[INFO] 01:45:14:411 Memoria/(28579:28587): atenderHilo- Fin atención acción
-[INFO] 01:45:14:421 Memoria/(28579:28715): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:45:14:421 Memoria/(28579:28715): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 16 bytes para el pid 2 en su página 0 con un offset de 25
-[INFO] 01:45:14:421 Memoria/(28579:28715): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:45:19:427 Memoria/(28579:28715): solicitarBytes - Marco encontrado: 24
-[INFO] 01:45:19:427 Memoria/(28579:28715): solicitarBytes - Tamaño solicitado: 16
-[INFO] 01:45:22:582 Memoria/(28579:28715): solicitarBytes - Marco encontrado: 24
-[INFO] 01:45:22:582 Memoria/(28579:28715): solicitarBytes - Tamaño solicitado: 256
-[INFO] 01:45:22:682 Memoria/(28579:28715): atenderHilo- Fin atención acción
-[INFO] 01:45:22:682 Memoria/(28579:28715): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:45:22:683 Memoria/(28579:28715): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 7 bytes para el pid 2 en su página 0 con un offset de 41
-[INFO] 01:45:22:683 Memoria/(28579:28715): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:45:56:657 Memoria/(28579:28715): atenderHilo- Fin atención acción
-[INFO] 01:46:04:450 Memoria/(28579:28715): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:46:30:370 Memoria/(28579:28715): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 4 bytes para el pid 2 en su página 1 con un offset de 4
-[INFO] 01:46:33:74 Memoria/(28579:28715): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:46:55:353 Memoria/(28579:28715): solicitarBytes - Marco encontrado: 25
-[INFO] 01:46:55:353 Memoria/(28579:28715): solicitarBytes - Tamaño solicitado: 4
-[INFO] 01:48:07:475 Memoria/(28579:28715): solicitarBytes - Marco encontrado: 25
-[INFO] 01:48:07:475 Memoria/(28579:28715): solicitarBytes - Tamaño solicitado: 256
-[INFO] 01:48:17:822 Memoria/(28579:28715): atenderHilo- Fin atención acción
-[INFO] 01:48:47:748 Memoria/(28868:28868): config.PUERTO_KERNEL: 9050
-[INFO] 01:48:47:748 Memoria/(28868:28868): config.IP_KERNEL: 127.0.0.1
-[INFO] 01:48:47:748 Memoria/(28868:28868): config.PUERTO: 9030
-[INFO] 01:48:47:748 Memoria/(28868:28868): config.MARCOS: 128
-[INFO] 01:48:47:748 Memoria/(28868:28868): config.MARCO_SIZE: 256
-[INFO] 01:48:47:748 Memoria/(28868:28868): config.ENTRADAS_CACHE: 10
-[INFO] 01:48:47:748 Memoria/(28868:28868): config.CACHE_X_PROC: 5
-[INFO] 01:48:47:748 Memoria/(28868:28868): config.RETARDO_MEMORIA: 100
-[INFO] 01:48:47:748 Memoria/(28868:28868): Cantidad de marcos que ocupa la tabla de páginas invertida: 4
-[INFO] 01:48:47:748 Memoria/(28868:28868): Tabla de páginas invertida inicializada
-[INFO] 01:48:47:748 Memoria/(28868:28868): Inicializando la memoria de 32768 bytes
-[INFO] 01:48:47:748 Memoria/(28868:28868): Memoria inicializada
-[INFO] 01:48:47:748 Memoria/(28868:28868): Escuchando nuevas solicitudes tcp en el puerto 9030...
-[INFO] 01:48:47:761 Memoria/(28868:28874): Escuchando nuevas solicitudes de consola en nuevo hilo
-[INFO] 01:48:49:662 Memoria/(28868:28868): Server: nueva conexion de 127.0.0.1 en socket 6
-[INFO] 01:48:49:662 Memoria/(28868:28877): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:48:49:662 Memoria/(28868:28877): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:48:49:662 Memoria/(28868:28877): atenderHilo- Fin atención acción
-[INFO] 01:48:49:662 Memoria/(28868:28877): atenderHilo - He recibido 4 bytes con la acción: 33
-[INFO] 01:48:49:662 Memoria/(28868:28877): atenderHilo[accionEnviarStackSize] - Recibido tamanio del stack: 1
-[INFO] 01:48:49:662 Memoria/(28868:28877): atenderHilo- Fin atención acción
-[INFO] 01:49:00:284 Memoria/(28868:28868): Server: nueva conexion de 127.0.0.1 en socket 7
-[INFO] 01:49:00:284 Memoria/(28868:28919): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:49:00:284 Memoria/(28868:28919): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:49:00:284 Memoria/(28868:28919): atenderHilo- Fin atención acción
-[INFO] 01:49:31:147 Memoria/(28868:28877): atenderHilo - He recibido 4 bytes con la acción: 1
-[INFO] 01:49:31:147 Memoria/(28868:28877): atenderHilo[inicializarProgramaAccion] - Recibida solicitud de 1 páginas para el pid 1
-[INFO] 01:49:31:147 Memoria/(28868:28877): atenderHilo[inicializarProgramaAccion] - Se procede a inicializar programa
-[INFO] 01:49:31:147 Memoria/(28868:28877): inicializarPrograma - Comienza inicialización para pid 1: 1 páginas + 1 páginas para stack
-[INFO] 01:49:31:147 Memoria/(28868:28877): inicializarPrograma - Para pid 1 y página 0 se obtuvo el marco candidato: 14
-[INFO] 01:49:31:147 Memoria/(28868:28877): inicializarPrograma - Para pid 1 y página 1 se obtuvo el marco candidato: 15
-[INFO] 01:49:31:147 Memoria/(28868:28877): inicializarPrograma - Paginas asignadas con éxito
-[INFO] 01:49:31:147 Memoria/(28868:28877): atenderHilo[inicializarProgramaAccion] - Inicializar programa en Memoria terminó con resultado de acción: 0
-[INFO] 01:49:31:147 Memoria/(28868:28877): atenderHilo- Fin atención acción
-[INFO] 01:49:31:148 Memoria/(28868:28877): atenderHilo - He recibido 4 bytes con la acción: 3
-[INFO] 01:49:31:148 Memoria/(28868:28877): atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar 80 bytes para el pid 1 en su página 0 con un offset de 0
-[INFO] 01:49:31:148 Memoria/(28868:28877): atenderHilo[almacenarBytesAccion] - Se procede a almacenar bytes: #!/usr/bin/ansisop
-begin
-	variables a, b
-	a = 3
-	a = 3
-	b = 5
-	a = b + 12
-end
-
-
-ilo 
-[INFO] 01:49:31:148 Memoria/(28868:28877): almacenarBytes - Inicia almacenarBytes
-[INFO] 01:49:31:148 Memoria/(28868:28877): almacenarBytes - Marco candidato para pid 1 y nroPagina 0: 14
-[INFO] 01:49:31:249 Memoria/(28868:28877): almacenarBytes - El pedido quedó almacenado
-[INFO] 01:49:31:249 Memoria/(28868:28877): atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: 0
-[INFO] 01:49:31:249 Memoria/(28868:28877): atenderHilo- Fin atención acción
-[INFO] 01:49:33:821 Memoria/(28868:28919): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:49:33:821 Memoria/(28868:28919): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 16 bytes para el pid 1 en su página 0 con un offset de 25
-[INFO] 01:49:33:821 Memoria/(28868:28919): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:49:36:326 Memoria/(28868:28919): solicitarBytes - Marco encontrado: 14
-[INFO] 01:49:36:326 Memoria/(28868:28919): solicitarBytes - Tamaño solicitado: 16
-[INFO] 01:49:36:426 Memoria/(28868:28919): solicitarBytes - Marco encontrado: 14
-[INFO] 01:49:36:426 Memoria/(28868:28919): solicitarBytes - Tamaño solicitado: 256
-[INFO] 01:49:36:526 Memoria/(28868:28919): atenderHilo- Fin atención acción
-[INFO] 01:50:00:740 Memoria/(28868:28919): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:50:00:740 Memoria/(28868:28919): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 7 bytes para el pid 1 en su página 0 con un offset de 41
-[INFO] 01:50:00:740 Memoria/(28868:28919): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:50:05:844 Memoria/(28868:28919): atenderHilo- Fin atención acción
-[ERROR] 01:51:31:439 Memoria/(28868:28919): atenderHilo - Server: socket 7 termino la conexion
-[ERROR] 01:51:35:569 Memoria/(28868:28877): atenderHilo - Server: socket 6 termino la conexion
-[INFO] 01:51:42:406 Memoria/(28868:28868): Server: nueva conexion de 127.0.0.1 en socket 6
-[INFO] 01:51:42:406 Memoria/(28868:28986): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:51:42:406 Memoria/(28868:28986): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:51:42:406 Memoria/(28868:28986): atenderHilo- Fin atención acción
-[INFO] 01:51:42:406 Memoria/(28868:28986): atenderHilo - He recibido 4 bytes con la acción: 33
-[INFO] 01:51:42:406 Memoria/(28868:28986): atenderHilo[accionEnviarStackSize] - Recibido tamanio del stack: 1
-[INFO] 01:51:42:406 Memoria/(28868:28986): atenderHilo- Fin atención acción
-[INFO] 01:51:54:613 Memoria/(28868:28868): Server: nueva conexion de 127.0.0.1 en socket 7
-[INFO] 01:51:54:613 Memoria/(28868:29056): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 01:51:54:613 Memoria/(28868:29056): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 01:51:54:613 Memoria/(28868:29056): atenderHilo- Fin atención acción
-[INFO] 01:52:12:916 Memoria/(28868:28986): atenderHilo - He recibido 4 bytes con la acción: 1
-[INFO] 01:52:12:916 Memoria/(28868:28986): atenderHilo[inicializarProgramaAccion] - Recibida solicitud de 1 páginas para el pid 1
-[INFO] 01:52:12:916 Memoria/(28868:28986): atenderHilo[inicializarProgramaAccion] - Se procede a inicializar programa
-[INFO] 01:52:12:916 Memoria/(28868:28986): inicializarPrograma - Comienza inicialización para pid 1: 1 páginas + 1 páginas para stack
-[INFO] 01:52:12:916 Memoria/(28868:28986): inicializarPrograma - Para pid 1 y página 0 se obtuvo el marco candidato: 14
-[INFO] 01:52:12:916 Memoria/(28868:28986): inicializarPrograma - El marco candidato 14 estaba ocupado. Pid 1 y Página 0 finalmente asignados al marco 16
-[INFO] 01:52:12:916 Memoria/(28868:28986): inicializarPrograma - Para pid 1 y página 1 se obtuvo el marco candidato: 15
-[INFO] 01:52:12:916 Memoria/(28868:28986): inicializarPrograma - El marco candidato 15 estaba ocupado. Pid 1 y Página 1 finalmente asignados al marco 17
-[INFO] 01:52:12:916 Memoria/(28868:28986): inicializarPrograma - Paginas asignadas con éxito
-[INFO] 01:52:12:916 Memoria/(28868:28986): atenderHilo[inicializarProgramaAccion] - Inicializar programa en Memoria terminó con resultado de acción: 0
-[INFO] 01:52:12:916 Memoria/(28868:28986): atenderHilo- Fin atención acción
-[INFO] 01:52:12:917 Memoria/(28868:28986): atenderHilo - He recibido 4 bytes con la acción: 3
-[INFO] 01:52:12:917 Memoria/(28868:28986): atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar 80 bytes para el pid 1 en su página 0 con un offset de 0
-[INFO] 01:52:12:917 Memoria/(28868:28986): atenderHilo[almacenarBytesAccion] - Se procede a almacenar bytes: #!/usr/bin/ansisop
-begin
-	variables a, b
-	a = 3
-	a = 3
-	b = 5
-	a = b + 12
-end
-
-
-ilo 
-[INFO] 01:52:12:917 Memoria/(28868:28986): almacenarBytes - Inicia almacenarBytes
-[INFO] 01:52:12:917 Memoria/(28868:28986): almacenarBytes - Marco candidato para pid 1 y nroPagina 0: 14
-[INFO] 01:52:13:17 Memoria/(28868:28986): almacenarBytes - El pedido quedó almacenado
-[INFO] 01:52:13:17 Memoria/(28868:28986): atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: 0
-[INFO] 01:52:13:17 Memoria/(28868:28986): atenderHilo- Fin atención acción
-[INFO] 01:52:15:167 Memoria/(28868:29056): atenderHilo - He recibido 4 bytes con la acción: 4
-[INFO] 01:52:15:167 Memoria/(28868:29056): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 16 bytes para el pid 1 en su página 0 con un offset de 25
-[INFO] 01:52:15:167 Memoria/(28868:29056): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
-[INFO] 01:52:29:231 Memoria/(28868:29056): atenderHilo- Fin atención acción
-[ERROR] 01:54:44:392 Memoria/(28868:29056): atenderHilo - Server: socket 7 termino la conexion
-[ERROR] 01:54:46:858 Memoria/(28868:28986): atenderHilo - Server: socket 6 termino la conexion
-[INFO] 05:55:29:485 Memoria/(5472:5472): config.PUERTO_KERNEL: 9050
-[INFO] 05:55:29:566 Memoria/(5472:5472): config.IP_KERNEL: 127.0.0.1
-[INFO] 05:55:29:566 Memoria/(5472:5472): config.PUERTO: 9030
-[INFO] 05:55:29:566 Memoria/(5472:5472): config.MARCOS: 128
-[INFO] 05:55:29:566 Memoria/(5472:5472): config.MARCO_SIZE: 256
-[INFO] 05:55:29:566 Memoria/(5472:5472): config.RETARDO_MEMORIA: 100
-[INFO] 05:55:29:566 Memoria/(5472:5472): Cantidad de marcos que ocupa la tabla de páginas invertida: 4
-[INFO] 05:55:29:566 Memoria/(5472:5472): Tabla de páginas invertida inicializada
-[INFO] 05:55:29:566 Memoria/(5472:5472): Inicializando la memoria de 32768 bytes
-[INFO] 05:55:29:566 Memoria/(5472:5472): Memoria inicializada
-[INFO] 05:55:29:566 Memoria/(5472:5472): Escuchando nuevas solicitudes tcp en el puerto 9030...
-[INFO] 05:55:29:574 Memoria/(5472:5480): Escuchando nuevas solicitudes de consola en nuevo hilo
-[INFO] 05:55:31:390 Memoria/(5472:5472): Server: nueva conexion de 127.0.0.1 en socket 6
-[INFO] 05:55:35:977 Memoria/(5472:5482): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 05:55:35:977 Memoria/(5472:5482): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 05:55:35:977 Memoria/(5472:5482): atenderHilo- Fin atención acción
-[INFO] 05:55:36:668 Memoria/(5472:5482): atenderHilo - He recibido 4 bytes con la acción: 33
-[INFO] 05:55:36:668 Memoria/(5472:5482): atenderHilo[accionEnviarStackSize] - Recibido tamanio del stack: 1
-[INFO] 05:55:36:668 Memoria/(5472:5482): atenderHilo- Fin atención acción
-[INFO] 05:55:37:390 Memoria/(5472:5472): Server: nueva conexion de 127.0.0.1 en socket 7
-[INFO] 05:55:38:115 Memoria/(5472:5485): atenderHilo - He recibido 4 bytes con la acción: 6
-[INFO] 05:55:38:115 Memoria/(5472:5485): atenderHilo[obtenerTamanioPaginas] - Se procede a enviar tamaño del marco: 256
-[INFO] 05:55:38:115 Memoria/(5472:5485): atenderHilo- Fin atención acción
+n: 3
+[INFO] 23:11:34:544 Memoria/(24176:24189): almacenarBytes - Inicia almacenarBytes
+[INFO] 23:11:34:544 Memoria/(24176:24189): almacenarBytes - Marco candidato para pid 1 y nroPagina 1: 43
+[INFO] 23:11:35:544 Memoria/(24176:24189): almacenarBytes - El pedido quedó almacenado
+[INFO] 23:11:35:544 Memoria/(24176:24189): atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: 0
+[INFO] 23:11:35:544 Memoria/(24176:24189): atenderHilo- Fin atención acción
+[INFO] 23:11:35:554 Memoria/(24176:24194): atenderHilo - He recibido 4 bytes con la acción: 4
+[INFO] 23:11:35:554 Memoria/(24176:24194): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 13 bytes para el pid 1 en su página 0 con un offset de 26
+[INFO] 23:11:35:554 Memoria/(24176:24194): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
+[INFO] 23:11:44:25 Memoria/(24176:24194): solicitarBytes - Marco encontrado: 42
+[INFO] 23:11:44:25 Memoria/(24176:24194): solicitarBytes - Tamaño solicitado: 13
+[INFO] 23:11:45:26 Memoria/(24176:24194): solicitarBytes - Marco encontrado: 42
+[INFO] 23:11:45:26 Memoria/(24176:24194): solicitarBytes - Tamaño solicitado: 128
+[INFO] 23:11:46:26 Memoria/(24176:24194): atenderHilo- Fin atención acción
+[INFO] 23:11:46:26 Memoria/(24176:24194): atenderHilo - He recibido 4 bytes con la acción: 4
+[INFO] 23:11:46:26 Memoria/(24176:24194): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 8 bytes para el pid 1 en su página 0 con un offset de 39
+[INFO] 23:11:46:26 Memoria/(24176:24194): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
+[INFO] 23:12:10:933 Memoria/(24176:24194): atenderHilo- Fin atención acción
+[INFO] 23:12:10:944 Memoria/(24176:24194): atenderHilo - He recibido 4 bytes con la acción: 4
+[INFO] 23:12:10:944 Memoria/(24176:24194): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 13 bytes para el pid 1 en su página 0 con un offset de 75
+[INFO] 23:12:10:944 Memoria/(24176:24194): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
+[INFO] 23:12:26:856 Memoria/(24176:24194): atenderHilo- Fin atención acción
+[INFO] 23:12:26:866 Memoria/(24176:24194): atenderHilo - He recibido 4 bytes con la acción: 4
+[INFO] 23:12:26:866 Memoria/(24176:24194): atenderHilo[solicitarBytesAccion] - Recibida solicitud de 5 bytes para el pid 1 en su página 0 con un offset de 88
+[INFO] 23:12:26:866 Memoria/(24176:24194): atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes
+[INFO] 23:12:36:153 Memoria/(24176:24194): atenderHilo- Fin atención acción
+[INFO] 23:12:36:153 Memoria/(24176:24194): atenderHilo - He recibido 4 bytes con la acción: 3
+[INFO] 23:12:36:153 Memoria/(24176:24194): atenderHilo[almacenarBytesAccion] - Recibida solicitud de almacenar 4 bytes para el pid 1 en su página 2 con un offset de 4
+[INFO] 23:12:36:153 Memoria/(24176:24194): atenderHilo[almacenarBytesAccion] - Se procede a almacenar bytes: 
+[INFO] 23:12:36:153 Memoria/(24176:24194): almacenarBytes - Inicia almacenarBytes
+[INFO] 23:12:36:153 Memoria/(24176:24194): almacenarBytes - Marco candidato para pid 1 y nroPagina 2: 44
+[INFO] 23:12:37:154 Memoria/(24176:24194): almacenarBytes - El pedido quedó almacenado
+[INFO] 23:12:37:154 Memoria/(24176:24194): atenderHilo[almacenarBytesAccion] - Solicitud de almacenar bytes terminó con resultado de acción: 0
+[INFO] 23:12:37:154 Memoria/(24176:24194): solicitarBytes - Marco encontrado: 42
+[INFO] 23:12:37:154 Memoria/(24176:24194): solicitarBytes - Tamaño solicitado: 128
