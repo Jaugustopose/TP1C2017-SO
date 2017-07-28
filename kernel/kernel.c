@@ -655,8 +655,8 @@ int main(int argc, char *argv[]) {
 		memoria = socket(AF_INET, SOCK_STREAM, 0);
 		struct sockaddr_in direccionServ;
 		direccionServ.sin_family = AF_INET;
-		direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red
-		direccionServ.sin_addr.s_addr = inet_addr("127.0.0.1");
+		direccionServ.sin_port = htons(config.PUERTO_MEMORIA); // short, Ordenación de bytes de la red
+		direccionServ.sin_addr.s_addr = inet_addr(config.IP_MEMORIA);
 		memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
 		connect(memoria, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
 		tamanioPag = obtener_tamanio_pagina(memoria);
