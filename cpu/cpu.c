@@ -159,11 +159,11 @@ void conectarConKernel() {
 
 	kernel = socket_ws();
 	connect_w(kernel, &dirKernel);
-	printf("Conectado a Kernel");
+	log_debug(debugLog,"Conectado a Kernel");
 
 	send(kernel,&identidadCpu, sizeof(int32_t),0);
 	recv(kernel, &algoritmo, sizeof(int32_t), 0);
-	printf("Algoritmo: %d", algoritmo);
+	log_debug(debugLog,"Algoritmo: %d", algoritmo);
 
 }
 
@@ -173,7 +173,7 @@ void conectarConMemoria() {
 	dirMemoria = crearDireccionParaCliente(config.PUERTO_MEMORIA, config.IP_MEMORIA);
 	memoria = socket_ws();
 	connect_w(memoria, &dirMemoria);
-	printf("Conectado a Memoria");
+	log_debug(debugLog,"Conectado a Memoria");
 
 }
 
@@ -224,6 +224,7 @@ void inicializarContexto()
 {
 	ejecutando = true;
 	terminar = false;
+	sigusR1 = false;
 	error = false;
 	pcbNuevo = NULL;
 
@@ -430,23 +431,21 @@ int32_t sentenciaNoFinaliza(char* sentencia){
 	return !retorno;
 }
 
-void finalizar_proceso(bool terminaNormalmente)
+void finalizar_proceso()
 {
 	log_debug(debugLog, ANSI_COLOR_GREEN "El proceso ansisop ejecutó su última instrucción." ANSI_COLOR_RESET);
 
 	pcbNuevo->exitCode = FINALIZO_CORRECTAMENTE;
 	serializar_PCB(pcbNuevo, kernel, accionFinProceso);
 
-	/* TODO: Finalizar por SIGUR
-	 * else{
-
-		log_debug(debugLog, ANSI_COLOR_GREEN "El proceso ansisop finaliza por SIGUSR1" ANSI_COLOR_RESET);
-		serializar_PCB(pcbNuevo, kernel, accionQuantumInterrumpido);
-	}*/
-
 	ejecutando = false;
 	destruir_PCB(pcbNuevo);
 	pcbNuevo = NULL;
+
+	if(sigusR1){
+		log_debug(debugLog, ANSI_COLOR_GREEN "El proceso CPU finaliza por SIGUSR1." ANSI_COLOR_RESET);
+		terminar = true;
+	}
 
 }
 
@@ -473,7 +472,7 @@ void parsear(char* sentencia)
 		}
 
 	}else{
-		finalizar_proceso(true);
+		finalizar_proceso();
 	}
 }
 
@@ -531,7 +530,7 @@ void recibirOrdenes(int32_t accionRecibida)
 		default:
 			log_error(errorLog, "Llego cualquier cosa.");
 			log_error(errorLog, "Llego la accion numero |%d| y no hay una accion definida para eso.", accionRecibida);
-		     exit(EXIT_FAILURE);
+		    exit(EXIT_FAILURE);
 			break;
 	}
 
@@ -565,7 +564,7 @@ void loggearFinDePrimitiva(char* primitiva) {
 
 void finalizar_todo() {
 
-	log_info(infoLog,"Finalizando proceso cpu...");
+	log_info(infoLog,"Finalizando proceso CPU");
 
 	close(kernel);
 	close(memoria);
@@ -577,8 +576,15 @@ void finalizar_todo() {
 
 void handler(int32_t sign) {
 	if (sign == SIGUSR1) {
-		printf("CHAAAAAU SIGUSR1!!!!\n");
-		log_debug(debugLog, "Me Boletearon!!");
+		if(ejecutando){
+			log_debug(debugLog, "SIGUSR1 recibido, preparando para finalizar");
+			sigusR1 = true;
+		}else{
+			log_debug(debugLog, "SIGUSR1 recibido finalizando");
+			exit(EXIT_SUCCESS);
+		}
+
+		/*
 		if(!ejecutando){
 
 			//TODO: deberia avisarle a memoria?
@@ -601,7 +607,7 @@ void handler(int32_t sign) {
 //			send(kernel, buffer, sizeof(codAccion), 0);
 
 			serializar_PCB(pcbNuevo, kernel, accionQuantumInterrumpido);
-		}
+		}*/
 	}
 }
 

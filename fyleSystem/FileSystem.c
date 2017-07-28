@@ -257,8 +257,9 @@ int crearDirectorio(char* path){
 int validarArchivo(char *path)
 {
 	archivo_t *archivo = newArchivo();
-	return leerArchivo(path, archivo);
+	int res = leerArchivo(path, archivo);
 	free(archivo);
+	return res;
 }
 
 int crearArchivo(char *path)
@@ -302,7 +303,7 @@ int borrarArchivo(char *path)
 	int i;
 	for (i = 0; i < archivo->cantBloques ; ++i) {
 		liberarBloque(strtol(archivo->BLOQUES[i],NULL,10));
-		printf("Bloque liberado: %s\n",archivo->BLOQUES[i]);
+		log_debug(debugLog, "Bloque liberado: %s\n",archivo->BLOQUES[i]);
 		i++;
 	}
 	escribirBitmap();
@@ -311,6 +312,7 @@ int borrarArchivo(char *path)
 	string_append(&pat, path);
 	remove(pat);
 	free(pat);
+	free(archivo);
 	return 1;
 }
 
@@ -344,7 +346,7 @@ void* obtenerDatos(char *path, int offset, int size)
 		bytesALeer-=cant;
 		bloqueActual++;
 	}
-
+	free(archivo);
 	return buffer;
 }
 
@@ -379,6 +381,7 @@ int guardarDatos(char *path, int offset, int size, void* buffer)
 			i++;
 		}
 		free(archivo->BLOQUES);
+		free(bloques);
 		archivo->BLOQUES=arrBloques;
 		archivo->cantBloques = bloquesNecesarios;
 	}
@@ -412,6 +415,8 @@ int guardarDatos(char *path, int offset, int size, void* buffer)
 	//Escribo archivos de metadata
 	escribirArchivo(path, archivo);
 	escribirBitmap();
+	free(archivo->BLOQUES);
+	free(archivo);
 	return 1;
 }
 
