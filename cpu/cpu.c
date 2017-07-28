@@ -92,18 +92,18 @@ void sacarSaltoDeLinea(char* texto, int32_t ultPos){
 	}
 }
 
-void cargarConfiguracion()
+void cargarConfiguracion(char* path)
 {
-	char* pat = string_new();
+	/*char* pat = string_new();
 		char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 		string_append(&pat, getcwd(cwd, sizeof(cwd)));
 		if (string_contains(pat, "/Debug")) {
 			string_append(&pat, "/cpu.cfg");
 		} else {
 			string_append(&pat, "/Debug/cpu.cfg");
-		}
-		t_config* configCpu = config_create(pat);
-		free(pat);
+		}*/
+		t_config* configCpu = config_create(path);
+		//free(pat);
 	if (config_has_property(configCpu, "IP_MEMORIA"))
 	{
 		config.IP_MEMORIA = config_get_string_value(configCpu, "IP_MEMORIA");
@@ -586,30 +586,34 @@ void handler(int32_t sign) {
 	}
 }
 
-int32_t main(void){
+int32_t main(int argc, char *argv[]){
 
+	if(argc>1){
 
-	signal(SIGUSR1, handler); //el progama sabe que cuando se recibe SIGUSR1,se ejecuta handler
+		signal(SIGUSR1, handler); //el progama sabe que cuando se recibe SIGUSR1,se ejecuta handler
 
-	crearLog(string_from_format("cpu_%d", getpid()), "CPU", 1);
-	log_debug(debugLog, "Iniciando proceso CPU, PID: %d.", getpid());
+		crearLog(string_from_format("cpu_%d", getpid()), "CPU", 1);
+		log_debug(debugLog, "Iniciando proceso CPU, PID: %d.", getpid());
 
-	identidadCpu = SOYCPU;
+		identidadCpu = SOYCPU;
 
-	cargarConfiguracion();
-	inicializarPrimitivas();
-	inicializarContexto();
-	conectarConKernel();
-    conectarConMemoria();
-    tamanioPaginas = obtenerTamanioPagina(memoria);
+		cargarConfiguracion(argv[1]);
+		inicializarPrimitivas();
+		inicializarContexto();
+		conectarConKernel();
+		conectarConMemoria();
+		tamanioPaginas = obtenerTamanioPagina(memoria);
 
-    pthread_t hiloEscucha;
-    pthread_create(&hiloEscucha, NULL, (void*)esperarProgramas, NULL);
+		pthread_t hiloEscucha;
+		pthread_create(&hiloEscucha, NULL, (void*)esperarProgramas, NULL);
 
-    while(ejecutando || !sigusR1);
+		while(ejecutando || !sigusR1);
 
-    //esperarProgramas();
-    finalizar_todo();
+		//esperarProgramas();
+		finalizar_todo();
+	}else{
+		printf("Te olvidaste de pasarme el path del cfg\n");
+	}
 
 	return EXIT_SUCCESS;
 }

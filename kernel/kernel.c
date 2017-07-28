@@ -10,17 +10,17 @@ void iniciarVigilanciaConfiguracion();
 
 /********************************** INICIALIZACIONES *****************************************************/
 
-void cargarConfiguracion() {
-	char* pat = string_new();
+void cargarConfiguracion(char* path) {
+	/*char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
 	if (string_contains(pat, "/Debug")){
 		string_append(&pat,"/kernel.cfg");
 	}else{
 	string_append(&pat, "/Debug/kernel.cfg");
-	}
-	configKernel = config_create(pat);
-	free(pat);
+	}*/
+	configKernel = config_create(path);
+	//free(pat);
 
 	if (config_has_property(configKernel, "IP_MEMORIA")) {
 		config.IP_MEMORIA = config_get_string_value(configKernel, "IP_MEMORIA");
@@ -631,119 +631,124 @@ void procesarCambiosConfiguracion(){
 /************************************** MAIN ****************************************************************/
 
 
-int main(void) {
+int main(int argc, char *argv[]) {
 
-	FIFO = "FIFO";
-	ROUND_ROBIN = "RR";
-	identificadorProceso = 0;
-	yes = 1;
-	cargarConfiguracion();
-	crearLog(string_from_format("kernel_%d", getpid()), "KERNEL", 1);
-	inicializarContexto();
+	if(argc>1){
+
+		FIFO = "FIFO";
+		ROUND_ROBIN = "RR";
+		identificadorProceso = 0;
+		yes = 1;
+		cargarConfiguracion(argv[1]);
+		crearLog(string_from_format("kernel_%d", getpid()), "KERNEL", 1);
+		inicializarContexto();
 
 
-	//Crear socket. Dejar reutilizable. Crear direccion del servidor. Bind. Listen.
-	sockServ = crearSocket();
-	reusarSocket(sockServ, yes);
-	direccionServidor = crearDireccionServidor(config.PUERTO_KERNEL);
-	bind_w(sockServ, &direccionServidor);
-	listen_w(sockServ);
+		//Crear socket. Dejar reutilizable. Crear direccion del servidor. Bind. Listen.
+		sockServ = crearSocket();
+		reusarSocket(sockServ, yes);
+		direccionServidor = crearDireccionServidor(config.PUERTO_KERNEL);
+		bind_w(sockServ, &direccionServidor);
+		listen_w(sockServ);
 
-	//Conectar con memoria
-    memoria = socket(AF_INET, SOCK_STREAM, 0);
-	struct sockaddr_in direccionServ;
-	direccionServ.sin_family = AF_INET;
-	direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red
-	direccionServ.sin_addr.s_addr = inet_addr("127.0.0.1");
-	memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
-	connect(memoria, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
-	tamanioPag = obtener_tamanio_pagina(memoria);
-	enviar_stack_size(memoria);
+		//Conectar con memoria
+		memoria = socket(AF_INET, SOCK_STREAM, 0);
+		struct sockaddr_in direccionServ;
+		direccionServ.sin_family = AF_INET;
+		direccionServ.sin_port = htons(9030); // short, Ordenación de bytes de la red
+		direccionServ.sin_addr.s_addr = inet_addr("127.0.0.1");
+		memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
+		connect(memoria, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
+		tamanioPag = obtener_tamanio_pagina(memoria);
+		enviar_stack_size(memoria);
 
-	//Conectar con FS
-	int socketFS = socket(AF_INET, SOCK_STREAM, 0);
-	struct sockaddr_in direccionServFS;
-	direccionServFS.sin_family = AF_INET;
-	direccionServFS.sin_port = htons(config.PUERTO_FS); // short, Ordenación de bytes de la red
-	direccionServFS.sin_addr.s_addr = inet_addr(config.IP_FS);
-	memset(&(direccionServFS.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
-	connect(socketFS, (struct sockaddr*) &direccionServFS, sizeof(struct sockaddr));
+		//Conectar con FS
+		int socketFS = socket(AF_INET, SOCK_STREAM, 0);
+		struct sockaddr_in direccionServFS;
+		direccionServFS.sin_family = AF_INET;
+		direccionServFS.sin_port = htons(config.PUERTO_FS); // short, Ordenación de bytes de la red
+		direccionServFS.sin_addr.s_addr = inet_addr(config.IP_FS);
+		memset(&(direccionServFS.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
+		connect(socketFS, (struct sockaddr*) &direccionServFS, sizeof(struct sockaddr));
 
-	//Añadir listener al conjunto maestro
-	FD_SET(sockServ, &master);
-	FD_SET(cambiosConfiguracion, &master);
-	FD_SET(cambiosConfiguracion, &configuracionCambio);
-	//Mantener actualizado cual es el maxSock
-	maxFd = sockServ;
+		//Añadir listener al conjunto maestro
+		FD_SET(sockServ, &master);
+		FD_SET(cambiosConfiguracion, &master);
+		FD_SET(cambiosConfiguracion, &configuracionCambio);
+		//Mantener actualizado cual es el maxSock
+		maxFd = sockServ;
 
-	//Crear hilo para interaccion por terminal
-	//pthread_t hiloInteraccionUsuario;
-	//pthread_create(&hiloInteraccionUsuario, NULL,
-	//		(void*) interactuar_con_usuario, NULL);
+		//Crear hilo para interaccion por terminal
+		//pthread_t hiloInteraccionUsuario;
+		//pthread_create(&hiloInteraccionUsuario, NULL,
+		//		(void*) interactuar_con_usuario, NULL);
 
-	//Abrimos hilo para escuchar al usuario desde la consola
-	pthread_t hiloConsolaKernal;
-	pthread_create(&hiloConsolaKernal, NULL, (void*)escucharConsolaKernel, NULL);
+		//Abrimos hilo para escuchar al usuario desde la consola
+		pthread_t hiloConsolaKernal;
+		pthread_create(&hiloConsolaKernal, NULL, (void*)escucharConsolaKernel, NULL);
 
-	//Bucle principal
-	for (;;) {
-		read_fds = master;
-		if (select(maxFd + 1, &read_fds, NULL, NULL, NULL) == -1) { //Compruebo si algun cliente quiere interactuar.
-			perror("select");
-			exit(1);
-		};
+		//Bucle principal
+		for (;;) {
+			read_fds = master;
+			if (select(maxFd + 1, &read_fds, NULL, NULL, NULL) == -1) { //Compruebo si algun cliente quiere interactuar.
+				perror("select");
+				exit(1);
+			};
 
-		for (fdCliente = 0; fdCliente <= maxFd; fdCliente++) {
+			for (fdCliente = 0; fdCliente <= maxFd; fdCliente++) {
 
-			if (FD_ISSET(fdCliente, &read_fds)) { // Me fijo si tengo datos listos para leer
-				if (fdCliente == sockServ) { //si entro en este "if", significa que tengo datos.
+				if (FD_ISSET(fdCliente, &read_fds)) { // Me fijo si tengo datos listos para leer
+					if (fdCliente == sockServ) { //si entro en este "if", significa que tengo datos.
 
-					// gestionar nuevas conexiones
-					addrlen = sizeof(direccionCliente);
-					if ((sockClie = accept(sockServ,(struct sockaddr*) &direccionCliente, &addrlen))
-							== -1) {
-							perror("accept");
-					} else {
-						printf("Server: nueva conexion de %s en socket %d\n",
-						inet_ntoa(direccionCliente.sin_addr), sockClie);
+						// gestionar nuevas conexiones
+						addrlen = sizeof(direccionCliente);
+						if ((sockClie = accept(sockServ,(struct sockaddr*) &direccionCliente, &addrlen))
+								== -1) {
+								perror("accept");
+						} else {
+							printf("Server: nueva conexion de %s en socket %d\n",
+							inet_ntoa(direccionCliente.sin_addr), sockClie);
 
-						FD_SET(sockClie, &master); // añadir al conjunto maestro
-						Colocar_en_respectivo_fdset();
-					}
-				} else {
-					// gestionar datos de un cliente
-
-					int idMensaje;
-
-					if ((cantBytes = recv(fdCliente, &idMensaje, sizeof(int32_t), 0))
-							<= 0) {
-
-						if (FD_ISSET(fdCliente, &configuracionCambio)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO INOTIFY
-							procesarCambiosConfiguracion();
-							printf("Nuevo QUANTUM_SLEEP: %d\n", config.QUANTUM_SLEEP);
-						}else
-						{
-							conexion_de_cliente_finalizada();
+							FD_SET(sockClie, &master); // añadir al conjunto maestro
+							Colocar_en_respectivo_fdset();
 						}
-
 					} else {
+						// gestionar datos de un cliente
 
-						if (FD_ISSET(fdCliente, &bolsaConsolas)) { // EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UNA CONSOLA.
+						int idMensaje;
 
-							atender_accion_consola(idMensaje, memoria, fdCliente);
-						}
-						if (FD_ISSET(fdCliente, &bolsaCpus)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UN CPU
+						if ((cantBytes = recv(fdCliente, &idMensaje, sizeof(int32_t), 0))
+								<= 0) {
 
-							atender_accion_cpu(idMensaje, memoria, socketFS); //Argumentos que le paso muy probablemente cambien
+							if (FD_ISSET(fdCliente, &configuracionCambio)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO INOTIFY
+								procesarCambiosConfiguracion();
+								printf("Nuevo QUANTUM_SLEEP: %d\n", config.QUANTUM_SLEEP);
+							}else
+							{
+								conexion_de_cliente_finalizada();
+							}
+
+						} else {
+
+							if (FD_ISSET(fdCliente, &bolsaConsolas)) { // EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UNA CONSOLA.
+
+								atender_accion_consola(idMensaje, memoria, fdCliente);
+							}
+							if (FD_ISSET(fdCliente, &bolsaCpus)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO UN CPU
+
+								atender_accion_cpu(idMensaje, memoria, socketFS); //Argumentos que le paso muy probablemente cambien
+							}
 						}
 					}
 				}
 			}
-		}
-	//	if(planificacionDetenida == 0){
-			planificar();
-	//	}
+		//	if(planificacionDetenida == 0){
+				planificar();
+		//	}
 
+		}
+	}else{
+		printf("Te olvidaste de pasarme el path del cfg\n");
 	}
 	return 0;
 }

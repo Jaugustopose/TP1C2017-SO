@@ -392,15 +392,20 @@ void inicializarContexto()
 
 int main(int argc, char *argv[]){
 
-	inicializarContexto();
+	if(argc>1){
 
-	limpiaMensajes();
+		inicializarContexto();
 
-    cargarConfiguracion(argv[0]);
+		limpiaMensajes();
 
-    imprimeMenuUsuario();
+		cargarConfiguracion(argv[1]);
 
-    escucharUsuario();
+		imprimeMenuUsuario();
+
+		escucharUsuario();
+	}else{
+		printf("Te olvidaste de pasarme el path del cfg\n");
+	}
 
 	return EXIT_SUCCESS;
 }

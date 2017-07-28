@@ -7,23 +7,23 @@
 
 #include "fileSystem.h"
 
-int cargarConfiguracion()
+int cargarConfiguracion(char* path)
 {
-	char* pat = string_new();
+	/*char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat,getcwd(cwd,sizeof(cwd)));
 	if (string_contains(pat, "/Debug")){
 		string_append(&pat,"/FileSystem.cfg");
 	}else{
 	string_append(&pat, "/Debug/FileSystem.cfg");
-	}
-	t_config* configFs = config_create(pat);
+	}*/
+	t_config* configFs = config_create(path);
 	if(configFs==NULL){
 		return -1;
-		printf("No se encontró el archivo de configuración: %s\n", pat);
+		printf("No se encontró el archivo de configuración: %s\n", path);
 	}
-	printf("El directorio sobre el que se esta trabajando es %s\n", pat);
-	free(pat);
+	printf("El directorio sobre el que se esta trabajando es %s\n", path);
+	//free(pat);
 
 	if (config_has_property(configFs, "PUERTO")){
 		config.PUERTO = config_get_int_value(configFs,"PUERTO");
@@ -40,25 +40,25 @@ int cargarConfiguracion()
 		return -1;
 	}
 
-	pat = string_new();
-	string_append(&pat,config.PUNTO_MONTAJE);
-	string_append(&pat,"/Metadata/Metadata.bin");
-	paths.Metadata = pat;
+	path = string_new();
+	string_append(&path,config.PUNTO_MONTAJE);
+	string_append(&path,"/Metadata/Metadata.bin");
+	paths.Metadata = path;
 
-	pat = string_new();
-	string_append(&pat,config.PUNTO_MONTAJE);
-	string_append(&pat,"/Metadata/Bitmap.bin");
-	paths.Bitmap = pat;
+	path = string_new();
+	string_append(&path,config.PUNTO_MONTAJE);
+	string_append(&path,"/Metadata/Bitmap.bin");
+	paths.Bitmap = path;
 
-	pat = string_new();
-	string_append(&pat,config.PUNTO_MONTAJE);
-	string_append(&pat,"/Archivos");
-	paths.Archivos = pat;
+	path = string_new();
+	string_append(&path,config.PUNTO_MONTAJE);
+	string_append(&path,"/Archivos");
+	paths.Archivos = path;
 
-	pat = string_new();
-	string_append(&pat,config.PUNTO_MONTAJE);
-	string_append(&pat,"/Bloques/");
-	paths.Bloques = pat;
+	path = string_new();
+	string_append(&path,config.PUNTO_MONTAJE);
+	string_append(&path,"/Bloques/");
+	paths.Bloques = path;
 
 	return 1;
 }
@@ -589,35 +589,40 @@ void sockets(){
 
 /***************************************MAIN FS*********************************/
 
-int main(void) {
+int main(int argc, char *argv[]) {
 
-	crearLog(string_from_format("FS_%d", getpid()), "FS", 1);
-	log_debug(debugLog, "Iniciando proceso FS, PID: %d.", getpid());
+	if(argc>1){
 
-	if(cargarConfiguracion()<0){
-		exit(EXIT_FAILURE);
-	}
-	if(leerMetadata()<0){
-		exit(EXIT_FAILURE);
-	}
-	crearBloques();
-	leerBitmap();
-	printf("Cantidad de bloques en bitmap = %i\n", bitarray_get_max_bit(bitmap));
+		crearLog(string_from_format("FS_%d", getpid()), "FS", 1);
+		log_debug(debugLog, "Iniciando proceso FS, PID: %d.", getpid());
 
-	//Crear hilo para manejar al comunicacion con el kernel
-	pthread_t hiloSockets;
-	pthread_create(&hiloSockets, NULL, (void*)sockets, NULL);
-
-	for(;;){
-		char *userInput=NULL;
-		size_t size=0;
-		getline(&userInput,&size,stdin);
-		if(!strcmp("exit\n",userInput)){
-			close(sockClie);
-			close(sockServ);
-			printf("Proceso finalizado por el usuario\n");
-			exit(EXIT_SUCCESS);
+		if(cargarConfiguracion(argv[1])<0){
+			exit(EXIT_FAILURE);
 		}
+		if(leerMetadata()<0){
+			exit(EXIT_FAILURE);
+		}
+		crearBloques();
+		leerBitmap();
+		printf("Cantidad de bloques en bitmap = %i\n", bitarray_get_max_bit(bitmap));
+
+		//Crear hilo para manejar al comunicacion con el kernel
+		pthread_t hiloSockets;
+		pthread_create(&hiloSockets, NULL, (void*)sockets, NULL);
+
+		for(;;){
+			char *userInput=NULL;
+			size_t size=0;
+			getline(&userInput,&size,stdin);
+			if(!strcmp("exit\n",userInput)){
+				close(sockClie);
+				close(sockServ);
+				printf("Proceso finalizado por el usuario\n");
+				exit(EXIT_SUCCESS);
+			}
+		}
+	}else{
+		printf("Te olvidaste de pasarme el path del cfg\n");
 	}
 
 	return 0;
