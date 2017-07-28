@@ -624,7 +624,7 @@ void realizarOperacionSobreProceso(t_proceso* proceso)
 			break;
 
 		case 2:
-			privilegiadasPorProceso(proceso);
+			privilegiadasDelProceso(proceso);
 			break;
 
 		case 3:
@@ -684,11 +684,9 @@ void rafagasPorProceso(t_proceso* unProceso)
 	free(rafagas);
 }
 
-void privilegiadasPorProceso(t_proceso* unProceso)
+void privilegiadasDelProceso(t_proceso* unProceso)
 {
-	char* privilegiadas = string_from_format("PID: |%d|, Privilegiadas: |%d| ",
-							unProceso->pidProceso,
-							unProceso->privilegiadas);
+	char* privilegiadas = string_from_format("PID: |%d|, Privilegiadas: |%d| ", unProceso->pidProceso, unProceso->privilegiadas);
 	log_info(infoLog,"[%s]", privilegiadas);
 	free(privilegiadas);
 }
