@@ -2,7 +2,7 @@
 CC=gcc
 DEPS=consola.h
 RM=rm -f
-CFLAGS= -lFunciones -lcommons -pthread -g3
+CFLAGS= -lfunciones -lcommons -pthread -g3
 
 #Compilar CONSOLA
 
@@ -12,7 +12,7 @@ Debug/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 Debug/consola: DebugDir  Debug/consola.o 
-	$(CC)  -g -fPIC -Wall -pthread  -fmessage-length=0 -o  Debug/"consola" Debug/consola.o -lFunciones -lcommons
+	$(CC)  -g -fPIC -Wall -pthread  -fmessage-length=0 -o  Debug/"consola" Debug/consola.o -lfunciones -lcommons
 
 DebugDir:
 	mkdir -p Debug
