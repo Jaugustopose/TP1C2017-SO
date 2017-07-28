@@ -158,7 +158,7 @@ void imprimeMenuUsuario()
 
 void* pidePathAlUsuario(char* path)
 {
-	char* ruta = strdup("/home/utnso/Escritorio/scripts/");
+	char* ruta = strdup("/home/utnso/scripts/");
 	string_append(&ruta, path);
 	string_append(&ruta, ".ansisop");
 	programa = fopen(ruta,"rb");

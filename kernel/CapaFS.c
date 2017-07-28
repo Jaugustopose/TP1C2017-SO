@@ -86,6 +86,8 @@ void liberarRecursosFS(int pid){
 	int i;
 	for (i = 0; i < list_size(tablaProceso); ++i) {
 		FD_t* fileDescriptor = list_get(tablaProceso, i);
+		if(fileDescriptor==NULL)
+			continue;
 		globalFD_t* globalFD = list_get(tablaGlobalArchivos,fileDescriptor->indiceTablaGlobal);
 		globalFD->cantProcesos--;
 		free(fileDescriptor);
