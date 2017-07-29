@@ -814,6 +814,9 @@ void inicializar_Lista_Entradas_Libres_Cache(t_list* entradasLibresCache){
 }
 
 void inicializarCache(){
+	if ((config.cache_x_proc !=0) && (config.entradas_cache != 0)) {
+
+
 	tamanioCache = (config.marco_size * config.entradas_cache);
 	cache = malloc(tamanioCache);
 
@@ -821,7 +824,7 @@ void inicializarCache(){
 	entradasOcupadasCache = list_create();
 
 	inicializar_Lista_Entradas_Libres_Cache(entradasLibresCache);
-
+	}
 }
 
 bool proceso_Alcanzo_Max_Entradas_Cache(int32_t unPid) {
@@ -992,7 +995,7 @@ void atenderHilo(paramHiloDedicado* parametros) {
 				log_info(memoLogger, "atenderHilo[solicitarBytesAccion] - Se procede a solicitar bytes");
 
 				//VERIFICO SI EXISTE DATA EN CACHE
-					if ((indiceCache = numero_Entrada_Ocupada_Cache(pedidoBytes.pid,pedidoBytes.nroPagina)) != -1){ //Tenia data en cache
+					if ((indiceCache = numero_Entrada_Ocupada_Cache(pedidoBytes.pid,pedidoBytes.nroPagina)) != -1 && (config.cache_x_proc != 0) && (config.entradas_cache != 0)){ //Tenia data en cache
 						bytesSolicitados = solicitarBytesCache(pedidoBytes.pid,pedidoBytes.nroPagina,pedidoBytes.offset,pedidoBytes.tamanio, indiceCache);
 						send(parametros->socketClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), MSG_WAITALL);
 						free(bytesSolicitados);
@@ -1003,11 +1006,11 @@ void atenderHilo(paramHiloDedicado* parametros) {
 						bytesSolicitados = solicitarBytesMemoria(pedidoBytes.pid, pedidoBytes.nroPagina, pedidoBytes.offset, pedidoBytes.tamanio, parametros->tablaPaginasInvertida);
 						memcpy(&resultAccion, bytesSolicitados, sizeof(resultAccion));
 						send(parametros->socketClie, bytesSolicitados, pedidoBytes.tamanio + sizeof(resultAccion), MSG_WAITALL);
+						if ((config.cache_x_proc != 0) && (config.entradas_cache != 0)){
 						cargar_Nueva_Entrada_En_Cache(pedidoBytes.pid,pedidoBytes.nroPagina,parametros->tablaPaginasInvertida);
+						}
 						free(bytesSolicitados);
-
 						break;
-
 					}
 
 				/*printf("Se procede a solicitar bytes\n");
