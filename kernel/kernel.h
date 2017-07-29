@@ -120,6 +120,7 @@ char* strLista;
 char* strLiberar;
 char* strBytesAlocados;
 char* stryBytesLiberados;
+char* pathConfiguracion;
 
 //Prototipos
 

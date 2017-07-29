@@ -11,16 +11,16 @@ void iniciarVigilanciaConfiguracion();
 /********************************** INICIALIZACIONES *****************************************************/
 
 void cargarConfiguracion(char* path) {
-	/*char* pat = string_new();
+	/*char* path = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
-	string_append(&pat, getcwd(cwd, sizeof(cwd)));
-	if (string_contains(pat, "/Debug")){
-		string_append(&pat,"/kernel.cfg");
+	string_append(&path, getcwd(cwd, sizeof(cwd)));
+	if (string_contains(path, "/Debug")){
+		string_append(&path,"/kernel.cfg");
 	}else{
-	string_append(&pat, "/Debug/kernel.cfg");
+	string_append(&path, "/Debug/kernel.cfg");
 	}*/
 	configKernel = config_create(path);
-	//free(pat);
+	//free(path);
 
 	if (config_has_property(configKernel, "IP_MEMORIA")) {
 		config.IP_MEMORIA = config_get_string_value(configKernel, "IP_MEMORIA");
@@ -584,18 +584,18 @@ void planificar()
 }
 
 /********************************************INOTIFY*******************************************/
-void recargarConfiguracion() {
+void recargarConfiguracion(char* pat) {
 	t_config* configNuevo;
-	char* pat = string_new();
+	/*char* pat = string_new();
 	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
 	string_append(&pat, getcwd(cwd, sizeof(cwd)));
 	if (string_contains(pat, "/Debug")){
 			string_append(&pat,"/kernel.cfg");
 	}else{
 		string_append(&pat, "/Debug/kernel.cfg");
-	}
+	}*/
 	configNuevo = config_create(pat);
-	free(pat);
+	//free(pat);
 
 	if (config_has_property(configNuevo, "QUANTUM_SLEEP")) {
 			config.QUANTUM_SLEEP = config_get_int_value(configNuevo, "QUANTUM_SLEEP");
@@ -620,7 +620,7 @@ void procesarCambiosConfiguracion(){
 		if (event->len) {
 			if (event->mask & IN_CLOSE_WRITE) {
 				if (strcmp(event->name, "kernel.cfg") == 0) {
-					recargarConfiguracion();
+					recargarConfiguracion(pathConfiguracion);
 				}
 			}
 		}
@@ -639,7 +639,8 @@ int main(int argc, char *argv[]) {
 		ROUND_ROBIN = "RR";
 		identificadorProceso = 0;
 		yes = 1;
-		cargarConfiguracion(argv[1]);
+		pathConfiguracion = argv[1];
+		cargarConfiguracion(pathConfiguracion);
 		crearLog(string_from_format("kernel_%d", getpid()), "KERNEL", 1);
 		inicializarContexto();
 

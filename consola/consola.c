@@ -77,16 +77,16 @@ char* calcularDuracion(struct timeb inicio, struct timeb fin) {
 
 void cargarConfiguracion(char *path){
 
-	/*char* pat = string_new();
+		/*char* path = string_new();
 		char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
-		string_append(&pat, getcwd(cwd, sizeof(cwd)));
-		if (string_contains(pat, "/Debug")) {
-			string_append(&pat, "/consola.cfg");
+		string_append(&path, getcwd(cwd, sizeof(cwd)));
+		if (string_contains(path, "/Debug")) {
+			string_append(&path, "/consola.cfg");
 		} else {
-			string_append(&pat, "/Debug/consola.cfg");
+			string_append(&path, "/Debug/consola.cfg");
 		}*/
 		t_config* configConsola = config_create(path);
-		//free(pat);
+		//free(path);
 		if (config_has_property(configConsola, "IP_KERNEL")){
 				config.IP_KERNEL = config_get_string_value(configConsola,"IP_KERNEL");
 		printf("config.IP_KERNEL: %s\n", config.IP_KERNEL);
@@ -280,7 +280,8 @@ void atenderAcciones(char* programaSolicitado)
 	while(*seguir)
 	{
 			int codAccion;
-			if(recv(socketKernel, &codAccion, sizeof(int32_t), 0)>0){
+			int recibido = recv(socketKernel, &codAccion, sizeof(int32_t), MSG_WAITALL);
+			if(recibido >0){
 				recibeOrden(codAccion, socketKernel, inicio ,fin, pidRecibido, seguir, cantPrintf);
 			}else{
 				printf("Proceso con PID %d finalizado por desconexion con Kernel/n", pidRecibido);

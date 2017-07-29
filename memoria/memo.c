@@ -272,7 +272,9 @@ int finalizarPrograma(int pid, tablaPagina_t* tablaPaginasInvertida) {
 	//pthread_mutex_lock(&lockTablaPaginas);
 	while(!finaliza){
 		int marco_candidato = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
-		if (tablaPaginasInvertida[marco_candidato].pid == pid && tablaPaginasInvertida[marco_candidato].pid != -1) {
+		if(marco_candidato==-10){
+			finaliza=true;
+		}else if (tablaPaginasInvertida[marco_candidato].pid == pid && tablaPaginasInvertida[marco_candidato].pid != -1) {
 			tablaPaginasInvertida[marco_candidato].pid = -10;
 			tablaPaginasInvertida[marco_candidato].nroPagina = -1;
 			retorno = EXIT_SUCCESS;

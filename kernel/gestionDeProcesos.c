@@ -139,7 +139,7 @@ void finalizarProceso(t_proceso* proceso)
 	cambiarEstado(proceso,EXIT);
 
 	liberarRecursosFS(proceso->pidProceso);
-	//liberarRecursos(proceso);
+	liberarRecursos(proceso);
 
 	if (proceso->semaforo != NULL){
 			t_semaforo* semaforo = dictionary_get(tablaSemaforos,proceso);
