@@ -608,7 +608,9 @@ int32_t main(int argc, char *argv[]){
 		pthread_t hiloEscucha;
 		pthread_create(&hiloEscucha, NULL, (void*)esperarProgramas, NULL);
 
-		while(ejecutando || !sigusR1);
+		while(ejecutando || !sigusR1){
+			usleep(1000000);
+		}
 
 		//esperarProgramas();
 		finalizar_todo();
