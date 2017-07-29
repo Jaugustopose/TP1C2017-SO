@@ -534,7 +534,7 @@ void sockets(){
 						}else{
 							int error = 1;
 							send(sockClie, &error, sizeof(int), MSG_WAITALL);
-							send(sockClie, datos, sizeof(int), MSG_WAITALL);
+							send(sockClie, datos, size, MSG_WAITALL);
 							printf("Datos leidos: ");
 							texto = datos;
 							for (i = 0; i < size; ++i) {
