@@ -15,6 +15,7 @@
 #include <commons/collections/dictionary.h>
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
+#include <commons/log.h>
 #include <stdio.h>
 #include "cliente-servidor.h"
 #include "serializador.h"
@@ -40,6 +41,10 @@ char path[200];
 FILE* programa;
 struct sockaddr_in dirKernel;
 t_dictionary* infoThreads;
+t_log *consolaLogger;
+t_log *ConsolaConsoleLogger;
+char* directorioOutputConsola = "output";
+char* consolaLogFileName = "consola";
 
 typedef struct{
 	int socket;

@@ -89,12 +89,12 @@ void cargarConfiguracion(char *path){
 		//free(path);
 		if (config_has_property(configConsola, "IP_KERNEL")){
 				config.IP_KERNEL = config_get_string_value(configConsola,"IP_KERNEL");
-		printf("config.IP_KERNEL: %s\n", config.IP_KERNEL);
+				log_info(ConsolaConsoleLogger, "config.IP_KERNEL: %s", config.IP_KERNEL);
 		}
 
 		if (config_has_property(configConsola, "PUERTO_KERNEL")){
 				config.PUERTO_KERNEL = config_get_int_value(configConsola,"PUERTO_KERNEL");
-		printf("config.PUERTO_KERNEL: %d\n", config.PUERTO_KERNEL);
+				log_info(ConsolaConsoleLogger, "config.PUERTO_KERNEL: %d\n", config.PUERTO_KERNEL);
 		}
 }
 
@@ -123,23 +123,26 @@ char* convertirArchivoACodigo()
 
 
 		return contenido;
+		log_info(consolaLogger, "Se ha convertido a código un archivo ansisop");
 
 }
 
 int conectarConKernel() {
 
 	//Handshake
+	int seConecto = 0;
 	int socketKernel = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in direccionServ;
 	direccionServ.sin_family = AF_INET;
 	direccionServ.sin_port = htons(config.PUERTO_KERNEL); // short, Ordenación de bytes de la red
 	direccionServ.sin_addr.s_addr = inet_addr(config.IP_KERNEL);
 	memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
-	connect(socketKernel, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
+	seConecto = connect(socketKernel, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
 	send(socketKernel,&identidad, sizeof(int),MSG_WAITALL);
-
+	if(seConecto == 0){
+		log_info(consolaLogger, "Consola conectada con Kernel exitosamente");
+	}
 	return socketKernel;
-
 }
 
 void limpiaMensajes()
@@ -171,6 +174,7 @@ void* pidePathAlUsuario(char* path)
 		char* archivoTransformado = convertirArchivoACodigo();
 		return archivoTransformado;
     }
+	log_info(consolaLogger, "Se ha introducido la ruta del programa ansisop: %s", path);
 }
 
 void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct timeb fin, int pid, int* seguir, int* cantPrintf){
@@ -187,15 +191,15 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 			recv(socketKernel, &tamanioTexto, sizeof(int32_t), MSG_WAITALL);
 			buffer = malloc(tamanioTexto);
 			recv(socketKernel, buffer, tamanioTexto, MSG_WAITALL);
-			printf("Impresion por pantalla PID: %d | Mensaje : ", pid);
+			log_info(ConsolaConsoleLogger, "Impresion por pantalla PID: %d | Mensaje : ", pid);
 			char *texto = buffer;
 			int i;
 			for (i = 0; i < tamanioTexto; ++i) {
 				if(i==0)
-					printf("|");
-				printf("%d|",(int)texto[i]);
+					log_info(ConsolaConsoleLogger, "|");
+				log_info(ConsolaConsoleLogger, "%d|",(int)texto[i]);
 			}
-			printf("\n");
+			log_info(ConsolaConsoleLogger,"\n");
 			free(buffer);
 			(*cantPrintf)++;
 			break;
@@ -204,12 +208,12 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 			ftime(&fin);
 			horaInicio = transformarTime(inicio);
 			horaFin = transformarTime(fin);
-			printf("Proceso finalizado correctamente PID: %d\n", pid);
-			printf("Inicio: %s\n",horaInicio);
-			printf("Fin: %s\n", horaFin);
+			log_info(ConsolaConsoleLogger, "Proceso finalizado correctamente PID: %d\n", pid);
+			log_info(ConsolaConsoleLogger, "Inicio: %s\n",horaInicio);
+			log_info(ConsolaConsoleLogger, "Fin: %s\n", horaFin);
 			tiempoTranscurrido = calcularDuracion(inicio, fin);
-			printf("Duracion: %s\n", tiempoTranscurrido);
-			printf("Cantidad de impresiones en pantalla: %d\n", *cantPrintf);
+			log_info(ConsolaConsoleLogger, "Duracion: %s\n", tiempoTranscurrido);
+			log_info(ConsolaConsoleLogger, "Cantidad de impresiones en pantalla: %d\n", *cantPrintf);
 			free(horaInicio);
 			free(horaFin);
 			free(tiempoTranscurrido);
@@ -221,12 +225,12 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 			ftime(&fin);
 			horaInicio = transformarTime(inicio);
 			horaFin = transformarTime(fin);
-			printf("Proceso finalizado con error PID: %d | Exit Code: %d\n", pid, exitCode);
-			printf("Inicio: %s\n",horaInicio);
-			printf("Fin: %s\n", horaFin);
+			log_info(ConsolaConsoleLogger, "Proceso finalizado con error PID: %d | Exit Code: %d\n", pid, exitCode);
+			log_info(ConsolaConsoleLogger, "Inicio: %s\n",horaInicio);
+			log_info(ConsolaConsoleLogger, "Fin: %s\n", horaFin);
 			tiempoTranscurrido = calcularDuracion(inicio, fin);
-			printf("Duracion: %s\n", tiempoTranscurrido);
-			printf("Cantidad de impresiones en pantalla: %d\n", *cantPrintf);
+			log_info(ConsolaConsoleLogger, "Duracion: %s\n", tiempoTranscurrido);
+			log_info(ConsolaConsoleLogger, "Cantidad de impresiones en pantalla: %d\n", *cantPrintf);
 			free(horaInicio);
 			free(horaFin);
 			free(tiempoTranscurrido);
@@ -268,7 +272,7 @@ void atenderAcciones(char* programaSolicitado)
 	infoThread->socket = socketKernel;
 	dictionary_put(infoThreads, string_itoa(pidRecibido), infoThread);
 
-	printf("Proceso iniciado con PID: %d\n", pidRecibido);
+	log_info(consolaLogger, "Proceso iniciado con PID: %d\n", pidRecibido);
 
 	//list_add(listaPIDs, pidRecibido);
 	int* seguir = malloc(sizeof(int));
@@ -284,7 +288,7 @@ void atenderAcciones(char* programaSolicitado)
 			if(recibido >0){
 				recibeOrden(codAccion, socketKernel, inicio ,fin, pidRecibido, seguir, cantPrintf);
 			}else{
-				printf("Proceso con PID %d finalizado por desconexion con Kernel/n", pidRecibido);
+				log_info(ConsolaConsoleLogger, "Proceso con PID %d finalizado por desconexion con Kernel/n", pidRecibido);
 				break;
 			}
 
@@ -310,7 +314,7 @@ void imprimirPIDs(int pid){
 void imprimirProgramasEnEjecucion(){
 	programasExec = string_new();
 	list_iterate(listaPIDs,(void*)imprimirPIDs);
-	printf("PIDs Impresos: %s", programasExec);
+	log_info(ConsolaConsoleLogger, "PIDs Impresos: %s", programasExec);
 	free(programasExec);
 }
 
@@ -325,7 +329,7 @@ void escucharUsuario()
 
 		 if(scanf("%d", &codAccion)==0){
 			 scanf("%s", &path); //Lo hago para que borre los caracteres que quedan
-			 printf("Numero de operacion invalido\n");
+			 log_info(consolaLogger, "El usuario ingreso un número de operacion invalido\n");
 			 continue;
 		}
 
@@ -337,7 +341,7 @@ void escucharUsuario()
 				  printf("Ingresar archivo ansisop: \n");
 				  scanf("%s", &path);
 				if ((programaSolicitado = pidePathAlUsuario(path)) == NULL){
-					puts("No se encontró el archivo\n");
+					log_info(ConsolaConsoleLogger, "No se encontró el archivo\n");
 					break;
 				}else {
 					crearPrograma(programaSolicitado);
@@ -350,11 +354,11 @@ void escucharUsuario()
 				printf("Ingresar PID: \n");
 				if(scanf("%d", &pid)==0){
 					scanf("%s", &path);
-					printf("PID invalido\n");
+					log_info(ConsolaConsoleLogger, "Se ha querida finalizar un programa con PID invalido\n");
 				}else{
 					infoThread_t* infoThread = dictionary_get(infoThreads, string_itoa(pid));
 					if(infoThread==NULL){
-						printf("No hay proceso en ejecucion con ese PID\n");
+						log_info(ConsolaConsoleLogger, "No existe proceso en ejecucion con ese PID\n");
 					}else{
 						//pthread_cancel(infoThread->threadId);
 						int32_t codigo = finalizarProgramaAccion;
@@ -369,6 +373,9 @@ void escucharUsuario()
 
 			case desconectarConsola:
 				salir = 1;
+				log_info(consolaLogger, "El usuario ha desconectado la consola");
+				log_destroy(consolaLogger);
+				log_destroy(ConsolaConsoleLogger);
 			break;
 
 			case limpiarMensajes:
@@ -376,7 +383,7 @@ void escucharUsuario()
 			break;
 
 			default:
-				printf("Numero de operacion invalido\n");
+				log_info(ConsolaConsoleLogger, "Numero de operacion invalido\n");
 				break;
 
 			}
@@ -389,23 +396,44 @@ void inicializarContexto()
 	infoThreads = dictionary_create();
 	//sem_init(&mutexCreaPrograma, 1, 1);
 	//sem_init(&mutexB, 1, 0);
+	log_info(consolaLogger, "Se ha inicializado el contexto correctamente");
+}
+
+void inicializarLog() {
+	char* directorioOutputConsola = "output";
+	char* consolaLogFileName = "consola";
+	char* filepath = string_new();
+	string_append(&filepath, directorioOutputConsola);
+	string_append(&filepath, "/");
+	string_append(&filepath, consolaLogFileName);
+	consolaLogger = log_create(string_from_format("%s.log", filepath), "Consola", false, LOG_LEVEL_INFO);
+	ConsolaConsoleLogger = log_create(string_from_format("%s.log", filepath), "Consola", true, LOG_LEVEL_INFO);
+	free (filepath);
 }
 
 int main(int argc, char *argv[]){
 
 	if(argc>1){
 
+		/****Si no existe el directorio de output lo crea****/
+		struct stat st = {0};
+		if (stat(directorioOutputConsola, &st) == -1) {
+			mkdir(directorioOutputConsola, 0700);
+		}
+		/****************************************************/
+
+		inicializarLog();
+
 		inicializarContexto();
 
 		limpiaMensajes();
 
 		cargarConfiguracion(argv[1]);
-
 		imprimeMenuUsuario();
 
 		escucharUsuario();
 	}else{
-		printf("Te olvidaste de pasarme el path del cfg\n");
+		printf("Por favor, ejecute el programa especificando la ruta del archivo .cfg\n");
 	}
 
 	return EXIT_SUCCESS;
