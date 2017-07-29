@@ -253,7 +253,7 @@ void escribirArchivo(int socketCpu, int socketFS){
 		void* buffer = malloc(tamanioBuffer);
 		memcpy(buffer,&codAccion,sizeof(int32_t));
 		memcpy(buffer+sizeof(int32_t),&tamanio,sizeof(int32_t));
-		memcpy(buffer+sizeof(int32_t)*2,buffer,tamanio);
+		memcpy(buffer+sizeof(int32_t)*2,datos,tamanio);
 		send(proceso->ConsolaDuenio,buffer,tamanioBuffer,MSG_WAITALL);
 
 		int res=1;

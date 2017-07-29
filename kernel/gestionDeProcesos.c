@@ -174,7 +174,11 @@ void bloquearProceso(t_proceso* proceso) {
 
 void desbloquearProceso(t_proceso* proceso) {
 	//Hacer toda la logica para enviar PCB
-	cambiarEstado(proceso,READY);
+	if(proceso->CpuDuenio==-1){
+		cambiarEstado(proceso,READY);
+	}else{
+		cambiarEstado(proceso,EXEC);
+	}
 	proceso->semaforo = NULL;
 }
 
@@ -314,7 +318,7 @@ void planificarExpulsion(t_proceso* proceso) {
 
     if(proceso->estado == EXEC && !proceso->abortado)
 	{
-		if(seLeAcaboElQuantum)
+		if(seLeAcaboElQuantum && !queue_is_empty(colaReady))
 		{
 			expulsarProceso(proceso);
 		}else

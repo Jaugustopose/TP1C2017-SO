@@ -506,6 +506,8 @@ void recibirOrdenes(int32_t accionRecibida)
 			overflow = false;
 			ejecutando = true;
 			obtenerPCB();
+			log_debug(debugLog, ANSI_COLOR_YELLOW "NUEVO PROCESO");
+			log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 			break;
 
 		case accionContinuarProceso:
@@ -514,7 +516,8 @@ void recibirOrdenes(int32_t accionRecibida)
 			}
 			break;
 		case accionDesalojarProceso:
-
+			log_debug(debugLog, ANSI_COLOR_YELLOW "DESALOJAR");
+			log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
 			desalojarProceso();
 
 			break;

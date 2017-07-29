@@ -446,7 +446,7 @@ void primitiva_signal(t_nombre_semaforo identificador_semaforo)
 	if(!error){
 	log_debug(debugLog, ANSI_COLOR_YELLOW "SIGNAL");
 	log_debug(debugLog, ANSI_COLOR_BLUE "PID:  |%d|", pcbNuevo->PID);
-	log_debug(debugLog, "El semaforo es: |%c|.", identificador_semaforo);
+	log_debug(debugLog, "El semaforo es: |%s|.", identificador_semaforo);
 
 	char* nombreSemaforo = identificador_semaforo;
 	int32_t codigoAccion = accionSignal;
