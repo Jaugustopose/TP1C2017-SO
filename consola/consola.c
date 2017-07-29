@@ -94,7 +94,7 @@ void cargarConfiguracion(char *path){
 
 		if (config_has_property(configConsola, "PUERTO_KERNEL")){
 				config.PUERTO_KERNEL = config_get_int_value(configConsola,"PUERTO_KERNEL");
-				log_info(ConsolaConsoleLogger, "config.PUERTO_KERNEL: %d\n", config.PUERTO_KERNEL);
+				log_info(ConsolaConsoleLogger, "config.PUERTO_KERNEL: %d", config.PUERTO_KERNEL);
 		}
 }
 
@@ -199,7 +199,7 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 					log_info(ConsolaConsoleLogger, "|");
 				log_info(ConsolaConsoleLogger, "%d|",(int)texto[i]);
 			}
-			log_info(ConsolaConsoleLogger,"\n");
+			log_info(ConsolaConsoleLogger,"");
 			free(buffer);
 			(*cantPrintf)++;
 			break;
@@ -208,12 +208,12 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 			ftime(&fin);
 			horaInicio = transformarTime(inicio);
 			horaFin = transformarTime(fin);
-			log_info(ConsolaConsoleLogger, "Proceso finalizado correctamente PID: %d\n", pid);
-			log_info(ConsolaConsoleLogger, "Inicio: %s\n",horaInicio);
-			log_info(ConsolaConsoleLogger, "Fin: %s\n", horaFin);
+			log_info(ConsolaConsoleLogger, "Proceso finalizado correctamente PID: %d", pid);
+			log_info(ConsolaConsoleLogger, "Inicio: %s",horaInicio);
+			log_info(ConsolaConsoleLogger, "Fin: %s", horaFin);
 			tiempoTranscurrido = calcularDuracion(inicio, fin);
-			log_info(ConsolaConsoleLogger, "Duracion: %s\n", tiempoTranscurrido);
-			log_info(ConsolaConsoleLogger, "Cantidad de impresiones en pantalla: %d\n", *cantPrintf);
+			log_info(ConsolaConsoleLogger, "Duracion: %s", tiempoTranscurrido);
+			log_info(ConsolaConsoleLogger, "Cantidad de impresiones en pantalla: %d", *cantPrintf);
 			free(horaInicio);
 			free(horaFin);
 			free(tiempoTranscurrido);
@@ -225,12 +225,12 @@ void recibeOrden(int32_t accion, int socketKernel, struct timeb inicio, struct t
 			ftime(&fin);
 			horaInicio = transformarTime(inicio);
 			horaFin = transformarTime(fin);
-			log_info(ConsolaConsoleLogger, "Proceso finalizado con error PID: %d | Exit Code: %d\n", pid, exitCode);
-			log_info(ConsolaConsoleLogger, "Inicio: %s\n",horaInicio);
-			log_info(ConsolaConsoleLogger, "Fin: %s\n", horaFin);
+			log_info(ConsolaConsoleLogger, "Proceso finalizado con error PID: %d | Exit Code: %d", pid, exitCode);
+			log_info(ConsolaConsoleLogger, "Inicio: %s",horaInicio);
+			log_info(ConsolaConsoleLogger, "Fin: %s", horaFin);
 			tiempoTranscurrido = calcularDuracion(inicio, fin);
-			log_info(ConsolaConsoleLogger, "Duracion: %s\n", tiempoTranscurrido);
-			log_info(ConsolaConsoleLogger, "Cantidad de impresiones en pantalla: %d\n", *cantPrintf);
+			log_info(ConsolaConsoleLogger, "Duracion: %s", tiempoTranscurrido);
+			log_info(ConsolaConsoleLogger, "Cantidad de impresiones en pantalla: %d", *cantPrintf);
 			free(horaInicio);
 			free(horaFin);
 			free(tiempoTranscurrido);
@@ -288,7 +288,7 @@ void atenderAcciones(char* programaSolicitado)
 			if(recibido >0){
 				recibeOrden(codAccion, socketKernel, inicio ,fin, pidRecibido, seguir, cantPrintf);
 			}else{
-				log_info(ConsolaConsoleLogger, "Proceso con PID %d finalizado por desconexion con Kernel/n", pidRecibido);
+				log_info(ConsolaConsoleLogger, "Proceso con PID %d finalizado por desconexion con Kernel", pidRecibido);
 				break;
 			}
 
@@ -329,7 +329,7 @@ void escucharUsuario()
 
 		 if(scanf("%d", &codAccion)==0){
 			 scanf("%s", &path); //Lo hago para que borre los caracteres que quedan
-			 log_info(consolaLogger, "El usuario ingreso un número de operacion invalido\n");
+			 log_info(consolaLogger, "El usuario ingreso un número de operacion invalido");
 			 continue;
 		}
 
@@ -341,7 +341,7 @@ void escucharUsuario()
 				  printf("Ingresar archivo ansisop: \n");
 				  scanf("%s", &path);
 				if ((programaSolicitado = pidePathAlUsuario(path)) == NULL){
-					log_info(ConsolaConsoleLogger, "No se encontró el archivo\n");
+					log_info(ConsolaConsoleLogger, "No se encontró el archivo");
 					break;
 				}else {
 					crearPrograma(programaSolicitado);
@@ -354,11 +354,11 @@ void escucharUsuario()
 				printf("Ingresar PID: \n");
 				if(scanf("%d", &pid)==0){
 					scanf("%s", &path);
-					log_info(ConsolaConsoleLogger, "Se ha querida finalizar un programa con PID invalido\n");
+					log_info(ConsolaConsoleLogger, "Se ha querido finalizar un programa con PID invalido");
 				}else{
 					infoThread_t* infoThread = dictionary_get(infoThreads, string_itoa(pid));
 					if(infoThread==NULL){
-						log_info(ConsolaConsoleLogger, "No existe proceso en ejecucion con ese PID\n");
+						log_info(ConsolaConsoleLogger, "No existe proceso en ejecucion con ese PID");
 					}else{
 						//pthread_cancel(infoThread->threadId);
 						int32_t codigo = finalizarProgramaAccion;
@@ -383,7 +383,7 @@ void escucharUsuario()
 			break;
 
 			default:
-				log_info(ConsolaConsoleLogger, "Numero de operacion invalido\n");
+				log_info(ConsolaConsoleLogger, "Numero de operacion invalido");
 				break;
 
 			}

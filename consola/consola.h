@@ -46,6 +46,7 @@ t_log *ConsolaConsoleLogger;
 char* directorioOutputConsola = "output";
 char* consolaLogFileName = "consola";
 
+
 typedef struct{
 	int socket;
 	pthread_t threadId;
