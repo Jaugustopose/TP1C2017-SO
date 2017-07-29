@@ -8,3 +8,8 @@ cd ansisop-parser/parser
 sudo make install
 cd ..
 cd ..
+cd funciones/Instalador
+sudo make install
+cd ..
+cd ..
+make all
