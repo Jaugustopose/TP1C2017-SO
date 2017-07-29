@@ -76,16 +76,11 @@ unsigned int calcularPosicion(int pid, int num_pagina) {
 int32_t buscarEnOverflow(int32_t indice, int32_t pid, int32_t pagina, tablaPagina_t* tablaPaginasInvertida) {
 	int32_t i = 0;
 	int32_t frame = -10;
-	//pthread_mutex_lock(&lockColisiones);
-	//pthread_mutex_lock(&lockTablaPaginas);
-	//TODO: REVISAR PORQUE LLEGA INDICE -10
 	for (i = 0; i < list_size(overflow[indice]); i++) {
 		if (esMarcoCorrecto((int32_t)list_get(overflow[indice], i), pid, pagina, tablaPaginasInvertida)) {
 			frame = (int32_t)list_get(overflow[indice], i);
 		}
 	}
-	//pthread_mutex_unlock(&lockTablaPaginas);
-	//pthread_mutex_unlock(&lockColisiones);
 	return frame;
 }
 
@@ -101,16 +96,13 @@ int esMarcoCorrecto(int pos_candidata, int pid, int pagina, tablaPagina_t* tabla
 
 /* Agrega una entrada a la lista enlazada correspondiente a una posición del vector de overflow */
 void agregarSiguienteEnOverflow(int pos_inicial, int nro_frame) {
-	//pthread_mutex_lock(&lockColisiones);
 	list_add(overflow[pos_inicial], nro_frame);
-	//pthread_mutex_unlock(&lockColisiones);
 }
 
 /* Elimina un frame de la lista enlazada correspondiente a una determinada posición del vector de overflow  */
 void borrarDeOverflow(int posicion, int frame) {
 	int i = 0;
 	int index_frame;
-	//pthread_mutex_lock(&lockColisiones);
 	for (i = 0; i < list_size(overflow[posicion]); i++) {
 		if (frame == (int) list_get(overflow[posicion], i)) {
 			index_frame = i;
@@ -118,7 +110,6 @@ void borrarDeOverflow(int posicion, int frame) {
 		}
 	}
 	list_remove(overflow[posicion], index_frame);
-	//pthread_mutex_unlock(&lockColisiones);
 }
 
 void realizarDumpMemoriaCache(){
@@ -146,7 +137,6 @@ void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	char* path = string_from_format("%s/dumpEstructuras_%s.txt", directorioOutputMemoria, fechaFormateada);
 	FILE* dumpFile = txt_open_for_append(path);
 	t_list* listaProcesosActivos = list_create();
-	//pthread_mutex_lock(&lockTablaPaginas);
 	puts("TABLA DE PÁGINAS INVERTIDA");
 	fprintf(dumpFile, "TABLA DE PÁGINAS INVERTIDA\n");
 	printf("||%*s||%*s||%*s||\n", 9, "Marco  ", 9, "PID   ", 13, "Nro Página");
@@ -165,7 +155,6 @@ void realizarDumpEstructurasDeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 		}
 
 	}
-	//pthread_mutex_unlock(&lockTablaPaginas);
 	printf("======================================\n\n");
 	fprintf(dumpFile, "======================================\n\n");
 	puts("LISTADO DE PROCESOS ACTIVOS");
@@ -196,8 +185,6 @@ void realizarDumpContenidoMemoriaCompleta(tablaPagina_t* tablaPaginasInvertida) 
 	char* bufferPagina = malloc(config.marco_size);
 	printf("Se procede a imprimir el contenido de cada marco:\n");
 	fprintf(dumpFile, "Se procede a imprimir el contenido de cada marco:\n");
-	//pthread_mutex_lock(&lockTablaPaginas);
-	//pthread_mutex_lock(&lockMemoria);
 	for (i = 0; i < config.marcos; i++) {
 		memcpy(bufferPagina, memoria + i * config.marco_size, config.marco_size);
 		printf("Marco: %d, pid: %d, pag: %d, contenido: %s\n", i,
@@ -208,8 +195,6 @@ void realizarDumpContenidoMemoriaCompleta(tablaPagina_t* tablaPaginasInvertida) 
 				tablaPaginasInvertida[i].pid,
 				tablaPaginasInvertida[i].nroPagina, bufferPagina);
 	}
-	//pthread_mutex_unlock(&lockMemoria);
-	//pthread_mutex_unlock(&lockTablaPaginas);
 	fclose(dumpFile);
 	free(bufferPagina);
 }
@@ -239,21 +224,17 @@ void realizarDumpContenidoProceso(tablaPagina_t* tablaPaginasInvertida) {
 	fprintf(dumpFile, "Se procede a imprimir el contenido de cada marco del pid %d:\n", pid);
 	int marco;
 	int i = 0;
-	//pthread_mutex_lock(&lockTablaPaginas);
 	while (true) {
 		marco = buscarMarco(pid, i, tablaPaginasInvertida);
 		if (marco != -10) {
-			//pthread_mutex_lock(&lockMemoria);
 			memcpy(bufferPagina, memoria + marco * config.marco_size, config.marco_size);
 			printf("pag: %d, marco: %d, contenido: %s\n", tablaPaginasInvertida[marco].nroPagina, marco, bufferPagina);
 			fprintf(dumpFile, "pag: %d, marco: %d, contenido: %s\n", tablaPaginasInvertida[marco].nroPagina, marco, bufferPagina);
-			//pthread_mutex_unlock(&lockMemoria);
 		} else {
 			break;
 		}
 		i++;
 	}
-	//pthread_mutex_unlock(&lockTablaPaginas);
 
 	if (i == 0) {
 		printf("El proceso de pid %d no se encuentra cargado en memoria\n\n", pid);
@@ -269,7 +250,6 @@ int finalizarPrograma(int pid, tablaPagina_t* tablaPaginasInvertida) {
 	int retorno = -14;
 	int nroPagina = 0;
 	bool finaliza = false;
-	//pthread_mutex_lock(&lockTablaPaginas);
 	while(!finaliza){
 		int marco_candidato = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
 		if(marco_candidato==-10){
@@ -291,7 +271,6 @@ int finalizarPrograma(int pid, tablaPagina_t* tablaPaginasInvertida) {
 		}
 		nroPagina++;
 	}
-	//pthread_mutex_unlock(&lockTablaPaginas);
 	if (retorno == -14) {
 		log_error(memoLogger, "finalizarPrograma - No se encontró el pid %d. Error code -14", pid);
 	}
@@ -301,19 +280,15 @@ int finalizarPrograma(int pid, tablaPagina_t* tablaPaginasInvertida) {
 int liberarPaginaPid(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida) {
 
 	int resultAccion;
-	//pthread_mutex_lock(&lockTablaPaginas);
 	int marco = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
-	//pthread_mutex_unlock(&lockTablaPaginas);
 	printf("Marco encontrado solicitarBytes: %d\n", marco);
 	if (marco == -10) {
 		printf("El nro de página %d para el pid %d no existe\n", pid, nroPagina);
 		resultAccion = marco;
 	} else {
-		//pthread_mutex_lock(&lockTablaPaginas);
 		//Liberamos Marco
 		tablaPaginasInvertida[marco].pid = -10;
 		tablaPaginasInvertida[marco].nroPagina = -1;
-		//pthread_mutex_unlock(&lockTablaPaginas);
 		resultAccion = EXIT_SUCCESS;
 	}
 
@@ -337,10 +312,6 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPag
 
 	//		Esta sección está hecha para averiguar los nros de página que debemos
 	//		otorgarle al PID.
-	//		¿Es correcto o los nros de página los setea el kernel antes?
-	//		Debiera ser así porque recorrer toda la tabla cada vez que se inicia
-	//		Un programa es costoso (Se hace así porque puede tener asignadas las
-	//		páginas no de manera contigua)
 
 	//Recorremos la tabla y obtenemos el último nro de página asignado al proceso
 	for (i = 0; i < config.marcos; ++i) {
@@ -353,7 +324,6 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPag
 	nroPag = nroPagUltimo;
 
 	//Recorro la memoria hasta que se termine o la cantidad de marcos libres encontrados satisfaga el pedido
-	//pthread_mutex_lock(&lockTablaPaginas);
 	for (i = 0; cantidadPosicionesEncontradas < cantPaginas; ++i) {
 		nroPag++;
 		int marco_candidato = calcularPosicion(pid, nroPag);
@@ -401,7 +371,6 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPag
 	 */
 	char* buffer = malloc(config.marco_size);
 	memset(buffer, '\0', config.marco_size);
-	//pthread_mutex_lock(&lockMemoria);
 	for (i = 0; i < cantPaginas; i++) {
 		//Si la segunda columna es -1 significa que el marco es el devuelto por la función hash
 		//Si no, el marco utilizado es el encontrado en el recorrido hecho luego de la colisión
@@ -418,8 +387,6 @@ int solicitarAsignacionPaginas(int pid, int cantPaginas, tablaPagina_t* tablaPag
 			memcpy(memoria + marcosLibres[i][1] * config.marco_size, buffer, config.marco_size);
 		}
 	}
-	//pthread_mutex_unlock(&lockMemoria);
-	//pthread_mutex_unlock(&lockTablaPaginas);
 
 	free(buffer);
 
@@ -456,12 +423,10 @@ char* solicitarBytesMemoria(int pid, int nroPagina, int offset, int tamanio, tab
 		codResult = -12;
 		log_error(memoLogger, "solicitarBytes - El pedido de lectura excede el tamaño de la página");
 	} else {
-		//pthread_mutex_lock(&lockMemoria);
 		log_info(memoLogger, "solicitarBytes - Tamaño solicitado: %d", tamanio);
 		codResult = EXIT_SUCCESS;
 		usleep(config.retardo_memoria * 1000);
 		memcpy(bytesSolicitados, memoria + marco * config.marco_size + offset, tamanio);
-		//pthread_mutex_unlock(&lockMemoria);
 	}
 	memcpy(respuesta, &codResult, sizeof(codResult));
 	memcpy(respuesta + sizeof(codResult), bytesSolicitados, tamanio);
@@ -470,7 +435,6 @@ char* solicitarBytesMemoria(int pid, int nroPagina, int offset, int tamanio, tab
 }
 
 int buscarMarco(int pid, int nroPagina, tablaPagina_t* tablaPaginasInvertida) {
-	//Los locks se hacen dentro de las funciones esMarcoCorrecto y buscarEnOverflow
 	int marco_candidato = calcularPosicion(pid, nroPagina);
 	if (esMarcoCorrecto(marco_candidato, pid, nroPagina, tablaPaginasInvertida)){
 		return marco_candidato;
@@ -502,16 +466,12 @@ int almacenarBytes(int pid, int nroPagina, int offset, int tamanio, void* buffer
 		log_error(memoLogger, "almacenarBytes - El pedido excede el tamaño de la página. Error code -12");
 		return -12;
 	} else {
-		//pthread_mutex_lock(&lockTablaPaginas);
 		int marcoPagina = buscarMarco(pid, nroPagina, tablaPaginasInvertida);
-		//pthread_mutex_unlock(&lockTablaPaginas);
 		log_info(memoLogger, "almacenarBytes - Marco candidato para pid %d y nroPagina %d: %d", pid, nroPagina, marcoPagina);
 		if (marcoPagina > -1) {
-			//pthread_mutex_lock(&lockMemoria);
 			char* destino = memoria + marcoPagina * config.marco_size + offset;
 			usleep(config.retardo_memoria * 1000);
 			memcpy(destino, buffer, tamanio);
-			//pthread_mutex_unlock(&lockMemoria);
 			log_info(memoLogger, "almacenarBytes - El pedido quedó almacenado");
 		} else {
 			log_info(memoLogger, "almacenarBytes - Marco no encontrado para pid y nroPagina especificados. Error code -10");
@@ -540,7 +500,6 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 	}
 
 	//Recorro la memoria hasta que se termine o la cantidad de marcos libres encontrados satisfaga el pedido
-	//pthread_mutex_lock(&lockTablaPaginas);
 	for (i = 0; cantPosicionesEncontradas < cantRealPaginasSolicitadas; ++i) {
 
 		int marco_candidato = calcularPosicion(pid, i);
@@ -588,7 +547,6 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 	 */
 	char* buffer = malloc(config.marco_size);
 	memset(buffer, '\0', config.marco_size);
-	//pthread_mutex_lock(&lockMemoria);
 	for (i = 0; i < cantRealPaginasSolicitadas; i++) {
 
 		//Si la segunda columna es -1 significa que se el marco es el devuelto por la función hash
@@ -604,8 +562,6 @@ int inicializarPrograma(int pid, int cantPaginasSolicitadas, tablaPagina_t* tabl
 			memcpy(memoria + marcosLibres[i][1] * config.marco_size, buffer, config.marco_size);
 		}
 	}
-	//pthread_mutex_unlock(&lockMemoria);
-	//pthread_mutex_unlock(&lockTablaPaginas);
 	free(buffer);
 
 	log_info(memoLogger, "inicializarPrograma - Paginas asignadas con éxito");
@@ -627,13 +583,11 @@ bool estaElMarcoReservado(int marcoBuscado, int cantPaginasSolicitadas, int marc
 void obtenerSizeMemoria(tablaPagina_t* tablaPaginasInvertida) {
 	int i;
 	int cantLibres = 0;
-	//pthread_mutex_lock(&lockTablaPaginas);
 	for (i = 0; i < config.marcos; i++) {
 		if (tablaPaginasInvertida[i].pid == -10) {
 			cantLibres++;
 		}
 	}
-	//pthread_mutex_unlock(&lockTablaPaginas);
 	log_info(memoConsoleLogger, "obtenerSizeMemoria - Tamaño total de la memoria en frames: %d", config.marcos);
 	log_info(memoConsoleLogger, "obtenerSizeMemoria - Cantidad de frames ocupados: %d", config.marcos - cantLibres);
 	log_info(memoConsoleLogger, "obtenerSizeMemoria - Cantidad de frames libres: %d", cantLibres);
@@ -671,13 +625,11 @@ void obtenerSizePid(tablaPagina_t* tablaPaginasInvertida) {
 	int i;
 	int cantMarcos = 0;
 	log_info(memoLogger, "obtenerSizePid - Se busca pid %d\n", pid);
-	//pthread_mutex_lock(&lockTablaPaginas);
 	for (i = 0; i < config.marcos; i++) {
 		if (tablaPaginasInvertida[i].pid == pid) {
 			cantMarcos++;
 		}
 	}
-	//pthread_mutex_unlock(&lockTablaPaginas);
 	if (cantMarcos == 0) {
 		log_warning(memoConsoleLogger, "El pid %d no se encuentra cargado en memoria!", pid);
 	} else {
@@ -763,9 +715,7 @@ void realizarFlushMemoriaCache(){
 
 	inicializarCache();
 
-	//signal(&semaforoCache);
-
-	printf("Cache limpia\n");
+	log_info(memoLogger, "Cache limpia\n");
 }
 
 int32_t entradas_Proceso_En_Cache(int32_t unPid)
@@ -1096,25 +1046,15 @@ void inicializarTablaPaginas(tablaPagina_t tablaPaginasInvertida[config.marcos])
 	log_info(memoLogger, "Tabla de páginas invertida inicializada");
 }
 
-void inicializarMutex() {
-	//pthread_mutex_init(&lockMemoria, NULL);
-	//pthread_mutex_init(&lockTablaPaginas, NULL);
-	//pthread_mutex_init(&lockColisiones, NULL);
-}
-
 void finalizar() {
 	log_destroy(memoLogger);
 	log_destroy(memoConsoleLogger);
-	//pthread_mutex_destroy(&lockMemoria);
-	//pthread_mutex_destroy(&lockTablaPaginas);
-	//pthread_mutex_destroy(&lockColisiones);
 	free(memoria);
 }
 
 void sig_handler(int signo) {
   if (signo == SIGINT) {
 	  printf("SIGINT interceptado. Finalizando... \n");
-	  //TODO IMPLEMENTAR LO NECESARIO PARA NO ROMPER A LOS OTROS PROCESOS
 	  exit(EXIT_SUCCESS);
   }
 }
@@ -1167,9 +1107,6 @@ int main(int argc, char *argv[]) {
 		//Inicialización memoria caché
 
 		inicializarCache();
-
-		/***********************************************************/
-		inicializarMutex();
 
 		/***********************************************************/
 

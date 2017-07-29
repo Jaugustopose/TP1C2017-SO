@@ -31,7 +31,7 @@ void* serializar(t_header cabeza, void* contenidoDelMensaje) {
 }
 
 void* serializarMemoria(int codigoAccion, void* contenidoDelMensaje, int tamanioMensaje) {
-	printf("tamanio mensaje: %d\n", tamanioMensaje);
+//	printf("tamanio mensaje: %d\n", tamanioMensaje);
 	void* buffer = malloc(tamanioMensaje + sizeof(codigoAccion));
 	memcpy(buffer, &codigoAccion, sizeof(codigoAccion)); //PRIMERO EL CODIGO
 	memcpy(buffer + sizeof(codigoAccion), contenidoDelMensaje, tamanioMensaje); // SEGUNDO LA DATA

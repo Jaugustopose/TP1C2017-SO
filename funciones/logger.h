@@ -21,6 +21,10 @@ t_log *debugLog;
 t_log *warningLog;
 t_log *infoLog;
 t_log *traceLog;
+t_log *kernelLogger;
+t_log *kernelConsoleLogger;
+
+
 
 void crearLog(char* nombreLog, char* nombreProceso, int muestraPantalla);
 void desactivarLogs();

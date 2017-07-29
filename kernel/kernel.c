@@ -11,108 +11,98 @@ void iniciarVigilanciaConfiguracion();
 /********************************** INICIALIZACIONES *****************************************************/
 
 void cargarConfiguracion(char* path) {
-	/*char* path = string_new();
-	char cwd[1024]; // Variable donde voy a guardar el path absoluto hasta el /Debug
-	string_append(&path, getcwd(cwd, sizeof(cwd)));
-	if (string_contains(path, "/Debug")){
-		string_append(&path,"/kernel.cfg");
-	}else{
-	string_append(&path, "/Debug/kernel.cfg");
-	}*/
+
 	configKernel = config_create(path);
-	//free(path);
 
 	if (config_has_property(configKernel, "IP_MEMORIA")) {
 		config.IP_MEMORIA = config_get_string_value(configKernel, "IP_MEMORIA");
-		printf("IP_MEMORIA: %s\n", config.IP_MEMORIA);
+		log_info(kernelConsoleLogger, "IP_MEMORIA: %s", config.IP_MEMORIA);
 	}
 	if (config_has_property(configKernel, "IP_FS")) {
 		config.IP_FS = config_get_string_value(configKernel, "IP_FS");
-		printf("IP_FS: %s\n", config.IP_FS);
+		log_info(kernelConsoleLogger, "IP_FS: %s", config.IP_FS);
 	}
 	if (config_has_property(configKernel, "PUERTO_KERNEL")) {
-		config.PUERTO_KERNEL = config_get_int_value(configKernel,
-				"PUERTO_KERNEL");
-		printf("PUERTO_KERNEL: %d\n", config.PUERTO_KERNEL);
+		config.PUERTO_KERNEL = config_get_int_value(configKernel, "PUERTO_KERNEL");
+		log_info(kernelConsoleLogger, "PUERTO_KERNEL: %d", config.PUERTO_KERNEL);
 	}
 	if (config_has_property(configKernel, "PUERTO_MEMORIA")) {
-		config.PUERTO_MEMORIA = config_get_int_value(configKernel,
-				"PUERTO_MEMORIA");
-		printf("PUERTO_MEMORIA: %d\n", config.PUERTO_MEMORIA);
+		config.PUERTO_MEMORIA = config_get_int_value(configKernel, "PUERTO_MEMORIA");
+		log_info(kernelConsoleLogger, "PUERTO_MEMORIA: %d", config.PUERTO_MEMORIA);
 	}
 	if (config_has_property(configKernel, "PUERTO_CPU")) {
 		config.PUERTO_CPU = config_get_int_value(configKernel, "PUERTO_CPU");
-		printf("PUERTO_CPU: %d\n", config.PUERTO_CPU);
+		log_info(kernelConsoleLogger, "PUERTO_CPU: %d", config.PUERTO_CPU);
 	}
 	if (config_has_property(configKernel, "PUERTO_FS")) {
 		config.PUERTO_FS = config_get_int_value(configKernel, "PUERTO_FS");
-		printf("PUERTO_FS: %d\n", config.PUERTO_FS);
+		log_info(kernelConsoleLogger, "PUERTO_FS: %d", config.PUERTO_FS);
 	}
 	if (config_has_property(configKernel, "PUERTO_CONSOLA")) {
-		config.PUERTO_CONSOLA = config_get_int_value(configKernel,
-				"PUERTO_CONSOLA");
-		printf("PUERTO_CONSOLA: %d\n", config.PUERTO_CONSOLA);
+		config.PUERTO_CONSOLA = config_get_int_value(configKernel, "PUERTO_CONSOLA");
+		log_info(kernelConsoleLogger, "PUERTO_CONSOLA: %d", config.PUERTO_CONSOLA);
 	}
 	if (config_has_property(configKernel, "ALGORITMO")) {
-			config.ALGORITMO = config_get_string_value(configKernel, "ALGORITMO");
-			printf("ALGORITMO: %s\n", config.ALGORITMO);
-		}
+		config.ALGORITMO = config_get_string_value(configKernel, "ALGORITMO");
+		log_info(kernelConsoleLogger, "ALGORITMO: %s", config.ALGORITMO);
+	}
 	if (config_has_property(configKernel, "QUANTUM")) {
-			config.QUANTUM = config_get_int_value(configKernel,
-					"QUANTUM");
-			printf("QUANTUM: %d\n", config.QUANTUM);
-		}
+		config.QUANTUM = config_get_int_value(configKernel, "QUANTUM");
+		log_info(kernelConsoleLogger, "QUANTUM: %d", config.QUANTUM);
+	}
 	if (config_has_property(configKernel, "QUANTUM_SLEEP")) {
-				config.QUANTUM_SLEEP = config_get_int_value(configKernel,
-						"QUANTUM_SLEEP");
-				printf("QUANTUM_SLEEP: %d\n", config.QUANTUM_SLEEP);
-			}
+		config.QUANTUM_SLEEP = config_get_int_value(configKernel, "QUANTUM_SLEEP");
+		log_info(kernelConsoleLogger, "QUANTUM_SLEEP: %d", config.QUANTUM_SLEEP);
+	}
 	if (config_has_property(configKernel, "GRADO_MULTIPROG")) {
-		config.GRADO_MULTIPROG = config_get_int_value(configKernel,
-				"GRADO_MULTIPROG");
-		printf("GRADO_MULTIPROG: %d\n", config.GRADO_MULTIPROG);
+		config.GRADO_MULTIPROG = config_get_int_value(configKernel, "GRADO_MULTIPROG");
+		log_info(kernelConsoleLogger, "GRADO_MULTIPROG: %d", config.GRADO_MULTIPROG);
 	}
 	if (config_has_property(configKernel, "SEM_IDS")) {
 		config.SEM_IDS = config_get_array_value(configKernel, "SEM_IDS");
-		printf("SEM_IDS: ");
+		char* semString = string_new();
+		string_append(&semString, "SEM_IDS: ");
 		char **sem = config.SEM_IDS;
 		int i;
 		for (i = 0; sem[i]; ++i) {
 			if(i!=0)
-				printf("|");
-			printf("%s",sem[i]);
+				string_append(&semString, "|");
+			string_append(&semString, sem[i]);
 		}
-		printf("\n");
+		log_info(kernelConsoleLogger, semString);
+		free(semString);
 	}
 	if (config_has_property(configKernel, "SEM_INIT")) {
 		config.SEM_INIT = config_get_array_value(configKernel, "SEM_INIT");
-		printf("SEM_INIT: ");
+		char* semString = string_new();
+		string_append(&semString, "SEM_INIT: ");
 		char **sem = config.SEM_INIT;
 		int i;
 		for (i = 0; sem[i]; ++i) {
 			if(i!=0)
-				printf("|");
-			printf("%s",sem[i]);
+				string_append(&semString, "|");
+			string_append(&semString, sem[i]);
 		}
-		printf("\n");
+		log_info(kernelConsoleLogger, semString);
+		free(semString);
 	}
 	if (config_has_property(configKernel, "SHARED_VARS")) {
-		config.SHARED_VARS = config_get_array_value(configKernel,
-				"SHARED_VARS");
-		printf("SHARED_VARS: ");
+		config.SHARED_VARS = config_get_array_value(configKernel, "SHARED_VARS");
+		char* semString = string_new();
+		string_append(&semString, "SHARED_VARS: ");
 		char **sem = config.SHARED_VARS;
 		int i;
 		for (i = 0; sem[i]; ++i) {
 			if(i!=0)
-				printf("|");
-			printf("%s",sem[i]);
+				string_append(&semString, "|");
+			string_append(&semString, sem[i]);
 		}
-		printf("\n");
+		log_info(kernelConsoleLogger, semString);
+		free(semString);
 	}
 	if (config_has_property(configKernel, "STACK_SIZE")) {
-			config.STACK_SIZE = config_get_int_value(configKernel,
-					"STACK_SIZE");
-			printf("STACK_SIZE: %d\n", config.STACK_SIZE);
+		config.STACK_SIZE = config_get_int_value(configKernel, "STACK_SIZE");
+			log_info(kernelConsoleLogger, "STACK_SIZE: %d\n", config.STACK_SIZE);
 		}
 }
 
@@ -144,6 +134,8 @@ int obtener_tamanio_pagina(int memoria) {
 }
 
 void inicializarContexto() {
+	log_info(kernelLogger, "Se inicializa contexto");
+
 	listaDeProcesos = list_create();
 	tablaSemaforos = dictionary_create();
 	tablaCompartidas = dictionary_create();
@@ -158,6 +150,7 @@ void inicializarContexto() {
 	colaExit = queue_create();
 	planificacionDetenida = 0;
 
+	log_info(kernelLogger, "Se inicializa contexto - fin");
 }
 
 int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
@@ -166,25 +159,29 @@ int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
 	pedidoSolicitudPaginas_t pedidoPaginas;
 	pedidoPaginas.pid = idProceso;
 	pedidoPaginas.cantidadPaginas = paginas;
-	printf("Sizeof pedidoPaginas: %d\n", sizeof(pedidoPaginas));
+	log_info(kernelLogger,
+			"Pedido de inicialización de programa, para pid %d de %d páginas.Tamaño del pedido: %d",
+			idProceso, paginas, sizeof(pedidoPaginas));
 	void* buffer = serializarMemoria(codigoAccion, &pedidoPaginas, sizeof(pedidoPaginas));
 	send(cliente, buffer, sizeof(codigoAccion) + sizeof(pedidoPaginas), 0);
 	free(buffer);
 	//Reservo para recibir un int con el resultAccion
 	int resultAccion;
 	recv(cliente, &resultAccion, sizeof(int), MSG_WAITALL);
-	printf("inicializarPrograma resultó con código de acción: %d\n",resultAccion);
+	log_info(kernelLogger, "La inicialización del programa %d resultó con código de operación %d", idProceso, resultAccion);
 
 	return resultAccion;
 }
 
 int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffer, int tamanioTotal) {
-	printf("tamanioTotal = %d\n", tamanioTotal);
+	log_info(kernelLogger,
+				"Pedido de almacenar bytes para pid %d.Tamaño total del contenido del pedido en bytes: %d",
+				unProceso->pidProceso, tamanioTotal);
 	int codigoAccion = almacenarBytesAccion;
 	//El STACK_SIZE se envia a memoria en handshake y memoria sabe que SIEMPRE debera reservar lo que le solicite
 	//kernel en cantidadPaginasDeCodigo MAS el  stack_size que ya conoce.
 	int tamanioBufferParaMemoria = ((sizeof(codigoAccion) + sizeof(pedidoBytesMemoria_t)) * unProceso->PCB->cantidadPaginas) + tamanioTotal;
-	printf("tamanioBufferParaMemoria: %d\n", tamanioBufferParaMemoria);
+	log_info("tamanioBufferParaMemoria: %d\n", tamanioBufferParaMemoria);
 	void* bufferParaAlmacenarEnMemoria = malloc(tamanioBufferParaMemoria);
 	int m;
 	int tamanioAAlmacenar;
@@ -216,9 +213,9 @@ int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffe
 
 
 		if (m != 0) {
-			printf("memcpy para m == %d\n", m);
-			printf("corrimiento: %d\n", tamanioBufferAux * m);
-			printf("tamanioBufferAux: %d\n", tamanioBufferAux);
+			log_info(kernelLogger, "memcpy para m == %d\n", m);
+			log_info(kernelLogger, "corrimiento: %d\n", tamanioBufferAux * m);
+			log_info(kernelLogger, "tamanioBufferAux: %d\n", tamanioBufferAux);
 			memcpy(bufferParaAlmacenarEnMemoria + posicionUltimoByteEscrito, &codigoAccion,sizeof(codigoAccion));
 			memcpy(bufferParaAlmacenarEnMemoria + posicionUltimoByteEscrito + sizeof(int32_t), &pedidoAlmacenar.pedidoBytes.pid,sizeof(pedidoAlmacenar.pedidoBytes.pid));
 			memcpy(bufferParaAlmacenarEnMemoria + posicionUltimoByteEscrito + sizeof(int32_t)*2, &pedidoAlmacenar.pedidoBytes.nroPagina,sizeof(pedidoAlmacenar.pedidoBytes.nroPagina));
@@ -243,7 +240,7 @@ int enviarSolicitudAlmacenarBytes(int memoria, t_proceso* unProceso, void* buffe
 	int k;
 	for (k=0; k < m; k++){
 		recv(memoria, &resultAccion, sizeof(resultAccion), MSG_WAITALL);
-		printf("almacenarBytes resultó con código de acción: %d\n", resultAccion);
+		log_info(kernelLogger, "almacenarBytes resultó con código de acción: %d\n", resultAccion);
 	}
 
 	//VERIFICAR
@@ -270,6 +267,7 @@ void procesos_exit_code_corto_consola(int fileDescriptor, t_list* listaConProces
 		t_proceso* proceso = list_get(listaConProcesos, fdClienteCont);
 		if (proceso -> ConsolaDuenio == fileDescriptor) {
 			//queue_push(colaExit, proceso);
+			log_info(kernelLogger, "Se setea el estado abortado en el proceso PID %d", proceso -> pidProceso);
 			proceso->abortado = true;
 		}
 
@@ -284,6 +282,7 @@ void liberar_procesos_de_cpu(int fileDescriptor, t_list* listaConProcesos) {
 	for (fdClienteCont = 0; fdClienteCont < list_size(listaConProcesos); fdClienteCont++) {
 		t_proceso* proceso = list_get(listaConProcesos, fdClienteCont);
 		if (proceso -> CpuDuenio == fileDescriptor) {
+			log_info(kernelLogger, "Se desasocia proceso PID %d del cpu %d dado de baja", proceso->CpuDuenio, fileDescriptor);
 			proceso -> CpuDuenio = -1;
 		}
 
@@ -293,6 +292,7 @@ void liberar_procesos_de_cpu(int fileDescriptor, t_list* listaConProcesos) {
 void enviar_algoritmo_a_cpu()
 {
 	int algoritmo = (strcmp(config.ALGORITMO, FIFO) == 0)? SOY_FIFO : SOY_RR;
+	log_info(kernelLogger, "Se informa el algoritmo al cpu\n");
 	send(sockClie, &algoritmo, sizeof(int32_t), MSG_WAITALL);
 }
 void Colocar_en_respectivo_fdset() {
@@ -303,14 +303,14 @@ void Colocar_en_respectivo_fdset() {
 	case soyConsola:
 
 		FD_SET(sockClie, &bolsaConsolas); //agrego una nueva consola a la bolsa de consolas
-		printf("Se ha conectado una nueva consola \n");
+		log_info(kernelLogger, "Se ha conectado una nueva consola \n");
 		break;
 
 	case soyCPU:
 			FD_SET(sockClie, &bolsaCpus); //agrego un nuevo cpu a la bolsa de cpus
+			log_info(kernelLogger, "Se ha conectado un nuevo CPU  \n");
 			encolarCPU(colaCPU, sockClie);
 			enviar_algoritmo_a_cpu();
-			printf("Se ha conectado un nuevo CPU  \n");
 			break;
 	}
 
@@ -323,21 +323,21 @@ void conexion_de_cliente_finalizada() {
 	// error o conexión cerrada por el cliente
 	if (cantBytes == 0) {
 		// conexión cerrada
-		printf("Server: socket %d termino la conexion\n", fdCliente);
+		log_info(kernelLogger, "Server: socket %d termino la conexion\n", fdCliente);
 	} else {
-		perror("recv");
+		log_error(kernelLogger, "Algún error en el recv se ha producido");
 	}
 	// Eliminar del conjunto maestro y su respectiva bolsa
 	FD_CLR(fdCliente, &master);
 	if (FD_ISSET(fdCliente, &bolsaConsolas)) {
 		FD_CLR(fdCliente, &bolsaConsolas);
-		printf("Se desconecto consola del socket %d", fdCliente);
+		log_info(kernelLogger, "Se desconectó la consola del socket %d", fdCliente);
 
 		procesos_exit_code_corto_consola(fdCliente, listaDeProcesos);
 
 	} else {
 		FD_CLR(fdCliente, &bolsaCpus);
-		printf("Se desconecto cpu del socket %d\n", fdCliente);
+		log_info(kernelLogger, "Se desconecto cpu del socket %d\n", fdCliente);
 	    colaCPU = queue_remove(colaCPU, fdCliente);
 		liberar_procesos_de_cpu(fdCliente, listaDeProcesos);
 	}
@@ -352,7 +352,7 @@ void pedirMemoria(t_proceso* proceso)
 	if (resultadoAccionInicializar == 0) {//Depende de lo que devuelve si sale bien. (valor de EXIT_SUCCESS)
 
 		proceso->PCB = crearPCB(proceso, paginasASolicitar);
-		printf("Se procede a preparar solicitud almacenar para enviar\n");
+		log_info(kernelLogger, "Se procede a preparar solicitud almacenar para enviar\n");
 
 		int resultadoAccionAlmacenar = enviarSolicitudAlmacenarBytes(memoria, proceso, proceso->codigoPrograma, proceso->tamanioScript);
 
@@ -377,12 +377,12 @@ void pedirMemoria(t_proceso* proceso)
 void Accion_envio_script(int memoria, int consola, int idMensaje)
 {
 	int tamanioScript;
-	printf("Procediendo a recibir tamaño script\n");
+	log_info(kernelLogger, "Procediendo a recibir tamaño script");
 	recv(consola, &tamanioScript, sizeof(int32_t), MSG_WAITALL);
-	printf("Tamaño del script: %d\n", tamanioScript);
+	log_info(kernelLogger, "Tamaño del script: %d", tamanioScript);
 	char* buff = malloc(tamanioScript + 1);
 	recv(fdCliente, buff, tamanioScript, MSG_WAITALL);
-	printf("el valor de cadena es: %.*s\n", tamanioScript, buff);
+	log_info(kernelLogger, "el valor de cadena es: %.*s", tamanioScript, buff);
 
     identificadorProceso++;
 	t_proceso* proceso = crearProceso(identificadorProceso, consola, (char*)buff, tamanioScript);
@@ -628,10 +628,30 @@ void procesarCambiosConfiguracion(){
 	}
 }
 
+void inicializarLog() {
+
+	char* filepath = string_new();
+	string_append(&filepath, "output");
+	string_append(&filepath, "/");
+	string_append(&filepath, "kernel");
+	kernelLogger = log_create(string_from_format("%s.log", filepath), "Memoria", false, LOG_LEVEL_INFO);
+	kernelConsoleLogger = log_create(string_from_format("%s.log", filepath), "Memoria", true, LOG_LEVEL_INFO);
+}
+
 /************************************** MAIN ****************************************************************/
 
 
 int main(int argc, char *argv[]) {
+
+	/***********************************************************
+	***Si no existe el directorio de output lo crea*************/
+	struct stat st = {0};
+	if (stat("output", &st) == -1) {
+		mkdir("output", 0700);
+	}
+	/***********************************************************/
+
+	inicializarLog();
 
 	if(argc>1){
 
@@ -641,7 +661,7 @@ int main(int argc, char *argv[]) {
 		yes = 1;
 		pathConfiguracion = argv[1];
 		cargarConfiguracion(pathConfiguracion);
-		crearLog(string_from_format("kernel_%d", getpid()), "KERNEL", 1);
+//		crearLog(string_from_format("kernel_%d", getpid()), "KERNEL", 1);
 		inicializarContexto();
 
 
@@ -653,6 +673,7 @@ int main(int argc, char *argv[]) {
 		listen_w(sockServ);
 
 		//Conectar con memoria
+		log_info(kernelLogger, "Se procede a conectar con memoria");
 		memoria = socket(AF_INET, SOCK_STREAM, 0);
 		struct sockaddr_in direccionServ;
 		direccionServ.sin_family = AF_INET;
@@ -660,10 +681,15 @@ int main(int argc, char *argv[]) {
 		direccionServ.sin_addr.s_addr = inet_addr(config.IP_MEMORIA);
 		memset(&(direccionServ.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
 		connect(memoria, (struct sockaddr*) &direccionServ, sizeof(struct sockaddr));
+		log_info(kernelLogger, "Memoria conectada en %s:%d socket %d", config.IP_MEMORIA, config.PUERTO_MEMORIA, memoria);
 		tamanioPag = obtener_tamanio_pagina(memoria);
+		log_info(kernelLogger, "Tamaño de página obtenido de la memoria: %d", tamanioPag);
+		log_info(kernelLogger, "Se envía stack size a la memoria");
 		enviar_stack_size(memoria);
+		log_info(kernelLogger, "Stack size enviado");
 
 		//Conectar con FS
+		log_info(kernelLogger, "Se procede a conectar con FileSystem");
 		int socketFS = socket(AF_INET, SOCK_STREAM, 0);
 		struct sockaddr_in direccionServFS;
 		direccionServFS.sin_family = AF_INET;
@@ -671,6 +697,7 @@ int main(int argc, char *argv[]) {
 		direccionServFS.sin_addr.s_addr = inet_addr(config.IP_FS);
 		memset(&(direccionServFS.sin_zero), '\0', 8); // Poner ceros para rellenar el resto de la estructura
 		connect(socketFS, (struct sockaddr*) &direccionServFS, sizeof(struct sockaddr));
+		log_info(kernelLogger, "FileSystem conectado en %s:%d socket %d", config.IP_FS, config.PUERTO_FS, socketFS);
 
 		//Añadir listener al conjunto maestro
 		FD_SET(sockServ, &master);
@@ -685,8 +712,8 @@ int main(int argc, char *argv[]) {
 		//		(void*) interactuar_con_usuario, NULL);
 
 		//Abrimos hilo para escuchar al usuario desde la consola
-		pthread_t hiloConsolaKernal;
-		pthread_create(&hiloConsolaKernal, NULL, (void*)escucharConsolaKernel, NULL);
+		pthread_t hiloConsolaKernel;
+		pthread_create(&hiloConsolaKernel, NULL, (void*)escucharConsolaKernel, NULL);
 
 		//Bucle principal
 		for (;;) {
@@ -703,12 +730,10 @@ int main(int argc, char *argv[]) {
 
 						// gestionar nuevas conexiones
 						addrlen = sizeof(direccionCliente);
-						if ((sockClie = accept(sockServ,(struct sockaddr*) &direccionCliente, &addrlen))
-								== -1) {
+						if ((sockClie = accept(sockServ,(struct sockaddr*) &direccionCliente, &addrlen)) == -1) {
 								perror("accept");
 						} else {
-							printf("Server: nueva conexion de %s en socket %d\n",
-							inet_ntoa(direccionCliente.sin_addr), sockClie);
+							log_info(kernelLogger,"Server: nueva conexion de %s en socket %d\n", inet_ntoa(direccionCliente.sin_addr), sockClie);
 
 							FD_SET(sockClie, &master); // añadir al conjunto maestro
 							Colocar_en_respectivo_fdset();
@@ -718,12 +743,11 @@ int main(int argc, char *argv[]) {
 
 						int idMensaje;
 
-						if ((cantBytes = recv(fdCliente, &idMensaje, sizeof(int32_t), 0))
-								<= 0) {
+						if ((cantBytes = recv(fdCliente, &idMensaje, sizeof(int32_t), 0)) <= 0) {
 
 							if (FD_ISSET(fdCliente, &configuracionCambio)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO INOTIFY
 								procesarCambiosConfiguracion();
-								printf("Nuevo QUANTUM_SLEEP: %d\n", config.QUANTUM_SLEEP);
+								log_info(kernelLogger, "Nuevo QUANTUM_SLEEP configurado: %d\n", config.QUANTUM_SLEEP);
 							}else
 							{
 								conexion_de_cliente_finalizada();
@@ -748,6 +772,9 @@ int main(int argc, char *argv[]) {
 		//	}
 
 		}
+
+		log_destroy(kernelLogger);
+		log_destroy(kernelConsoleLogger);
 	}else{
 		printf("Te olvidaste de pasarme el path del cfg\n");
 	}
