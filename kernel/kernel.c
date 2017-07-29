@@ -168,7 +168,7 @@ int pedido_Inicializar_Programa(int cliente, int paginas, int idProceso) {
 	pedidoPaginas.cantidadPaginas = paginas;
 	printf("Sizeof pedidoPaginas: %d\n", sizeof(pedidoPaginas));
 	void* buffer = serializarMemoria(codigoAccion, &pedidoPaginas, sizeof(pedidoPaginas));
-	send(cliente, buffer, sizeof(codigoAccion) + sizeof(pedidoPaginas), 0);
+	send(cliente, buffer, sizeof(codigoAccion) + sizeof(pedidoPaginas), MSG_WAITALL);
 	free(buffer);
 	//Reservo para recibir un int con el resultAccion
 	int resultAccion;
@@ -718,7 +718,7 @@ int main(int argc, char *argv[]) {
 
 						int idMensaje;
 
-						if ((cantBytes = recv(fdCliente, &idMensaje, sizeof(int32_t), 0))
+						if ((cantBytes = recv(fdCliente, &idMensaje, sizeof(int32_t), MSG_WAITALL))
 								<= 0) {
 
 							if (FD_ISSET(fdCliente, &configuracionCambio)) { //EN CASO DE QUE EL MENSAJE LO HAYA ENVIADO INOTIFY

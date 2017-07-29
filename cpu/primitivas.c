@@ -512,7 +512,7 @@ void liberar(t_puntero puntero)
 	memcpy(buffer + sizeof(codigoAccion) + sizeof(int32_t), &punteroALiberar, sizeof(punteroALiberar));
 	memcpy(buffer + sizeof(codigoAccion) + sizeof(int32_t) + sizeof(punteroALiberar), &cantPagCodigo, sizeof(cantPagCodigo));
 
-	send(kernel, buffer, sizeof(int32_t)*4, 0);
+	send(kernel, buffer, sizeof(int32_t)*4, MSG_WAITALL);
 
 	int32_t respuesta = 0;
 	recv(kernel, &respuesta, sizeof(int32_t), MSG_WAITALL);

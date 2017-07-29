@@ -349,7 +349,7 @@ void liberarPagina(t_paginaHeap* pagina, int puntero, int cantPaginasCodigo)
 	memcpy(buffer + sizeof(codAccion), &pidLiberar, sizeof(pidLiberar));
 	memcpy(buffer + sizeof(codAccion) + sizeof(nroPagina), &nroPagina, sizeof(nroPagina));
 
-	send(memoria, buffer, sizeof(int)*3, 0);
+	send(memoria, buffer, sizeof(int)*3, MSG_WAITALL);
 
 	char* stackOverflow = malloc(sizeof(int));
 	int bytesRecibidos = recv(memoria, stackOverflow, sizeof(int), MSG_WAITALL);

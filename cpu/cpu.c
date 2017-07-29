@@ -64,7 +64,7 @@ void enviarLargoMensajeASerializar(int32_t sock, int32_t largo, char* mensaje){
 void recibirQuantumSleep(){
 
 	int32_t quantum;
-	int32_t bytes = recv(kernel, &quantum, sizeof(int32_t), 0);
+	int32_t bytes = recv(kernel, &quantum, sizeof(int32_t), MSG_WAITALL);
 	quantumSleep = quantum;
 
 }
@@ -181,7 +181,7 @@ void conectarConMemoria() {
 int32_t obtener_tamanio_pagina(int32_t memoria) {
 	int32_t valorRecibido;
 	int32_t idMensaje = 6;
-	send(memoria, &idMensaje, sizeof(int32_t), 0);
+	send(memoria, &idMensaje, sizeof(int32_t), MSG_WAITALL);
 	recv(memoria, &valorRecibido, sizeof(int32_t), MSG_WAITALL);
 
 	return valorRecibido;
